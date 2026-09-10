@@ -45,6 +45,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnNextLevel()
         {
+            if (LevelManager.IsLastAvailableLevel(GameDataManager.PlayerData.CurrentLevel))
+            {
+                _uiManager.CloseModal(ScreenEnum.WinModal);
+                _uiManager.ShowModalAsync(ScreenEnum.JourneyCompleteModal);
+                return;
+            }
             LevelManager.TryGetNextLevelKey(GameDataManager.PlayerData.CurrentLevel, out string nextLevel);
             _navigation.Continue(
                 ScreenEnum.WinModal,

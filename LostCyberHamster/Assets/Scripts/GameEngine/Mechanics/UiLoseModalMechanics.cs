@@ -7,6 +7,8 @@ using GameManagement;
 using Assets.Scripts.Tutorial;
 using LostCyberHamster.UI;
 using UnityEngine.SceneManagement;
+using Vues.GameCore;
+using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -21,6 +23,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly int _sceneHandle;
         private RewardedAdRequest _request;
         private bool _runEnded;
+        private bool _purchasing;
+        private readonly string _profile = GameDataManager.ProfileId;
+        private readonly long _generation = GameDataManager.Generation;
         private readonly LevelResultNavigationCoordinator _navigation;
 
         internal UiLoseModalMechanics(UIManager uiManager, GameManager gameManager, Hamster character,
@@ -35,6 +40,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _loseModalController.SetExitAction(OnExit);
             _loseModalController.SetRestartAction(OnRestart);
             _loseModalController.SetWatchAdsAction(OnWatchAd);
+            _loseModalController.SetReviveActions(CanContinue, CanBuyRevive, OnBuyRevive);
         }
 
         private void OnExit()
@@ -61,13 +67,45 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnWatchAd()
         {
-            if (_runEnded || (_request != null && !_request.IsFinished))
+            if (!CanContinue() || _purchasing || (_request != null && !_request.IsFinished))
                 return;
             _request = RewardedAdService.Instance.RequestRevive(_runId, _sceneHandle,
-                () => !_runEnded && _character != null && _gameManager != null &&
-                    _character.gameObject.scene.handle == _sceneHandle && _character.Lives.Value <= 0,
+                CanContinue,
                 Revive);
             _loseModalController.SetAdvertisementRequest(_request);
+        }
+
+        private bool CanContinue() => !_runEnded && _profile == GameDataManager.ProfileId &&
+            _generation == GameDataManager.Generation && _character != null && _gameManager != null &&
+            _character.gameObject.scene.handle == _sceneHandle && _character.Lives.Value <= 0 &&
+            GameDataManager.PlayerData?.Monetization?.LastRevivedRunId != _runId;
+
+        private bool CanBuyRevive() => CanContinue() && !_purchasing && !RewardedAdService.Instance.IsBusy &&
+            !GameDataManager.IsProfileReplacementBlocked && !TutorialStorage.IsPlayerDataBackupActive &&
+            !Assets.Scripts.Account.AccountTransitionScope.IsActive &&
+            ResourceManager.CanSpendResource(ResourceType.Crystals, 1);
+
+        private void OnBuyRevive()
+        {
+            if (!CanBuyRevive()) return;
+            _purchasing = true;
+            bool committed = false;
+            try
+            {
+                GameDataManager.ExecuteTransaction(CheckpointReason.RunRevivePurchased, () =>
+                {
+                    if (!CanContinue() || !ResourceManager.SpendResource(ResourceType.Crystals, 1, notify: false))
+                        throw new InvalidOperationException("Revive context or balance changed.");
+                    GameDataManager.PlayerData.Monetization ??= new MonetizationState();
+                    GameDataManager.PlayerData.Monetization.LastRevivedRunId = _runId;
+                }, () => committed = true);
+                if (!committed) return;
+                MonetizationEvent.Record("crystal_spent", "revive", _runId, 1);
+                ResourceManager.NotifyBalancesChangedAfterCommit();
+                Revive();
+            }
+            catch (Exception exception) { Debug.LogException(exception); }
+            finally { _purchasing = false; }
         }
 
         private void Revive()

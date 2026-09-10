@@ -33,6 +33,20 @@ namespace GameManagement
                     data.Monetization.LastShopRewardUtcTicks > DateTime.MaxValue.Ticks))
                 return PlayerDataValidationResult.Rejected("invalid_shop_reward_time");
 
+            if (data.Monetization != null && (data.Monetization.LastWinBonusCoins < 0 ||
+                data.Monetization.LastWinBonusCoins > 0 && string.IsNullOrEmpty(data.Monetization.LastWinId)))
+                return PlayerDataValidationResult.Rejected("invalid_win_bonus");
+
+            if (data.Monetization != null && (data.Monetization.VisitCount < 0 ||
+                data.Monetization.InterstitialDayCount < 0 || data.Monetization.InterstitialDayUtcTicks < 0 ||
+                data.Monetization.InterstitialDayUtcTicks > DateTime.MaxValue.Ticks))
+                return PlayerDataValidationResult.Rejected("invalid_interstitial_state");
+
+            var purchaseIds = data.Monetization?.PurchaseTransactionIds;
+            if (purchaseIds != null && (purchaseIds.Any(string.IsNullOrWhiteSpace) ||
+                purchaseIds.Distinct(StringComparer.Ordinal).Count() != purchaseIds.Count))
+                return PlayerDataValidationResult.Rejected("invalid_purchase_ledger");
+
             // Квитанции описывают только уже выданные награды существующих уровней.
             if (data.PendingLevelUpRewards?.Any(reward => reward == null || reward.PlayerLevel < 2 ||
                     reward.PlayerLevel > data.PlayerLevel ||

@@ -9,10 +9,22 @@
                         <engine:VisualElement class="game-result-modal__title game-result-modal__title--fail" picking-mode="Ignore" />
                         <Vues.GameCore.LocalizedLabel key="fail_no_lives_left" class="game-result-modal__message game-result-modal__message--no-lives" picking-mode="Ignore" />
                         <engine:VisualElement class="game-result-modal__divider game-result-modal__divider--fail" picking-mode="Ignore" />
-                        <Vues.GameCore.LocalizedLabel key="fail_watch_ad_to_continue" class="game-result-modal__message game-result-modal__message--watch-ad" picking-mode="Ignore" />
+                        <engine:VisualElement name="revive-options" class="revive-options">
+                            <Vues.GameCore.LocalizedLabel key="revive_continue_for" class="revive-heading" />
+                            <engine:VisualElement class="revive-row">
+                                <engine:Button name="btn__watch-ads" class="monetization-button monetization-button--orange revive-video">
+                                    <Vues.GameCore.LocalizedLabel key="revive_watch_video" picking-mode="Ignore" />
+                                </engine:Button>
+                                <Vues.GameCore.LocalizedLabel key="revive_or" class="revive-or" />
+                                <engine:Button name="btn__revive-crystal" class="monetization-button revive-crystal">
+                                    <engine:VisualElement class="monetization-gem" picking-mode="Ignore" />
+                                    <engine:Label text="1" picking-mode="Ignore" />
+                                </engine:Button>
+                            </engine:VisualElement>
+                        </engine:VisualElement>
+                        <engine:Label name="revive-status" class="game-result-modal__message revive-status" picking-mode="Ignore" />
                         <engine:Button name="btn__home" tooltip="Home" class="game-result-modal__image-button game-result-modal__home-button game-result-modal__home-button--fail" />
                         <engine:Button name="btn__repeat" tooltip="Retry" class="game-result-modal__image-button game-result-modal__retry-button game-result-modal__retry-button--fail" />
-                        <engine:Button name="btn__watch-ads" tooltip="Watch Ad" class="game-result-modal__image-button game-result-modal__primary-button game-result-modal__primary-button--fail" />
                     </engine:VisualElement>
                 </engine:VisualElement>
             </engine:VisualElement>

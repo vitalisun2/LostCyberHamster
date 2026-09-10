@@ -16,12 +16,14 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly Hamster _hamster;
         private readonly ActivityAttemptContext _activityAttempt;
         private bool _finishCommitted;
+        private readonly Func<int> _grossCoins;
 
-        public UiGameOverMechanics(UIManager uiManager, GameManager gameManager, Hamster hamster)
+        public UiGameOverMechanics(UIManager uiManager, GameManager gameManager, Hamster hamster, Func<int> grossCoins = null)
         {
             _uiManager = uiManager;
             _gameManager = gameManager;
             _hamster = hamster;
+            _grossCoins = grossCoins;
             _activityAttempt = new ActivityAttemptContext(GameDataManager.PlayerData?.CurrentLevel);
             try { _activityAttempt.Prepare(); }
             catch (Exception exception)
@@ -61,20 +63,15 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     playerData.IsAccountPromptPending = true;
                 }
 
+                _activityAttempt.GrossCoins = Math.Max(0, _grossCoins?.Invoke() ?? 0);
                 _activityAttempt.Complete(() => GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value));
                 _finishCommitted = true;
-
-                if (LevelManager.IsLastAvailableLevel(
-                        playerData?.CurrentLevel))
-                {
-                    _uiManager.ShowModalAsync(
-                        ScreenEnum.JourneyCompleteModal);
-                    return;
-                }
+                if (_activityAttempt.Committed) GameAds.InterstitialAdService.Instance.SelectWin(_activityAttempt.Id);
 
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
                 winScreenController.SetRunResult(_hamster.LatestRunResult);
+                winScreenController.SetRewardedWin(_activityAttempt.Committed ? _activityAttempt.Id : null);
                 _uiManager.ShowModalAsync(ScreenEnum.WinModal);
             }
         }

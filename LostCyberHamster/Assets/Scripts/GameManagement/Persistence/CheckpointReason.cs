@@ -34,6 +34,10 @@ namespace GameManagement
         ReturnActivityRewardPresented,
         ReturnActivityRecovered,
         ReturnActivityTelemetrySent,
-        RunRefillPurchased
+        RunRefillPurchased,
+        RunRevivePurchased,
+        MonetizationVisitStarted,
+        InterstitialReserved,
+        PurchaseFulfilled
     }
 }

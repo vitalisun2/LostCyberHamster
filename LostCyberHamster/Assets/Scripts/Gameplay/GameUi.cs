@@ -73,7 +73,8 @@ namespace Assets.Scripts.Gameplay
                 _character.SuperJumpRequest,
                 _character.SuperRoofJumpRequest,
                 _character.ActorSwitcher);
-            _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character);
+            _uiGameOverMechanics = new UiGameOverMechanics(_uiManager, _gameManager, _character,
+                () => _uiGameScreenMechanics.GrossCollectedCoins);
             _levelResultNavigationCoordinator =
                 new LevelResultNavigationCoordinator(_uiManager);
             _uiLoseModalMechanics = new UiLoseModalMechanics(_uiManager, _gameManager, _character,
@@ -115,6 +116,8 @@ namespace Assets.Scripts.Gameplay
             _energyMechanics.OnUpdate(Time.deltaTime);
             bool blocked = _gameManager.State != GameState.PLAYING || _uiManager.HasModalOrTransition ||
                 TutorialStorage.IsPlayerDataBackupActive || !Application.isFocused || _applicationPaused;
+            if (!blocked && !_shieldPractice.IsPresenting)
+                GameAds.InterstitialAdService.Instance.RecordActiveGameplay(Time.unscaledDeltaTime);
             _shieldPractice.Tick(blocked);
             _notifications.Tick(gameplay: true, blocked || _shieldPractice.IsPresenting);
             RuntimePerformanceDiagnostics.EndAllocationSample(

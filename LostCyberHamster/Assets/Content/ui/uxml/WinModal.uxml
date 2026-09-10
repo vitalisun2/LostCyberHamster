@@ -20,6 +20,12 @@
                             <engine:Label name="win_submission_status" class="game-result-modal__runtime-text game-result-modal__submission" />
                         </engine:VisualElement>
                         <engine:Button name="btn_leaderboard" class="game-result-modal__leaderboard" />
+                        <Vues.GameCore.LocalizedLabel name="win-ad-pause" key="win_ad_pause" class="game-result-modal__message win-ad-pause" picking-mode="Ignore" />
+                        <engine:VisualElement name="win-bonus" class="win-bonus">
+                            <engine:VisualElement class="monetization-coin" picking-mode="Ignore" />
+                            <engine:Label name="win-bonus-amount" class="win-bonus-amount" picking-mode="Ignore" />
+                            <engine:Button name="btn_win_bonus" class="monetization-button win-bonus-button" />
+                        </engine:VisualElement>
                         <engine:Button name="btn__home" tooltip="Home" class="game-result-modal__image-button game-result-modal__home-button game-result-modal__home-button--win" />
                         <engine:Button name="btn__repeat" tooltip="Retry" class="game-result-modal__image-button game-result-modal__retry-button game-result-modal__retry-button--win" />
                         <engine:Button name="btn__play" tooltip="Next Level" class="game-result-modal__image-button game-result-modal__primary-button game-result-modal__primary-button--win" />

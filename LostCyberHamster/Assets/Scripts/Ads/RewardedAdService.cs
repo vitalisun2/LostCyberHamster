@@ -57,7 +57,7 @@ namespace GameAds
         }
 
         public bool IsBusy => _active != null;
-        public bool CanRequest => !IsBusy && CanPersistRewards &&
+        public bool CanRequest => !IsBusy && !InterstitialAdService.Instance.IsBusy && CanPersistRewards &&
             !GameDataManager.IsProfileReplacementBlocked && !AccountTransitionScope.IsActive &&
             _recoveredProfile == CurrentProfileKey && _provider.IsSupported &&
             (_provider.HasLoadedAd || CanLoadFromNetwork);
@@ -140,9 +140,23 @@ namespace GameAds
             }, null, null);
         }
 
+        public RewardedAdRequest RequestWinBonus(string winId)
+        {
+            var state = GameDataManager.PlayerData?.Monetization;
+            if (string.IsNullOrEmpty(winId) || !InterstitialAdService.Instance.AllowsWinBonus(winId) || state?.LastWinId != winId ||
+                state.LastRewardedWinId == winId || state.LastWinBonusCoins <= 0) return null;
+            return Begin(new RewardedAdIntent
+            {
+                IsWinBonus = true, RunId = winId, RewardType = ResourceType.Coins,
+                RewardAmount = state.LastWinBonusCoins, SceneHandle = SceneManager.GetActiveScene().handle
+            }, null, null);
+        }
+
         public RewardedAdRequest RequestRevive(string runId, int sceneHandle,
             Func<bool> canRevive, Action revive)
         {
+            if (string.IsNullOrEmpty(runId) || canRevive?.Invoke() != true ||
+                GameDataManager.PlayerData?.Monetization?.LastRevivedRunId == runId) return null;
             return Begin(new RewardedAdIntent
             {
                 IsRevive = true,
@@ -171,6 +185,7 @@ namespace GameAds
                 Revive = revive
             };
             _lastStatus = string.Empty;
+            MonetizationEvent.Record("choice", intent.IsRevive ? "revive" : intent.IsWinBonus ? "win" : "shop", intent.RequestId, intent.RewardAmount);
             DebugManager.DiagStability($"[ADS] {intent.RequestId} Preparing.");
             RequestInitialization();
             Notify();
@@ -269,6 +284,12 @@ namespace GameAds
                 return;
             }
 
+            if (request.Intent.IsRevive && request.CanRevive?.Invoke() != true)
+            {
+                Finish(request, RewardedAdState.Cancelled, string.Empty);
+                return;
+            }
+
             // Durable intent и блокировка замены профиля предшествуют native Show.
             try
             {
@@ -299,7 +320,10 @@ namespace GameAds
         private void Started(RewardedAdRequest request)
         {
             if (_active == request && !request.TerminalReceived && request.IsNativePending)
+            {
+                MonetizationEvent.Record("show", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
                 SetState(request, RewardedAdState.Showing);
+            }
         }
 
         private void Failed(RewardedAdRequest request, string error)
@@ -307,6 +331,8 @@ namespace GameAds
             if (_active != request || request.TerminalReceived || request.IsFinished)
                 return;
             request.TerminalReceived = true;
+            if (request.IsNativePending) InterstitialAdService.Instance.ResetInterval();
+            MonetizationEvent.Record("failed", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
             DebugManager.DiagStability($"[ADS] {request.RequestId} SDK failure: {error}.");
             Finish(request, RewardedAdState.Failed, "ads_try_again");
         }
@@ -316,6 +342,8 @@ namespace GameAds
             if (_active != request || request.TerminalReceived || request.IsFinished)
                 return;
             request.TerminalReceived = true;
+            InterstitialAdService.Instance.ResetInterval();
+            MonetizationEvent.Record(completed ? "completed" : "skipped", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
             if (!completed)
             {
                 Finish(request, RewardedAdState.Skipped, "ads_not_completed");
@@ -339,34 +367,54 @@ namespace GameAds
                 // Сохраняем completion до выдачи, чтобы восстановить её после сбоя второй записи.
                 GameDataManager.ExecuteTechnicalTransaction(() => WriteIntent(request.Intent));
                 bool newlyGranted = false;
+                bool committed = false;
+                bool reviveContext = request.Intent.IsRevive && !request.ContextCancelled &&
+                    request.CanRevive?.Invoke() == true;
                 GameDataManager.ExecuteTransaction(CheckpointReason.RewardedAdRewardGranted, () =>
                 {
                     var player = GameDataManager.PlayerData;
                     player.AppliedRewardedRequestIds ??= new List<string>();
                     if (!player.AppliedRewardedRequestIds.Contains(request.RequestId))
                     {
-                        if (!request.Intent.IsRevive)
+                        player.Monetization ??= new MonetizationState();
+                        var state = player.Monetization;
+                        if (request.Intent.IsRevive)
+                        {
+                            newlyGranted = state.LastRevivedRunId != request.Intent.RunId;
+                            state.LastRevivedRunId = request.Intent.RunId;
+                        }
+                        else if (request.Intent.IsWinBonus)
+                        {
+                            newlyGranted = state.LastRewardedWinId != request.Intent.RunId;
+                            if (newlyGranted) ApplyShopReward(request.Intent);
+                            state.LastRewardedWinId = request.Intent.RunId;
+                        }
+                        else
                         {
                             ApplyShopReward(request.Intent);
-                            // Награда, её ID и начало cooldown сохраняются одной транзакцией.
-                            player.Monetization ??= new MonetizationState();
-                            player.Monetization.LastShopRewardUtcTicks = DateTime.UtcNow.Ticks;
+                            state.LastShopRewardUtcTicks = DateTime.UtcNow.Ticks;
+                            newlyGranted = true;
                         }
                         player.AppliedRewardedRequestIds.Add(request.RequestId);
-                        newlyGranted = true;
                     }
                     GameDataManager.SetJournalJson(JournalFeature, string.Empty);
-                });
+                }, () => committed = true);
+                if (!committed) return;
 
+                if (newlyGranted) MonetizationEvent.Record("reward_saved", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId, request.Intent.IsRevive ? 1 : request.Intent.RewardAmount);
                 // UI и игровой эффект видят только уже сохранённую выдачу.
                 if (newlyGranted && !request.Intent.IsRevive)
                 {
                     ResourceManager.NotifyBalancesChangedAfterCommit();
-                    try { GameEventsManager.ItemBought(request.Intent.ShopItemId, ResourceType.Advertisement, 0); }
+                    try
+                    {
+                        if (!request.Intent.IsWinBonus)
+                            GameEventsManager.ItemBought(request.Intent.ShopItemId, ResourceType.Advertisement, 0);
+                    }
                     catch (Exception exception) { Debug.LogException(exception); }
                 }
                 if (newlyGranted && request.Intent.IsRevive && !request.ContextCancelled &&
-                    request.CanRevive?.Invoke() == true)
+                    reviveContext && IsCurrentOwner(request))
                 {
                     try { request.Revive?.Invoke(); }
                     catch (Exception exception) { Debug.LogException(exception); }

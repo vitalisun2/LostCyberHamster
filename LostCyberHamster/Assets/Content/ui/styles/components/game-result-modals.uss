@@ -53,7 +53,7 @@
 }
 
 .game-result-modal__panel--fail {
-    height: 479px;
+    height: 515px;
     background-image: url("/Assets/Content/ui/sprites/modals/fail/panel_fail_exact.png");
 }
 
@@ -295,16 +295,16 @@
 }
 
 .game-result-modal__home-button--fail {
-    left: 104px;
-    top: 310px;
+    left: 287px;
+    top: 370px;
     width: 100px;
     height: 101px;
     background-image: url("/Assets/Content/ui/sprites/modals/fail/button_home.png");
 }
 
 .game-result-modal__retry-button--fail {
-    left: 224px;
-    top: 310px;
+    left: 402px;
+    top: 370px;
     width: 98px;
     height: 101px;
     background-image: url("/Assets/Content/ui/sprites/modals/fail/button_retry.png");
@@ -367,3 +367,39 @@
     -unity-text-align: upper-center;
     color: rgb(100, 20, 20);
 }
+
+/* Одобренные Win B и Lose B: рисунок отдельно от динамических данных. */
+.monetization-button {
+    margin: 0; padding: 6px 18px; border-width: 0;
+    background-color: rgba(0,0,0,0);
+    background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    color: white; font-size: 24px; -unity-font-style: bold;
+    -unity-text-align: middle-center; white-space: normal;
+    -unity-text-outline-color: rgb(15,42,80); -unity-text-outline-width: 1px;
+    flex-direction: row; justify-content: center; align-items: center;
+}
+.monetization-button > Label { color: white; -unity-text-align: middle-center; white-space: normal; }
+.monetization-button--orange { background-image: url("/Assets/Content/ui/sprites/shared/button_reward_primary_base.png"); }
+.monetization-button:disabled { opacity: 0.6; background-color: rgba(0,0,0,0); border-width: 0; color: white; }
+.monetization-button:active { scale: 0.98 0.98; }
+.monetization-gem { width: 60px; height: 60px; margin-right: 14px; background-image: url("/Assets/Content/ui/sprites/shared/hud_gems_icon.png"); -unity-background-scale-mode: scale-to-fit; }
+.monetization-coin { width: 75px; height: 75px; background-image: url("/Assets/Content/ui/sprites/shared/hud_coins_icon.png"); -unity-background-scale-mode: scale-to-fit; }
+.revive-options { position: absolute; left: 73px; top: 195px; width: 636px; align-items: center; }
+.revive-heading { height: 40px; color: rgb(15,42,80); font-size: 28px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.revive-row { flex-direction: row; align-items: center; margin-top: 8px; width: 100%; height: 86px; }
+.revive-video { width: 344px; height: 86px; }
+.revive-or { width: 88px; color: rgb(15,42,80); font-size: 26px; -unity-text-align: middle-center; }
+.revive-crystal { width: 204px; height: 86px; font-size: 44px; }
+.revive-status { left: 70px; top: 332px; width: 642px; height: 32px; font-size: 21px; }
+.win-bonus { display: none; position: absolute; left: 90px; top: 380px; width: 602px; height: 78px; flex-direction: row; align-items: center; }
+.win-bonus-amount { width: 226px; padding-left: 10px; color: rgb(15,42,80); font-size: 25px; -unity-font-style: bold; white-space: normal; }
+.win-bonus-button { width: 301px; height: 68px; font-size: 22px; }
+.win-has-bonus .game-result-modal__panel--win { height: 610px; top: 189px; }
+.win-has-bonus .game-result-modal__home-button--win,
+.win-has-bonus .game-result-modal__retry-button--win,
+.win-has-bonus .game-result-modal__primary-button--win { top: 478px; }
+.game-result-modal .win-journey-button { background-image: url("/Assets/Content/ui/sprites/shared/button_reward_primary_base.png"); color: white; font-size: 25px; -unity-font-style: bold; white-space: normal; padding: 8px 24px; -unity-text-align: middle-center; }
+
+.win-ad-pause { display: none; left: 90px; top: 503px; width: 602px; height: 34px; font-size: 23px; }
+.win-has-pause .game-result-modal__panel--win { height: 570px; }

@@ -429,6 +429,12 @@ namespace Assets.Scripts.System
                 experience = _playerExperienceService.GrantExperienceForLevelCompletion(
                     playerData, progressKey, updatedSnapshot, notify: false);
                 playerData.Progress = updatedSnapshot;
+                if (activityAttempt?.IsCurrent == true && activityAttempt.Level == levelKey && stars > 0)
+                {
+                    playerData.Monetization ??= new MonetizationState();
+                    playerData.Monetization.LastWinId = activityAttempt.Id;
+                    playerData.Monetization.LastWinBonusCoins = Math.Max(0, activityAttempt.GrossCoins) / 2;
+                }
                 activityRecorded = ReturnActivityService.ApplyCommittedWin(activityAttempt, levelKey, stars);
             }, () =>
             {

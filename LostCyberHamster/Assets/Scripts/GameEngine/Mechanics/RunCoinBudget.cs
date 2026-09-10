@@ -10,6 +10,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly string _profileId = GameDataManager.ProfileId;
         private readonly long _generation = GameDataManager.Generation;
         private int _remainingCoins;
+        private int _grossCoins;
+        public int GrossCoins => IsCurrent ? _grossCoins : 0;
 
         private bool IsCurrent => ResourceManager.IsReady && _profileId == GameDataManager.ProfileId &&
                                   _generation == GameDataManager.Generation;
@@ -21,6 +23,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             if (!IsCurrent || amount <= 0) return;
             _remainingCoins += Math.Min(amount, int.MaxValue - _remainingCoins);
+            _grossCoins += Math.Min(amount, int.MaxValue - _grossCoins);
         }
 
         public bool CanSpend(int price) => IsCurrent && ResourceManager.CanSpendResource(ResourceType.Coins, price);

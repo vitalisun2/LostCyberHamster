@@ -5,11 +5,50 @@
         <engine:VisualElement name="shop-viewport" class="shop-viewport main-screen-body">
             <engine:VisualElement name="shop-scale-frame" class="shop-scale-frame">
                 <engine:VisualElement name="shop-design" class="shop-design">
-                    <engine:VisualElement name="shop-offers" class="shop-offers">
-                        <engine:Button name="shop-free-coins" class="shop-offer shop-offer--free-coins" />
-                        <engine:Button name="shop-crystal-pack" class="shop-offer shop-offer--crystal-pack" />
-                    </engine:VisualElement>
-                    <Vues.GameCore.LocalizedLabel name="shop-purchase-message" key="shop_insufficient_coins_for_crystals" class="shop-purchase-message" />
+                    <engine:ScrollView name="shop-offers" class="shop-offers" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto">
+                        <Vues.GameCore.LocalizedLabel key="shop_one_time" class="shop-section-heading" />
+                        <engine:VisualElement name="shop-onetime-row" class="shop-card-row">
+                            <engine:VisualElement class="shop-card shop-card--noads">
+                                <engine:VisualElement class="shop-noads-icon" picking-mode="Ignore"><engine:Label text="▶" /><engine:VisualElement class="shop-noads-slash" /></engine:VisualElement>
+                                <engine:VisualElement class="shop-noads-copy">
+                                    <Vues.GameCore.LocalizedLabel key="shop_noads_title" class="shop-card-title" />
+                                    <Vues.GameCore.LocalizedLabel key="shop_noads_once" class="shop-card-detail" />
+                                    <Vues.GameCore.LocalizedLabel key="shop_noads_rewarded" class="shop-card-detail" />
+                                </engine:VisualElement>
+                                <engine:Button name="iap-noads" class="shop-action shop-noads-action" />
+                            </engine:VisualElement>
+                            <engine:VisualElement name="shop-starter" class="shop-card shop-card--starter">
+                                <Vues.GameCore.LocalizedLabel key="shop_starter_title" class="shop-card-title" />
+                                <Vues.GameCore.LocalizedLabel key="shop_starter_content" class="shop-card-detail" />
+                                <Vues.GameCore.LocalizedLabel key="shop_starter_once" class="shop-card-detail" />
+                                <engine:Button name="iap-starter" class="shop-action" />
+                            </engine:VisualElement>
+                        </engine:VisualElement>
+                        <Vues.GameCore.LocalizedLabel key="shop_crystals_section" class="shop-section-heading" />
+                        <engine:VisualElement class="shop-card-row">
+                            <engine:VisualElement class="shop-card shop-card--crystal"><engine:VisualElement class="shop-card-copy">
+                                <Vues.GameCore.LocalizedLabel key="shop_crystals_10" class="shop-card-title" />
+                                <engine:Button name="iap-crystals10" class="shop-action" />
+                            </engine:VisualElement></engine:VisualElement>
+                            <engine:VisualElement class="shop-card shop-card--crystal"><engine:VisualElement class="shop-card-copy">
+                                <Vues.GameCore.LocalizedLabel key="shop_crystals_30" class="shop-card-title" />
+                                <engine:Button name="iap-crystals30" class="shop-action" />
+                            </engine:VisualElement></engine:VisualElement>
+                        </engine:VisualElement>
+                        <Vues.GameCore.LocalizedLabel key="shop_game_resources" class="shop-section-heading" />
+                        <engine:VisualElement class="shop-card-row">
+                            <engine:VisualElement class="shop-card shop-card--coins"><engine:VisualElement class="shop-card-copy">
+                                <engine:Label name="shop-free-amount" class="shop-card-title" />
+                                <engine:Button name="shop-free-coins" class="shop-action" />
+                            </engine:VisualElement></engine:VisualElement>
+                            <engine:VisualElement class="shop-card shop-card--crystal"><engine:VisualElement class="shop-card-copy">
+                                <engine:Label name="shop-exchange-amount" class="shop-card-title" />
+                                <engine:Button name="shop-crystal-pack" class="shop-action" />
+                            </engine:VisualElement></engine:VisualElement>
+                        </engine:VisualElement>
+                    </engine:ScrollView>
+                    <engine:Button name="shop-restore" class="shop-action shop-restore"><Vues.GameCore.LocalizedLabel key="shop_restore" picking-mode="Ignore" /></engine:Button>
+                    <engine:Label name="shop-purchase-message" class="shop-purchase-message" />
                 </engine:VisualElement>
             </engine:VisualElement>
         </engine:VisualElement>

@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.GameManagerLogic;
+using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using System;
 using Assets.Scripts.Gameplay.Enums;
@@ -16,6 +16,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private const int EnergyRefillPrice = 50;
         private const int UltraRefillPrice = 100;
         private readonly RunCoinBudget _runCoinBudget = new();
+        public int GrossCollectedCoins => _runCoinBudget.GrossCoins;
         private bool _refillInProgress;
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;

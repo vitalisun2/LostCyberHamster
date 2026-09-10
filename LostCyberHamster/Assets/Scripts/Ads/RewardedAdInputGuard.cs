@@ -54,7 +54,7 @@ namespace GameAds
                 Release();
         }
 
-        private static bool HasActiveInput()
+        internal static bool HasActiveInput()
         {
             foreach (var device in InputSystem.devices)
             {

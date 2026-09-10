@@ -1,6 +1,12 @@
 # Монетизация — задачи
 
-Дата: 2026-09-10. Владелец: задача «Монетизация», `01a08b59-5fcd-7673-817d-5ad8258db289`. Local `integration/unity-live`. Основа: [brief](monetization_brief.md), [research 21](research/21_monetization_launch_policy.md), research 19/20. Пользователь выбрал 3/15/1, магазин B/Starter B, Win B, Lose B, паузу B. Фоны карточек магазина: насыщенность примерно на 50% ниже; обновлённый концепт показан, итоговый вид подтверждается.
+Дата: 2026-09-10. Владелец: задача «Монетизация», `01a08b59-5fcd-7673-817d-5ad8258db289`. Local `integration/unity-live`. Основа: [brief](monetization_brief.md), [research 21](research/21_monetization_launch_policy.md), research 19/20. Пользователь выбрал 3/15/1, магазин B/Starter B, Win B, Lose B, паузу B. Фоны карточек магазина: насыщенность примерно на 50% ниже; обновлённый концепт подтверждён.
+
+## Статус 10.09
+
+M1–M4: клиентская логика и выбранные UI реализованы. M5–M8: клиент IAP 5.4.3, права/ledger, UI и события подготовлены. Пользователь подтвердил отсутствие Google Play/сервера и выбрал подготовку кода + [списка настройки](monetization_store_setup.md). Покупки и interstitial выключены до подключения. Фактические проверки и граница runtime-приёмки — в [отчёте](monetization_implementation.md).
+
+Ниже сохранены требования к 16 частям; внешняя store/Ads приёмка выполняется при подключении.
 
 ## Порядок и владение
 
@@ -14,7 +20,7 @@ Research и этот план; реальные PNG Shop/Win/Lose; ImageGen-ре
 
 **M1-L. Логика cooldown.** Выполнено; compile/Play/policy check в отчёте. Результат: 50 монет; 10 минут реального времени после сохранённой выдачи; часы продолжаются вне игры; без суточного cap. Зависимости: существующие `RewardedAdService`/`ShopManager`, передача persistence. Владение: `Scripts/Ads/RewardedAdService.cs`, `RewardedAdIntent.cs`, новый `RewardedAdPolicy.cs`; `Scripts/GameManagement/PlayerProgress/PlayerData.cs`, новый `MonetizationState.cs`; `Scripts/SharedCore/Meta/Shop/ShopManager.cs`. Приёмка: ошибка/skip/отмена не запускают таймер; повтор callback не выдаёт снова; повтор входа сохраняет остаток; смена профиля исключает чужую награду. При локальных часах защита между устройствами отдельно.
 
-**M1-U. Карточка rewarded в общем магазине.** Результат: 50 монет, «Видео · Получить», «Доступно через 09:59», загрузка/нет видео/ошибка/получено. Зависимости: M1-L, каркас M8-U и выбор A/B. Владение: `Scripts/UI/Screens/ShopScreenController.cs`, `Content/ui/uxml/ShopScreen.uxml`, `Content/ui/styles/screens/ShopScreen.uss`, локализации после передачи. Приёмка: видны сумма и причина недоступности; таймер обновляется без перезагрузки; карточка остаётся единственной.
+**M1-U. Карточка rewarded в общем магазине.** Результат: 50 монет, «Видео · Получить», «Доступно через 09:59», загрузка/нет видео/ошибка/получено. Зависимости: M1-L, каркас M8-U и выбор A/B. Владение: `Scripts/UI/Screens/ShopScreenController.cs`, `Content/ui/uxml/ShopScreen.uxml`, `Content/ui/styles/components/shop.uss`, локализации после передачи. Приёмка: видны сумма и причина недоступности; таймер обновляется без перезагрузки; карточка остаётся единственной.
 
 ## M2 — бонус Win
 
@@ -24,7 +30,7 @@ Research и этот план; реальные PNG Shop/Win/Lose; ImageGen-ре
 
 ## M3 — продолжение
 
-**M3-L. Общее право на одно возрождение.** Результат: rewarded или 1 кристалл, оба дают 1 жизнь; один успешный способ на попытку. Зависимости: reward pipeline и run lifecycle. Владение: `Scripts/GameEngine/Mechanics/UiLoseModalMechanics.cs`, новый `RunReviveState.cs`, `Scripts/Ads/RewardedAdService.cs`; checkpoint enum после передачи. Приёмка: skip/ошибка сохраняют возможность; одновременный запрос исключён; кристалл списывается транзакцией до продолжения; второй Lose оставляет выход/повтор; новая попытка восстанавливает право.
+**M3-L. Общее право на одно возрождение.** Результат: rewarded или 1 кристалл, оба дают 1 жизнь; один успешный способ на попытку. Зависимости: reward pipeline и run lifecycle. Владение: `Scripts/GameEngine/Mechanics/UiLoseModalMechanics.cs`, право в `MonetizationState.cs`, `Scripts/Ads/RewardedAdService.cs`; checkpoint enum после передачи. Приёмка: skip/ошибка сохраняют возможность; одновременный запрос исключён; кристалл списывается транзакцией до продолжения; второй Lose оставляет выход/повтор; новая попытка восстанавливает право.
 
 **M3-U. Lose с двумя способами.** Результат: фраза «Продолжить за [просмотр рекламы] или [💎 1]» с настоящими кнопками внутри; второй вариант меняет компоновку, сохраняя смысл. Зависимости: M3-L, выбор A/B. Владение: `Scripts/UI/Modals/LoseModalController.cs`, `Content/ui/uxml/LoseModal.uxml`, result USS и ru/en после передачи. Приёмка: tappable-области различимы на телефоне; нехватка кристалла/нет видео понятны; покупка денег внутри забега исключена решением пользователя.
 

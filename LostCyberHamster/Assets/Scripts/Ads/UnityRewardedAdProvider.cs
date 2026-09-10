@@ -35,7 +35,7 @@ namespace GameAds
             _initialization = new TaskCompletionSource<bool>();
             try
             {
-                Advertisement.Initialize(GameId, true,
+                Advertisement.Initialize(GameId, MonetizationConfig.Current.AdsTestMode,
                     new AdsInitializationListener(_initialization));
             }
             catch (Exception exception)

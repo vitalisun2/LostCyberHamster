@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using GameAds;
 using UnityEngine.UIElements;
@@ -15,6 +15,11 @@ namespace LostCyberHamster.UI
         private VisualElement _exitButton => _modalContent.Q<VisualElement>("btn__home");
 
         private Action _actionWatchAdd;
+        private Action _buyRevive;
+        private Func<bool> _canContinue;
+        private Func<bool> _canBuyRevive;
+        private Button CrystalButton => _modalContent.Q<Button>("btn__revive-crystal");
+        private IVisualElementScheduledItem _reviveSchedule;
         private Action _actionRestart;
         private Action _actionExit;
 
@@ -34,6 +39,8 @@ namespace LostCyberHamster.UI
             _presentation = GameResultModalPresentation.Apply(_root);
             _buttonCloseModal.style.display = DisplayStyle.None;
             UpdateAdvertisementState();
+            if (_canContinue?.Invoke() == true)
+                MonetizationEvent.Record("offer", "revive", QuestManager.CurrentAttemptPreview.AttemptId);
             return Task.CompletedTask;
         }
 
@@ -41,6 +48,9 @@ namespace LostCyberHamster.UI
         {
             _presentation ??= GameResultModalPresentation.Apply(_root);
             _watchAdsButton?.RegisterCallback<ClickEvent>(OnClickWatchAds);
+            CrystalButton?.RegisterCallback<ClickEvent>(OnClickCrystal);
+            _reviveSchedule?.Pause();
+            _reviveSchedule = _modalContent.schedule.Execute(UpdateAdvertisementState).Every(200);
             _restartButton?.RegisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.RegisterCallback<ClickEvent>(OnClickExit);
             _ads = RewardedAdService.Instance;
@@ -48,15 +58,20 @@ namespace LostCyberHamster.UI
             UpdateAdvertisementState();
         }
 
+        private void OnClickCrystal(ClickEvent evt) => _buyRevive?.Invoke();
+
+        private bool NavigationBlocked => _ownedAdRequest != null &&
+            (_ownedAdRequest.IsNativePending || _ownedAdRequest.State == RewardedAdState.Settling);
+
         private void OnClickExit(ClickEvent evt)
         {
-            _actionExit?.Invoke();
+            if (!NavigationBlocked) _actionExit?.Invoke();
         }
 
 
         private void OnClickRestart(ClickEvent evt)
         {
-            _actionRestart?.Invoke();
+            if (!NavigationBlocked) _actionRestart?.Invoke();
         }
 
 
@@ -74,6 +89,9 @@ namespace LostCyberHamster.UI
                 _ads.CancelContext(_ownedAdRequest);
                 _ownedAdRequest = null;
             }
+            _reviveSchedule?.Pause();
+            _reviveSchedule = null;
+            CrystalButton?.UnregisterCallback<ClickEvent>(OnClickCrystal);
             _watchAdsButton?.UnregisterCallback<ClickEvent>(OnClickWatchAds);
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
@@ -85,23 +103,31 @@ namespace LostCyberHamster.UI
         {
             if (_ads == null)
                 return;
-            _watchAdsButton?.SetEnabled(_ads.CanRequest);
-            var request = _ownedAdRequest;
-            bool blockNavigation = request != null &&
-                (request.State == RewardedAdState.ShowSubmitted ||
-                 request.State == RewardedAdState.Showing);
+            bool canContinue = _canContinue?.Invoke() ?? true;
+            _modalContent.Q("revive-options")?.SetEnabled(canContinue);
+            var options = _modalContent.Q("revive-options");
+            if (options != null) options.style.display = canContinue ? DisplayStyle.Flex : DisplayStyle.None;
+            _watchAdsButton?.SetEnabled(canContinue && _ads.CanRequest);
+            CrystalButton?.SetEnabled(_canBuyRevive?.Invoke() == true);
+            bool blockNavigation = NavigationBlocked;
             _restartButton?.SetEnabled(!blockNavigation);
             _exitButton?.SetEnabled(!blockNavigation);
 
             // Используем существующую текстовую плашку, сохраняя локализацию и геометрию.
-            var message = _modalContent.Q<LocalizedLabel>(className: "game-result-modal__message--watch-ad");
+            var message = _modalContent.Q<Label>("revive-status");
             if (message == null)
                 return;
-            string key = _ads.StatusKey;
-            if (string.IsNullOrEmpty(key) || key == "ads_reward_granted")
-                key = "fail_watch_ad_to_continue";
-            message.key = key;
+            string key = _ownedAdRequest != null && !_ownedAdRequest.IsFinished ? _ads.StatusKey : string.Empty;
+            if (!canContinue) key = "revive_used";
+            else if (string.IsNullOrEmpty(key) || key == "ads_reward_granted") key = "revive_once";
             message.text = LocalizationManager.GetLocalizedString(key);
+        }
+
+        public void SetReviveActions(Func<bool> canContinue, Func<bool> canBuy, Action buy)
+        {
+            _canContinue = canContinue;
+            _canBuyRevive = canBuy;
+            _buyRevive = buy;
         }
 
         public void SetRestartAction(Action value)

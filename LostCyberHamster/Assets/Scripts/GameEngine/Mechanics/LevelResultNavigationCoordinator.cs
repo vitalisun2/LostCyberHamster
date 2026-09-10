@@ -41,12 +41,22 @@ namespace Assets.Scripts.GameEngine.Mechanics
             bool IsCurrent() => !_disposed && SceneManager.GetActiveScene().handle == scene &&
                 profile == GameDataManager.ProfileId && generation == GameDataManager.Generation;
 
-            void InvokeOnce(Action continuation)
+            async void InvokeOnce(Action continuation)
             {
                 if (_disposed || actionInvoked || SceneManager.GetActiveScene().handle != scene ||
                     profile != GameDataManager.ProfileId || generation != GameDataManager.Generation) return;
                 actionInvoked = true;
-                continuation();
+                try
+                {
+                    await GameAds.InterstitialAdService.Instance.ShowSelectedAfterResultsAsync(IsCurrent);
+                }
+                catch (Exception exception) { Debug.LogException(exception); }
+                try { if (IsCurrent()) continuation(); }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    await RestoreResult();
+                }
             }
 
             async Task RestoreResult()

@@ -149,6 +149,7 @@
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\SlideToggle.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Runtime\QuestExperienceRewardPolicy.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\EnvironmentKeyResolver.cs" />
+    <Compile Include="Assets\Scripts\Ads\InterstitialPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\IJumpOnFromRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\CollectibleObjectiveValue.cs" />
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskSequence.cs" />
@@ -184,6 +185,7 @@
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerData.cs" />
+    <Compile Include="Assets\Scripts\Ads\InterstitialAdService.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsOverlayShell.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerExperienceService.cs" />
     <Compile Include="Assets\Scripts\Bot\Execution\PlanExecutor.cs" />
@@ -279,6 +281,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Runtime\QuestAttemptPreview.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ActivityDayPolicy.cs" />
     <Compile Include="Assets\Scripts\DevTools\ExperienceProgressTesting\ExperienceProgressTestRunner.cs" />
+    <Compile Include="Assets\Scripts\Purchases\PurchaseProof.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Actors\SkateboardCollisionSensor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnRoof\JumpOnRoofActionResolver.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofFireWindowFinder.cs" />
@@ -310,6 +313,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ReturnActivityRewardService.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardReadService.cs" />
     <Compile Include="Assets\Scripts\DevTools\Resources\ResourcesDevToolsScreen.cs" />
+    <Compile Include="Assets\Scripts\Purchases\PurchaseService.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameLoadingTasks\RootTask.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\QuestValidator.cs" />
     <Compile Include="Assets\Scripts\UI\Common\UiInputBlock.cs" />
@@ -391,6 +395,7 @@
     <Compile Include="Assets\Scripts\UI\Components\Energybar.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Skins\SkinIdentity.cs" />
     <Compile Include="Assets\Scripts\Bot\RuntimeBotController.cs" />
+    <Compile Include="Assets\Scripts\Ads\MonetizationConfig.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardPersonalStatus.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\TransitionSimulator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\GameEventSystemController.cs" />
@@ -428,6 +433,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ObstacleBonusDropPolicy.cs" />
     <Compile Include="Assets\Scripts\Installers\Roots\UiRoot.cs" />
     <Compile Include="Assets\Scripts\Account\AccountRestore\ExistingAccountRestoreResult.cs" />
+    <Compile Include="Assets\Scripts\Ads\MonetizationEvent.cs" />
     <Compile Include="Assets\Scripts\System\FeatureFlags\DayPartLevelsFeature.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Storages\ResourceManager.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Runtime\QuestManager.cs" />
@@ -479,6 +485,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\SafeInterval.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\SuperAttackFactory.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\ElectricStrikeAttack.cs" />
+    <Compile Include="Assets\Scripts\Purchases\PurchaseCatalog.cs" />
     <Compile Include="Assets\Scripts\UI\Components\LevelItem.cs" />
     <Compile Include="Assets\Scripts\CloudSave\ConflictService.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameEntryPoint.cs" />
@@ -600,6 +607,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardVisualSequence.cs" />
     <Compile Include="Assets\Scripts\UI\Common\UIManager.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyRunStatus.cs" />
+    <Compile Include="Assets\Scripts\Purchases\IPurchaseFulfillment.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ScrollLeftMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKindRules.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofExecutor.cs" />
@@ -615,6 +623,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneStrategy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectStrategy.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Persistence\ProfileReplacementLease.cs" />
+    <Compile Include="Assets\Scripts\Ads\UnityInterstitialAdProvider.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ReturnActivityRecovery.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LevelInfoRef.cs" />
     <Compile Include="Assets\Scripts\GameManagement\Configuration\Config.cs" />
@@ -680,6 +689,7 @@
     <Compile Include="Assets\Scripts\Ads\IRewardedAdProvider.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SwitchLane\SwitchLaneExecutor.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HealthBarMechanics.cs" />
+    <Compile Include="Assets\Scripts\Purchases\PurchaseEntitlements.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\DailyQuestRewardModalController.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialGameplayStepCatalog.cs" />
     <Compile Include="Assets\Scripts\Consts.cs" />
@@ -689,6 +699,7 @@
     <Compile Include="Assets\Scripts\System\Models\PreloadedEffect.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOn\SuperJumpOnStrategy.cs" />
+    <Compile Include="Assets\Scripts\Purchases\StarterPackEligibility.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardLandingImpactRuntime.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofSwitchLane\RoofSwitchLaneTarget.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ModalController.cs" />
@@ -1435,7 +1446,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@74deb55db2a0\Runtime\Newtonsoft.Json.dll</HintPath>
+      <HintPath>Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64\Runtime\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil">
@@ -1962,6 +1973,14 @@
       <HintPath>C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Purchasing.SecurityStub">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.SecurityStub.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing.WebshopService">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.WebshopService.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.2D.Common.Path.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.2D.Common.Path.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1986,20 +2005,8 @@
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.2D.IK.Runtime">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.IK.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.ScriptableBuildPipeline">
-      <HintPath>Library\ScriptAssemblies\Unity.ScriptableBuildPipeline.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.2D.Animation.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.Animation.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.InternalAPIEditorBridge.001">
@@ -2008,10 +2015,6 @@
     </Reference>
     <Reference Include="Unity.2D.Common.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.2D.Common.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Timeline">
-      <HintPath>Library\ScriptAssemblies\Unity.Timeline.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Pipeline.IlInterpreter">
@@ -2026,44 +2029,20 @@
       <HintPath>Library\ScriptAssemblies\Unity.2D.Animation.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.Shared.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.ScriptableBuildPipeline.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.ScriptableBuildPipeline.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.2D.PixelPerfect.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.PixelPerfect.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.PlasticSCM.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.PlasticSCM.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Burst.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Burst.Editor.dll</HintPath>
+    <Reference Include="Unity.Purchasing.Stores">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.Stores.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Services.CloudSave.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Services.CloudSave.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.Core">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Mathematics.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.Editor.dll</HintPath>
+    <Reference Include="Unity.Services.Core.Components">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Components.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.2D.Aseprite.Common">
       <HintPath>Library\ScriptAssemblies\Unity.2D.Aseprite.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Services.Core.Components">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Components.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.2D.PixelPerfect">
@@ -2078,20 +2057,12 @@
       <HintPath>Library\ScriptAssemblies\Unity.SysrootPackage.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Services.Core.Analytics">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Analytics.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Pipeline.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.Pipeline.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.2D.Aseprite.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.2D.Aseprite.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.2D.Psdimporter.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.Psdimporter.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Pipeline">
@@ -2118,26 +2089,6 @@
       <HintPath>Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.2D.Tilemap.Extras">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Flow.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.2D.IK.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.IK.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.2D.SpriteShape.Runtime">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.SpriteShape.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.ResourceManager">
-      <HintPath>Library\ScriptAssemblies\Unity.ResourceManager.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.VisualStudio.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
       <Private>False</Private>
@@ -2150,80 +2101,36 @@
       <HintPath>Library\ScriptAssemblies\Unity.Services.CloudSave.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.2D.Common.Runtime">
-      <HintPath>Library\ScriptAssemblies\Unity.2D.Common.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Collections">
-      <HintPath>Library\ScriptAssemblies\Unity.Collections.dll</HintPath>
+    <Reference Include="Unity.InputSystem.ForUI">
+      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.ForUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Profiling.Core">
       <HintPath>Library\ScriptAssemblies\Unity.Profiling.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.InputSystem.ForUI">
-      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.ForUI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Timeline.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.VisualScripting.State.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Mathematics">
-      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Common">
-      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Services.Core.Environments">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Environments.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Burst">
-      <HintPath>Library\ScriptAssemblies\Unity.Burst.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.VisualScripting.Core.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Services.Leaderboards.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.Editor.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Multiplayer.Center.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
+    <Reference Include="Unity.Purchasing.Stores.XboxCloudServices">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.Stores.XboxCloudServices.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.Advertisements.Editor">
       <HintPath>Library\ScriptAssemblies\UnityEngine.Advertisements.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.State">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Toolchain.Linux-x86_64">
-      <HintPath>Library\ScriptAssemblies\Unity.Toolchain.Linux-x86_64.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Services.Leaderboards">
       <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Unity.Collections.Editor">
-      <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Vues.Core">
@@ -2250,6 +2157,154 @@
       <HintPath>Library\ScriptAssemblies\Vues.Core.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.Purchasing.Codeless">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.Codeless.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing.PaymentProviderService">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.PaymentProviderService.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.IK.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.IK.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.Purchasing">
+      <HintPath>Library\ScriptAssemblies\UnityEditor.Purchasing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ScriptableBuildPipeline">
+      <HintPath>Library\ScriptAssemblies\Unity.ScriptableBuildPipeline.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.Animation.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.Animation.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Timeline">
+      <HintPath>Library\ScriptAssemblies\Unity.Timeline.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Shared.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ScriptableBuildPipeline.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.ScriptableBuildPipeline.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.PixelPerfect.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.PixelPerfect.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.PlasticSCM.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.PlasticSCM.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing.LiveContentAdapterService">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.LiveContentAdapterService.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing.Utilities">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.Utilities.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Burst.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Burst.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Core.Analytics">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Core.Analytics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.Psdimporter.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.Psdimporter.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.Tilemap.Extras">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.Tilemap.Extras.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Flow.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.IK.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.IK.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.SpriteShape.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.SpriteShape.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ResourceManager">
+      <HintPath>Library\ScriptAssemblies\Unity.ResourceManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.2D.Common.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.2D.Common.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>Library\ScriptAssemblies\Unity.Collections.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Timeline.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Purchasing.SecurityCore">
+      <HintPath>Library\ScriptAssemblies\Unity.Purchasing.SecurityCore.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Multiplayer.Center.Common">
+      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>Library\ScriptAssemblies\Unity.Burst.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Core.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Services.Leaderboards.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Services.Leaderboards.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Multiplayer.Center.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.State">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Toolchain.Linux-x86_64">
+      <HintPath>Library\ScriptAssemblies\Unity.Toolchain.Linux-x86_64.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Collections.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
       <Private>False</Private>
@@ -2260,21 +2315,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Sirenix.OdinInspector.Modules.UnityMathematics.csproj">
-      <Project>{C9CEDC68-391D-B995-AE26-2CE36F991562}</Project>
-      <Name>Sirenix.OdinInspector.Modules.UnityMathematics</Name>
-    </ProjectReference>
     <ProjectReference Include="Sirenix.OdinInspector.Modules.Unity.Addressables.csproj">
       <Project>{C709DD18-0AB7-1BD3-C5FA-ADD840B38E68}</Project>
       <Name>Sirenix.OdinInspector.Modules.Unity.Addressables</Name>
-    </ProjectReference>
-    <ProjectReference Include="Zenject-Editor.csproj">
-      <Project>{D8B54E78-B937-E41E-F157-931818E3E098}</Project>
-      <Name>Zenject-Editor</Name>
-    </ProjectReference>
-    <ProjectReference Include="Zenject.csproj">
-      <Project>{BDDB27A2-6781-1078-B74F-EF97B54A7509}</Project>
-      <Name>Zenject</Name>
     </ProjectReference>
     <ProjectReference Include="Atomic.Extensions.csproj">
       <Project>{9F18F1CE-8379-4F81-415E-896D7A25DBEB}</Project>
@@ -2288,10 +2331,6 @@
       <Project>{04EC4748-FA15-3541-5A72-FA44D886C445}</Project>
       <Name>Unity.Services.Authentication.Editor.Shared</Name>
     </ProjectReference>
-    <ProjectReference Include="Atomic.Elements.csproj">
-      <Project>{019D1301-516A-59BF-74CE-02ED3C3FFCC6}</Project>
-      <Name>Atomic.Elements</Name>
-    </ProjectReference>
     <ProjectReference Include="Unity.Services.Authentication.PlayerAccounts.csproj">
       <Project>{5E18F8CF-C851-B703-B2D9-4143402C3BFE}</Project>
       <Name>Unity.Services.Authentication.PlayerAccounts</Name>
@@ -2303,6 +2342,22 @@
     <ProjectReference Include="Atomic.Behaviours.csproj">
       <Project>{F71D5C4C-EB9E-B519-B644-D035D6BB5F7D}</Project>
       <Name>Atomic.Behaviours</Name>
+    </ProjectReference>
+    <ProjectReference Include="Sirenix.OdinInspector.Modules.UnityMathematics.csproj">
+      <Project>{C9CEDC68-391D-B995-AE26-2CE36F991562}</Project>
+      <Name>Sirenix.OdinInspector.Modules.UnityMathematics</Name>
+    </ProjectReference>
+    <ProjectReference Include="Zenject-Editor.csproj">
+      <Project>{D8B54E78-B937-E41E-F157-931818E3E098}</Project>
+      <Name>Zenject-Editor</Name>
+    </ProjectReference>
+    <ProjectReference Include="Zenject.csproj">
+      <Project>{BDDB27A2-6781-1078-B74F-EF97B54A7509}</Project>
+      <Name>Zenject</Name>
+    </ProjectReference>
+    <ProjectReference Include="Atomic.Elements.csproj">
+      <Project>{019D1301-516A-59BF-74CE-02ED3C3FFCC6}</Project>
+      <Name>Atomic.Elements</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

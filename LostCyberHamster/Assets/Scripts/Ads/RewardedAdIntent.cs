@@ -17,6 +17,7 @@ namespace GameAds
         public int RewardAmount;
         public int ShopItemId;
         public bool IsRevive;
+        public bool IsWinBonus;
         public bool CompletionReceived;
     }
 }

@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.System;
 using GameManagement.Leaderboard;
+using GameManagement;
+using GameAds;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
@@ -39,6 +41,13 @@ namespace LostCyberHamster.UI
             _modalContent.Q<Label>("level_context");
 
         private Action _actionResume;
+        private string _rewardedWinId;
+        private string _recordedOfferWin;
+        private RewardedAdRequest _rewardRequest;
+        private RewardedAdService _ads;
+        private Button BonusButton => _modalContent.Q<Button>("btn_win_bonus");
+        private bool NavigationBlocked => _rewardRequest != null &&
+            (_rewardRequest.IsNativePending || _rewardRequest.State == RewardedAdState.Settling);
 
         private Action _actionRestart;
 
@@ -73,6 +82,11 @@ namespace LostCyberHamster.UI
             // Локализуем контекст уровня до показа дерева.
             _levelContextLabel.text = FormatLevelContext();
 
+            bool journey = LevelManager.IsLastAvailableLevel(GameDataManager.PlayerData?.CurrentLevel);
+            _resumeButton?.EnableInClassList("win-journey-button", journey);
+            if (_resumeButton is Button nextButton)
+                nextButton.text = journey ? LocalizationManager.GetLocalizedString("win_journey_results") : string.Empty;
+
             // Показываем только заработанные звёзды из подготовленного набора.
             int visibleStars = Math.Max(0, Math.Min(_stars, 3));
             for (int i = 1; i <= 3; i++)
@@ -87,6 +101,14 @@ namespace LostCyberHamster.UI
             }
 
             RenderRunResult();
+            RenderBonus();
+            if (!string.IsNullOrEmpty(_rewardedWinId) && _recordedOfferWin != _rewardedWinId)
+            {
+                _recordedOfferWin = _rewardedWinId;
+                if (InterstitialAdService.Instance.HasSelectedPause) MonetizationEvent.Record("offer", "interstitial", _rewardedWinId);
+                else if (GameDataManager.PlayerData?.Monetization?.LastWinBonusCoins > 0)
+                    MonetizationEvent.Record("offer", "win", _rewardedWinId, GameDataManager.PlayerData.Monetization.LastWinBonusCoins);
+            }
             return Task.CompletedTask;
         }
 
@@ -98,6 +120,10 @@ namespace LostCyberHamster.UI
             _restartButton?.RegisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.RegisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.RegisterCallback<ClickEvent>(OnClickLeaderboard);
+            BonusButton?.RegisterCallback<ClickEvent>(OnClickBonus);
+            _ads = RewardedAdService.Instance;
+            _ads.Changed += RenderBonus;
+            RenderBonus();
             // Карточка живёт в свободном боковом слоте текущего дерева результата.
             StopGoalPresentation();
             _goalHost = _modalContent.Q("win-modal");
@@ -110,7 +136,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickLeaderboard(ClickEvent evt)
         {
-            if (_runResult?.IsLastLevelOfPart != true)
+            if (NavigationBlocked || _runResult?.IsLastLevelOfPart != true)
                 return;
 
             AcknowledgeVisibleRecord();
@@ -121,6 +147,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickExit(ClickEvent evt)
         {
+            if (NavigationBlocked) return;
             AcknowledgeVisibleRecord();
             _actionExit?.Invoke();
         }
@@ -128,6 +155,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickRestart(ClickEvent evt)
         {
+            if (NavigationBlocked) return;
             AcknowledgeVisibleRecord();
             _actionRestart?.Invoke();
         }
@@ -135,13 +163,14 @@ namespace LostCyberHamster.UI
 
         private void OnClickResume(ClickEvent evt)
         {
+            if (NavigationBlocked) return;
             AcknowledgeVisibleRecord();
             _actionResume?.Invoke();
         }
 
         private void OnClickGoal(NextGoalCandidate goal)
         {
-            if (goal?.IsCurrentProfile != true || _actionGoal == null) return;
+            if (NavigationBlocked || goal?.IsCurrentProfile != true || _actionGoal == null) return;
             AcknowledgeVisibleRecord();
             _actionGoal(goal);
         }
@@ -154,11 +183,56 @@ namespace LostCyberHamster.UI
             _restartButton?.UnregisterCallback<ClickEvent>(OnClickRestart);
             _exitButton?.UnregisterCallback<ClickEvent>(OnClickExit);
             _leaderboardButton?.UnregisterCallback<ClickEvent>(OnClickLeaderboard);
+            BonusButton?.UnregisterCallback<ClickEvent>(OnClickBonus);
+            if (_ads != null)
+            {
+                _ads.Changed -= RenderBonus;
+                _ads.CancelContext(_rewardRequest);
+            }
 
             // Останавливаем карточку до восстановления общей геометрии модалки.
             StopGoalPresentation();
             _presentation?.Restore();
             _presentation = null;
+        }
+
+        public void SetRewardedWin(string winId)
+        {
+            if (_rewardedWinId != winId) _rewardRequest = null;
+            _rewardedWinId = winId;
+        }
+
+        private void OnClickBonus(ClickEvent evt)
+        {
+            if (NavigationBlocked) return;
+            _rewardRequest = RewardedAdService.Instance.RequestWinBonus(_rewardedWinId);
+            RenderBonus();
+        }
+
+        private void RenderBonus()
+        {
+            var row = _modalContent.Q("win-bonus");
+            if (row == null) return;
+            var state = GameDataManager.PlayerData?.Monetization;
+            bool pause = InterstitialAdService.Instance.HasSelectedPause;
+            var pauseLabel = _modalContent.Q("win-ad-pause");
+            if (pauseLabel != null) pauseLabel.style.display = pause ? DisplayStyle.Flex : DisplayStyle.None;
+            _modalContent.Q("win-modal")?.EnableInClassList("win-has-pause", pause);
+            bool visible = !pause && InterstitialAdService.Instance.AllowsWinBonus(_rewardedWinId) && !string.IsNullOrEmpty(_rewardedWinId) && state?.LastWinId == _rewardedWinId &&
+                state.LastWinBonusCoins > 0;
+            row.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            _modalContent.Q("win-modal")?.EnableInClassList("win-has-bonus", visible);
+            bool received = visible && state.LastRewardedWinId == _rewardedWinId;
+            row.Q<Label>("win-bonus-amount").text = visible
+                ? FormatLocalized(received ? "win_bonus_received" : "win_bonus_coins", state.LastWinBonusCoins.ToString())
+                : string.Empty;
+            BonusButton.SetEnabled(visible && !received && _ads?.CanRequest == true);
+            BonusButton.text = LocalizationManager.GetLocalizedString(received ? "ads_reward_granted" :
+                _rewardRequest != null && !_rewardRequest.IsFinished ? _ads.StatusKey : "win_bonus_video");
+            _resumeButton?.SetEnabled(!NavigationBlocked);
+            _restartButton?.SetEnabled(!NavigationBlocked);
+            _exitButton?.SetEnabled(!NavigationBlocked);
+            _leaderboardButton?.SetEnabled(!NavigationBlocked);
         }
 
         public void SetResumeAction(Action value)
@@ -213,7 +287,7 @@ namespace LostCyberHamster.UI
         private void TickGoalPresentation()
         {
             if (_goalPresenter == null) return;
-            bool blocked = _goalHost?.panel == null || _actionGoal == null;
+            bool blocked = NavigationBlocked || _goalHost?.panel == null || _actionGoal == null;
             for (var element = _goalHost; !blocked && element != null; element = element.parent)
                 blocked = element.resolvedStyle.display == DisplayStyle.None || !element.visible;
             _goalPresenter.Tick(blocked);

@@ -36,6 +36,7 @@ namespace GameAds
         {
             double now = Time.realtimeSinceStartupAsDouble;
             Service?.Tick(!_paused && _focused, now - _lastTick);
+            InterstitialAdService.Instance.Tick(!_paused && _focused);
             _inputGuard?.Tick();
             _lastTick = now;
         }

@@ -11,6 +11,7 @@ namespace Vues.GameCore.ReturnActivities
     {
         public string Id { get; } = Guid.NewGuid().ToString("N");
         public string Level { get; }
+        public int GrossCoins { get; set; }
         private readonly string _profile;
         private readonly long _generation;
         private readonly int _scene;

@@ -35,85 +35,41 @@
 }
 
 .main-screen-title--shop {
+    top: 8px;
     width: 213.592px;
     background-image: url("/Assets/Content/ui/sprites/shop/title_shop.png");
 }
 
-.shop-offers {
-    position: absolute;
-    left: 16.666667%;
-    top: 240px;
-    width: 66.666667%;
-    height: 560px;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-}
 
-.shop-offer {
-    position: relative;
-    flex-shrink: 0;
-    margin: 0;
-    padding: 0;
-    background-color: rgba(0, 0, 0, 0);
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
-    overflow: visible;
-    -unity-background-scale-mode: scale-to-fit;
-    transition-property: scale, opacity;
-    transition-duration: 90ms;
-    transition-timing-function: ease-out;
-}
+.shop-offers { position: absolute; left: 50%; translate: -50% 0; top: 116px; width: 1080px; height: 663px; }
+.shop-section-heading { color: white; -unity-text-outline-color: rgb(0,0,0); -unity-text-outline-width: 3px; font-size: 36px; -unity-font-style: bold; -unity-text-align: middle-center; height: 44px; margin: 0 0 5px 0; }
+.shop-card-row { flex-direction: row; flex-shrink: 0; width: 100%; }
+.shop-card { height: 171px; flex-grow: 1; flex-basis: 0; margin: 0 6px; border-radius: 20px; border-width: 4px; border-color: rgb(8,14,19); overflow: hidden; -unity-background-scale-mode: stretch-to-fill; }
+.shop-card--coins { background-image: url("/Assets/Content/ui/sprites/shop/card_coins_muted.png"); }
+.shop-card--crystal { background-image: url("/Assets/Content/ui/sprites/shop/card_crystals_muted.png"); }
+.shop-card-copy { margin-left: 40%; margin-right: 14px; flex-grow: 1; justify-content: center; }
+.shop-card-title { font-size: 28px; color: white; -unity-font-style: bold; -unity-text-outline-color: rgb(0,0,0); -unity-text-outline-width: 2px; white-space: normal; -unity-text-align: middle-center; margin-bottom: 8px; }
+.shop-card-detail { color: rgb(15,25,32); font-size: 22px; white-space: normal; -unity-text-align: middle-center; }
+.shop-action { min-height: 57px; margin: 0; padding: 5px 12px; color: white; font-size: 25px; -unity-font-style: bold; -unity-text-align: middle-center; white-space: normal; border-width: 0; background-color: rgba(0,0,0,0); background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-text-outline-color: rgb(0,0,0); -unity-text-outline-width: 1px; }
+.shop-action:disabled { opacity: 0.65; background-color: rgba(0,0,0,0); border-width: 0; color: white; }
+.shop-action:active { scale: 0.98 0.98; }
+.shop-card--noads { background-color: rgb(203,175,95); flex-direction: row; align-items: center; padding: 12px 16px; }
+.shop-noads-icon { width: 108px; height: 85px; flex-shrink: 0; border-color: rgb(10,22,33); border-width: 5px; border-radius: 14px; background-color: rgb(0,149,234); align-items: center; justify-content: center; }
+.shop-noads-icon > Label { color: white; font-size: 54px; -unity-text-outline-color: black; -unity-text-outline-width: 2px; }
+.shop-noads-slash { position: absolute; width: 81px; height: 9px; rotate: -45deg; background-color: rgb(239,38,30); border-color: black; border-width: 1px; }
+.shop-noads-copy { flex-grow: 1; flex-basis: 0; padding: 0 12px; }
+.shop-noads-action { width: 209px; flex-shrink: 0; }
+.shop-card--starter { display: none; background-color: rgb(203,175,95); padding: 12px; justify-content: center; }
+.shop-split .shop-card--noads { height: 171px; padding: 8px 16px; flex-direction: column; }
+.shop-split .shop-noads-icon { display: none; }
+.shop-split .shop-noads-copy { flex-grow: 0; flex-shrink: 0; flex-basis: auto; height: 80px; width: 100%; padding: 0; }
+.shop-split .shop-noads-copy .shop-card-title { font-size: 22px; height: 28px; margin: 0; padding: 0; flex-shrink: 0; }
+.shop-split .shop-noads-copy .shop-card-detail { font-size: 18px; height: 25px; margin: 0; padding: 0; flex-shrink: 0; }
+.shop-split .shop-card-title { font-size: 25px; }
+.shop-split .shop-noads-action { margin-top: 5px; width: 90%; }
+.shop-split .shop-card--starter { display: flex; height: 171px; padding: 8px 12px; }
+.shop-restore { position: absolute; left: 34%; top: 797px; width: 32%; height: 61px; }
+.shop-purchase-message { position: absolute; left: 15%; top: 863px; width: 70%; height: 45px; display: none; font-size: 22px; color: white; -unity-text-align: middle-center; -unity-text-outline-color: black; -unity-text-outline-width: 1px; white-space: normal; }
 
-.shop-offer:hover,
-.shop-offer:focus {
-    opacity: 0.97;
-    scale: 1.015 1.015;
-}
-
-.shop-offer:active {
-    opacity: 0.9;
-    scale: 0.98 0.98;
-}
-
-.shop-offer:disabled {
-    opacity: 1;
-    background-color: rgba(0, 0, 0, 0);
-    border-top-width: 0;
-    border-right-width: 0;
-    border-bottom-width: 0;
-    border-left-width: 0;
-    -unity-background-image-tint-color: rgb(255, 255, 255);
-}
-
-.shop-offer--free-coins {
-    width: 66%;
-    height: 100%;
-    background-position-x: left;
-    background-image: url("/Assets/Content/ui/sprites/shop/offer_free_coins.png");
-}
-
-.shop-offer--crystal-pack {
-    width: 31.43%;
-    height: 100%;
-    background-position-x: right;
-    background-image: url("/Assets/Content/ui/sprites/shop/offer_crystal_pack.png");
-}
-
-.shop-purchase-message {
-    position: absolute;
-    left: 16.666667%;
-    top: 802px;
-    width: 66.666667%;
-    height: 105px;
-    display: none;
-    color: rgb(255, 255, 255);
-    font-size: 39px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-    -unity-text-outline-width: 0;
-    -unity-text-outline-color: rgba(0, 0, 0, 0);
-    white-space: nowrap;
-}
+.shop-split .shop-card--starter .shop-card-title { height: 30px; margin: 0; padding: 0; flex-shrink: 0; }
+.shop-split .shop-card--starter .shop-card-detail { font-size: 20px; height: 26px; margin: 0; padding: 0; flex-shrink: 0; }
