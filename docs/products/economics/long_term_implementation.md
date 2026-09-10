@@ -51,6 +51,6 @@
 
 Чужие изменения сохранены отдельно: docs/rules, docs/experience/tool_usage.md, .agents/, tools/ui_gallery/, docs/Planning, competition_plan.md, research/17_competition_current_state.md, Assets/EditorLogs. Собственный generated diff содержит только включение нового C#.
 
-Git: реализация готова к scoped commit и обычному push; результат записывается после подтверждения remote.
+Git: реализация `74c5e6f1b7c848d3c650229e200052002eeeb48d` — `feat: добавить цели мастерства и награду после полного развития`. Обычный `git push origin integration/unity-live` успешен. `git ls-remote origin refs/heads/integration/unity-live` подтвердил тот же SHA. Эта запись доставки отправляется отдельным документационным commit; C# после успешного gate не менялся.
 
 Ретроспектива: перед compile нового C# проверять наличие Unity-generated meta и фактического Compile Include. Regeneration сама не гарантирует импорт файла. Принцип проверки результата уже есть в базе опыта; новой записи не требуется.
