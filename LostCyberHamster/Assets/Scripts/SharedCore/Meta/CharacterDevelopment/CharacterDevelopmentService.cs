@@ -13,6 +13,21 @@ namespace Vues.GameCore
     {
         public const int CurrentProgressVersion = 3;
         public const int DefaultSkinId = SkinIdentity.DefaultId;
+        public const int CompletedDevelopmentLevelUpCoins = 50;
+
+        /// <summary>Проверяет все открытия и tiers загруженных каталогов по переданному профилю.</summary>
+        public static bool IsDevelopmentComplete(PlayerData player)
+        {
+            if (player == null || !SkinManager.IsCatalogLoaded || !SuperAttackService.IsCatalogLoaded)
+                return false;
+
+            // Покупка уже открытого скина за кристаллы не расходует DP.
+            return SkinManager.AvailableSkins.All(skin => skin.Id == DefaultSkinId ||
+                    Contains(player.UnlockedSkinIds, skin.Id)) &&
+                SuperAttackService.Items.All(ability => Contains(player.UnlockedSuperAttackIds, ability.Id) &&
+                    ability.Levels?.Length > 0 && SuperAttackLevelResolver.GetLevel(player, ability.Id) >=
+                    ability.Levels.Max(tier => tier.Level));
+        }
 
         public static int DevelopmentPoints =>
             GameDataManager.PlayerData?.DevelopmentPoints ?? 0;
@@ -131,7 +146,7 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Начисляет по одному Development Point за каждый фактический level-up.
+        /// Начисляет DP либо монеты за повышения и сохраняет факт внутри транзакции владельца XP.
         /// </summary>
         internal static void GrantForLevelUps(
             PlayerData playerData,
@@ -153,8 +168,24 @@ namespace Vues.GameCore
                     "Development Points must be normalized before level-up.");
             }
 
-            playerData.DevelopmentPoints = checked(
-                playerData.DevelopmentPoints + levelsGained);
+            if (levelsGained == 0) return;
+
+            // Рассчитываем весь диапазон до изменения балансов.
+            bool complete = IsDevelopmentComplete(playerData);
+            int points = complete ? 0 : levelsGained;
+            int coins = complete ? checked(CompletedDevelopmentLevelUpCoins * levelsGained) : 0;
+            int updatedPoints = checked(playerData.DevelopmentPoints + points);
+            int updatedMoney = checked(playerData.Money + coins);
+            playerData.PendingLevelUpRewards ??= new List<LevelUpReward>();
+            for (int offset = 0; offset < levelsGained; offset++)
+                playerData.PendingLevelUpRewards.Add(new LevelUpReward
+                {
+                    PlayerLevel = playerData.PlayerLevel - levelsGained + offset + 1,
+                    DevelopmentPoints = complete ? 0 : 1,
+                    Coins = complete ? CompletedDevelopmentLevelUpCoins : 0
+                });
+            playerData.DevelopmentPoints = updatedPoints;
+            playerData.Money = updatedMoney;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

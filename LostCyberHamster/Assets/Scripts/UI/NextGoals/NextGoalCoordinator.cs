@@ -71,8 +71,8 @@ namespace LostCyberHamster.UI
             if (onboarding != null) return onboarding;
             if (_configuration?.enabled != true) return null;
             return _candidates.Where(candidate => CanShow(candidate, placement) && IsDue(candidate, currentId))
-                .OrderByDescending(candidate => candidate.Id == currentId)
-                .ThenByDescending(candidate => _configuration.Find(candidate.Kind).priority)
+                .OrderByDescending(candidate => _configuration.Find(candidate.Kind).priority)
+                .ThenByDescending(candidate => candidate.Id == currentId)
                 .ThenByDescending(candidate => candidate.Progress ?? 0)
                 .ThenBy(candidate => candidate.Id, StringComparer.Ordinal).FirstOrDefault();
         }

@@ -1497,6 +1497,38 @@
         {
             "key": "pause_exit_failed",
             "value": "Could not exit. Please try again."
+        },
+        {
+            "key": "long_term_stars_progress",
+            "value": "Stars collected: {0}/{1}"
+        },
+        {
+            "key": "long_term_stars_target",
+            "value": "{0} · {1} · Level {2}"
+        },
+        {
+            "key": "long_term_collect_stars",
+            "value": "Collect missing stars"
+        },
+        {
+            "key": "level_up_coins_reward",
+            "value": "+{0} coins"
+        },
+        {
+            "key": "level_up_mixed_reward",
+            "value": "+{0} DP and {1} coins"
+        },
+        {
+            "key": "level_up_development_complete",
+            "value": "All development complete"
+        },
+        {
+            "key": "long_term_level_up_coins",
+            "value": "KEEP LEVELING UP: +{0} COINS"
+        },
+        {
+            "key": "long_term_development_remaining",
+            "value": "CONTINUE UNLOCKING AND UPGRADING"
         }
     ]
 }

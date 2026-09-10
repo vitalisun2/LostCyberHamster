@@ -28,6 +28,14 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("negative_resource_balance");
             }
 
+            // Квитанции описывают только уже выданные награды существующих уровней.
+            if (data.PendingLevelUpRewards?.Any(reward => reward == null || reward.PlayerLevel < 2 ||
+                    reward.PlayerLevel > data.PlayerLevel ||
+                    !(reward.DevelopmentPoints == 1 && reward.Coins == 0 ||
+                      reward.DevelopmentPoints == 0 && reward.Coins > 0)) == true ||
+                data.PendingLevelUpRewards?.GroupBy(reward => reward.PlayerLevel).Any(group => group.Count() > 1) == true)
+                return PlayerDataValidationResult.Rejected("invalid_level_up_reward");
+
             // Старый профиль получает пустую активность; сохранённую историю проверяем целиком.
             bool activityNeedsRepair = data.ReturnActivities == null || string.IsNullOrEmpty(data.ReturnActivities.Epoch);
             if (activityNeedsRepair && data.ReturnActivities?.TotalDays > 0 ||
@@ -384,6 +392,7 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("invalid_super_attack_level");
 
             bool needsRepair = data.UnlockedSkinIds == null ||
+                               data.PendingLevelUpRewards == null ||
                                data.UnlockedSuperAttackIds == null ||
                                data.SuperAttackLevels == null ||
                                data.UnlockedSuperAttackIds.Any(id => !data.SuperAttackLevels.Any(item => item.SuperAttackId == id)) ||
@@ -408,6 +417,8 @@ namespace GameManagement
 
         private static void RepairDevelopmentState(PlayerData data)
         {
+            // Отсутствующие legacy-квитанции означают прежний DP; балансы здесь не меняются.
+            data.PendingLevelUpRewards ??= new List<LevelUpReward>();
             bool requiresInitialPointBackfill =
                 data.DevelopmentProgressVersion < 1;
 

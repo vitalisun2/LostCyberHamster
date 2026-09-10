@@ -1,5 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using GameManagement;
+using Vues.GameCore;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -16,6 +18,8 @@ namespace LostCyberHamster.UI
         private Action _homeAction;
         private Action _skillsAction;
         private Action _rankingsAction;
+        private Action<NextGoalCandidate> _goalAction;
+        private NextGoalCandidate _masteryGoal;
         private GameResultModalPresentation _presentation;
         private IVisualElementScheduledItem _layoutTask;
 
@@ -55,12 +59,40 @@ namespace LostCyberHamster.UI
             _rankingsAction = action;
         }
 
+        public void SetGoalAction(Action<NextGoalCandidate> action) => _goalAction = action;
+
         protected override Task OnShowAsync()
         {
             _presentation?.Restore();
             _presentation = GameResultModalPresentation.Apply(_root);
             _buttonCloseModal.style.display = DisplayStyle.None;
+            RefreshGoal();
             return Task.CompletedTask;
+        }
+
+        /// <summary>Обновляет существующие подписи и кнопку по текущим звёздам и развитию.</summary>
+        private void RefreshGoal()
+        {
+            _masteryGoal = StageNextGoalRule.GetMasteryGoal();
+            bool complete = CharacterDevelopmentService.IsDevelopmentComplete(GameDataManager.PlayerData);
+            SetText("journey-complete-modal__goal--level-up", _masteryGoal?.Text ??
+                NextGoalText.Get(complete ? "long_term_level_up_coins" : "journey_complete_goal_level_up",
+                    CharacterDevelopmentService.CompletedDevelopmentLevelUpCoins));
+            SetText("journey-complete-modal__message-secondary", _masteryGoal?.Detail ??
+                NextGoalText.Get("journey_complete_message_secondary"));
+            SetText("journey-complete-modal__goal--unlock", _masteryGoal?.ActionText ??
+                NextGoalText.Get(complete ? "level_up_development_complete" : "long_term_development_remaining"));
+            SkillsButton.EnableInClassList("journey-complete-modal__button--mastery", _masteryGoal != null);
+            SkillsButton.style.display = _masteryGoal != null || !complete ? DisplayStyle.Flex : DisplayStyle.None;
+            SkillsButton.tooltip = _masteryGoal?.ActionText ?? NextGoalText.Get("progression_open_development");
+        }
+
+        private void SetText(string className, string text)
+        {
+            var label = _modalContent.Q<LocalizedLabel>(className: className);
+            // Статический UXML-перевод не должен перезаписать динамическую цель отложенным callback.
+            label.key = null;
+            label.text = text;
         }
 
         protected override void OnSubscribeToEvents()
@@ -99,6 +131,16 @@ namespace LostCyberHamster.UI
 
         private void OnSkillsClicked(ClickEvent _)
         {
+            var shown = _masteryGoal;
+            RefreshGoal();
+            if (shown != null)
+            {
+                if (shown.IsCurrentProfile && _masteryGoal?.Id == shown.Id)
+                    _goalAction?.Invoke(_masteryGoal);
+                return;
+            }
+            if (_masteryGoal != null || CharacterDevelopmentService.IsDevelopmentComplete(GameDataManager.PlayerData))
+                return;
             _skillsAction?.Invoke();
         }
 

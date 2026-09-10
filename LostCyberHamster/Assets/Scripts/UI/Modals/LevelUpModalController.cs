@@ -8,7 +8,7 @@ using Vues.GameCore;
 namespace LostCyberHamster.UI
 {
     /// <summary>
-    /// Показывает новый уровень и начисленные Development Points.
+    /// Показывает новый уровень и сохранённые выплаты DP и монет.
     /// </summary>
     public sealed class LevelUpModalController : ModalController
     {
@@ -17,6 +17,7 @@ namespace LostCyberHamster.UI
         private int _previousLevel;
         private int _currentLevel;
         private int _pointsAwarded;
+        private int _coinsAwarded;
         private Action _okAction;
         private Action _shieldAction;
         private Action _developmentAction;
@@ -47,16 +48,17 @@ namespace LostCyberHamster.UI
         }
 
         /// <summary>
-        /// Задаёт level transition и количество points из этого перехода.
+        /// Задаёт диапазон уровней и фактически начисленные в нём награды.
         /// </summary>
         public void SetLevelUpData(
             int previousLevel,
             int currentLevel,
-            int pointsAwarded)
+            int pointsAwarded, int coinsAwarded)
         {
             _previousLevel = previousLevel;
             _currentLevel = currentLevel;
             _pointsAwarded = pointsAwarded;
+            _coinsAwarded = coinsAwarded;
         }
 
         public void SetOkAction(Action action)
@@ -81,11 +83,15 @@ namespace LostCyberHamster.UI
                 "level_up_transition",
                 _previousLevel.ToString(),
                 _currentLevel.ToString());
-            Reward.text = FormatLocalized(
-                "level_up_development_reward",
-                _pointsAwarded.ToString());
-            _modalContent.Q<Label>("level-up-free-points").text = FormatLocalized("progression_free_points",
-                (GameDataManager.PlayerData?.DevelopmentPoints ?? 0).ToString());
+            Reward.text = _coinsAwarded > 0
+                ? _pointsAwarded > 0
+                    ? FormatLocalized("level_up_mixed_reward", _pointsAwarded.ToString(), _coinsAwarded.ToString())
+                    : FormatLocalized("level_up_coins_reward", _coinsAwarded.ToString())
+                : FormatLocalized("level_up_development_reward", _pointsAwarded.ToString());
+            bool developmentComplete = CharacterDevelopmentService.IsDevelopmentComplete(GameDataManager.PlayerData);
+            _modalContent.Q<Label>("level-up-free-points").text = developmentComplete
+                ? Localize("level_up_development_complete")
+                : FormatLocalized("progression_free_points", (GameDataManager.PlayerData?.DevelopmentPoints ?? 0).ToString());
             var options = _modalContent.Q<VisualElement>("level-up-options");
             options.Clear();
             foreach (string option in PlayerLevelRewardViewModel.GetOptions())
@@ -95,7 +101,7 @@ namespace LostCyberHamster.UI
                 options.Add(label);
             }
             OkButton.text = Localize("first_session_continue");
-            ShieldButton.style.display = DisplayStyle.Flex;
+            ShieldButton.style.display = _shieldAction != null || !developmentComplete ? DisplayStyle.Flex : DisplayStyle.None;
             ShieldButton.text = Localize(_shieldAction != null ? "first_session_open_shield" : "progression_open_development");
             ShieldButton.SetEnabled(true);
             return Task.CompletedTask;

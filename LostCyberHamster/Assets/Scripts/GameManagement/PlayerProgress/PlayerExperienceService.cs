@@ -64,8 +64,11 @@ namespace GameManagement.Progress
             int amount = checked(improvedStars * ExperiencePerImprovedStar +
                 (previousBestStars == 0 && updatedBestStars > 0 ? ExperiencePerFirstWin : 0));
             int fromLevel = playerData.PlayerLevel;
+            int previousPoints = playerData.DevelopmentPoints;
+            int previousMoney = playerData.Money;
             if (amount > 0) GrantExperience(playerData, amount, notify);
-            return new ExperienceGrantResult(progressKey.ToString(), amount, fromLevel, playerData.PlayerLevel);
+            return new ExperienceGrantResult(progressKey.ToString(), amount, fromLevel, playerData.PlayerLevel,
+                playerData.DevelopmentPoints - previousPoints, playerData.Money - previousMoney);
         }
 
         /// <summary>
@@ -116,6 +119,7 @@ namespace GameManagement.Progress
         {
             if (playerLevelChanged)
             {
+                ResourceManager.NotifyBalancesChangedAfterCommit();
                 FirstSessionTelemetry.Record("development_point_committed", source,
                     GameDataManager.PlayerData?.PlayerLevel ?? 1);
                 GameEventsManager.PlayerStateChanged(

@@ -80,6 +80,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardCollisionResult.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyPersonalBest.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ActivityAttemptContext.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelUpReward.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardInteractionPolicy.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenEnum.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialExternalInputSuppressor.cs" />

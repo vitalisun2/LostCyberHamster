@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using GameManagement;
 using Assets.Scripts.Tutorial;
@@ -54,6 +55,12 @@ namespace LostCyberHamster.UI
             var data = GameDataManager.PlayerData;
             int previous = Math.Max(1, data.LastAcknowledgedPlayerLevel);
             int current = data.PlayerLevel;
+            var rewards = data.PendingLevelUpRewards?
+                .Where(reward => reward.PlayerLevel > previous && reward.PlayerLevel <= current).ToArray();
+            // У прежних повышений квитанций нет: исторически каждое уже выдало один DP.
+            int points = current - previous - (rewards?.Length ?? 0) +
+                (rewards?.Sum(reward => reward.DevelopmentPoints) ?? 0);
+            int coins = rewards?.Sum(reward => reward.Coins) ?? 0;
             Action preparedContinuation = null;
             var modal = _ui.GetController<LevelUpModalController>();
             _showing = true;
@@ -62,7 +69,7 @@ namespace LostCyberHamster.UI
             _ui.HasPriorityPresentation = true;
             try
             {
-                modal.SetLevelUpData(previous, current, current - previous);
+                modal.SetLevelUpData(previous, current, points, coins);
                 modal.SetAcceptanceAction(CommitAcknowledgment);
                 modal.SetOkAction(() => Finish(continued));
                 modal.SetShieldAction(!data.HasUsedTutorialShield &&
@@ -107,6 +114,7 @@ namespace LostCyberHamster.UI
                             : prepareContinuation?.Invoke(choice == LevelUpAction.Shield);
                         GameDataManager.PlayerData.LastAcknowledgedPlayerLevel =
                             Math.Max(GameDataManager.PlayerData.LastAcknowledgedPlayerLevel, current);
+                        GameDataManager.PlayerData.PendingLevelUpRewards?.RemoveAll(reward => reward.PlayerLevel <= current);
                         acknowledged = true;
                     });
                 if (!acknowledged) return false;

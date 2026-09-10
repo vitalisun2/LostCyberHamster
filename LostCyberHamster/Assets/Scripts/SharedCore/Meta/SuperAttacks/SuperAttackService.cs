@@ -22,6 +22,7 @@ namespace Vues.GameCore
         /// Все суперудары в порядке каталога.
         /// </summary>
         public static IReadOnlyList<SuperAttackData> Items => _items;
+        public static bool IsCatalogLoaded { get; private set; }
 
         /// <summary>
         /// ID выбранного суперудара или пустое значение до первого выбора.
@@ -40,6 +41,7 @@ namespace Vues.GameCore
         /// </summary>
         public static async Task InitAsync()
         {
+            IsCatalogLoaded = false;
             // Загружаем прежние данные суперударов из отдельного JSON.
             using var lease = await AddressableLoader.LoadAssetAsync<TextAsset>(CatalogAddress);
             TextAsset textAsset = lease.Value;
@@ -81,6 +83,7 @@ namespace Vues.GameCore
 
             _items = items.AsReadOnly();
             _itemsById = itemsById;
+            IsCatalogLoaded = true;
         }
 
         /// <summary>

@@ -16,6 +16,7 @@ public static class SkinManager
     public static string CurrentSkinName => CurrentSkin?.Name;
 
     public static List<Skin> AvailableSkins => _availableSkins;
+    public static bool IsCatalogLoaded { get; private set; }
 
     public static Skin CurrentSkin => _availableSkins.FirstOrDefault(x => x.Id == GameDataManager.PlayerData.AppliedSkinId);
     public static Skin DefaultSkin => _availableSkins.FirstOrDefault(x => x.Id == 0);
@@ -24,6 +25,7 @@ public static class SkinManager
 
     public static async Task Init()
     {
+        IsCatalogLoaded = false;
         _availableSkins.Clear();
         string json = await LoadJsonFromAddressables();
 
@@ -40,6 +42,7 @@ public static class SkinManager
             var skin = await SkinFactory.CreateSkinAsync(skinData);
             _availableSkins.Add(skin);
         }
+        IsCatalogLoaded = _availableSkins.Count > 0;
     }
 
     public static bool CanPurchaseSkin(int skinId)

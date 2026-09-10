@@ -12,18 +12,30 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private const string MenuSceneName = "Menu";
 
         private readonly LevelResultNavigationCoordinator _navigation;
+        private readonly UIManager _uiManager;
 
         public UiJourneyCompleteModalMechanics(
             UIManager uiManager,
             LevelResultNavigationCoordinator navigation)
         {
             _navigation = navigation;
+            _uiManager = uiManager;
 
             var controller =
                 uiManager.GetController<JourneyCompleteModalController>();
             controller.SetHomeAction(OnHome);
             controller.SetSkillsAction(OnSkills);
             controller.SetRankingsAction(OnRankings);
+            controller.SetGoalAction(OnGoal);
+        }
+
+        private void OnGoal(NextGoalCandidate goal)
+        {
+            if (goal?.IsCurrentProfile != true) return;
+            // LevelUp может заменить callback своим PrepareResume; target готовим до очереди.
+            NextGoalNavigation.Prepare(goal);
+            _navigation.Continue(ScreenEnum.JourneyCompleteModal,
+                () => NextGoalNavigation.Open(_uiManager, goal), returnScreen: goal.Destination);
         }
 
         private void OnHome()

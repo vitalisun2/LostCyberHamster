@@ -45,6 +45,7 @@ namespace GameManagement
         public bool IsTutorialSkipped;
         public bool HasReceivedTutorialExperience;
         public int LastAcknowledgedPlayerLevel = 1;
+        public List<LevelUpReward> PendingLevelUpRewards = new();
         public bool IsShieldTutorialStarted;
         public bool HasUsedTutorialShield;
         public bool EnableGameplayNotifications = true;

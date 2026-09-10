@@ -1497,6 +1497,38 @@
         {
             "key": "pause_exit_failed",
             "value": "Не удалось выйти. Повторите попытку."
+        },
+        {
+            "key": "long_term_stars_progress",
+            "value": "Собрано {0}/{1} звёзд"
+        },
+        {
+            "key": "long_term_stars_target",
+            "value": "{0} · {1} · Уровень {2}"
+        },
+        {
+            "key": "long_term_collect_stars",
+            "value": "Добрать звёзды"
+        },
+        {
+            "key": "level_up_coins_reward",
+            "value": "+{0} монет"
+        },
+        {
+            "key": "level_up_mixed_reward",
+            "value": "+{0} DP и {1} монет"
+        },
+        {
+            "key": "level_up_development_complete",
+            "value": "Всё развитие завершено"
+        },
+        {
+            "key": "long_term_level_up_coins",
+            "value": "ПОВЫШАЙ УРОВЕНЬ: +{0} МОНЕТ"
+        },
+        {
+            "key": "long_term_development_remaining",
+            "value": "ПРОДОЛЖАЙ ОТКРЫТИЯ И УЛУЧШЕНИЯ"
         }
     ]
 }
