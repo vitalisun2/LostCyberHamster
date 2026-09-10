@@ -1,0 +1,38 @@
+.ability-upgrade-viewport { width: 100%; height: 100%; justify-content: center; align-items: center; }
+.ability-upgrade-frame { position: relative; width: 1844px; height: 853px; flex-shrink: 0; }
+.ability-upgrade-design { position: absolute; left: 0; top: 0; width: 1844px; height: 853px; transform-origin: 0 0; }
+.ability-upgrade { position: absolute; left: 498px; top: 92px; width: 850px; height: 704px; padding: 28px 38px; background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60; -unity-slice-right: 60; -unity-slice-top: 60; -unity-slice-bottom: 60; }
+#ability-upgrade .unity-text-element { color: rgb(13,32,48); white-space: normal; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; -unity-text-outline-width: 0; }
+.ability-upgrade-icon { position: absolute; left: 40px; top: 35px; width: 160px; height: 160px; -unity-background-scale-mode: scale-to-fit; }
+#ability-upgrade .ability-upgrade-title { position: absolute; left: 214px; right: 86px; top: 37px; height: 83px; margin: 0; font-size: 37px; -unity-text-align: middle-left; }
+#ability-upgrade .ability-upgrade-close { position: absolute; right: 20px; top: 18px; width: 67px; height: 67px; margin: 0; padding: 0; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; color: white; font-size: 56px; }
+.ability-upgrade-tiers { position: absolute; left: 262px; top: 128px; width: 342px; height: 90px; flex-direction: row; justify-content: space-between; align-items: center; }
+#ability-upgrade .ability-upgrade-tier { width: 87px; height: 87px; margin: 0; background-color: rgb(218,228,232); border-width: 3px; border-color: rgb(22,24,24); border-radius: 44px; font-size: 51px; -unity-text-align: middle-center; }
+#ability-upgrade .ability-upgrade-tier--next { background-color: rgb(255,209,67); }
+#ability-upgrade .ability-upgrade-arrow { font-size: 78px; color: rgb(239,169,25); -unity-text-outline-width: 2px; -unity-text-outline-color: rgb(22,24,24); }
+.ability-upgrade-comparison { position: absolute; left: 38px; right: 38px; top: 231px; height: 217px; flex-direction: row; }
+.ability-upgrade-column { flex-grow: 1; flex-shrink: 1; width: 0; margin-right: 10px; border-width: 2px; border-color: rgb(85,102,114); border-radius: 16px; background-color: rgb(232,236,237); overflow: hidden; }
+.ability-upgrade-column--next { margin-right: 0; margin-left: 10px; background-color: rgb(255,247,214); border-color: rgb(26,34,41); }
+#ability-upgrade .ability-upgrade-heading { margin: 0; height: 47px; background-color: rgba(80,109,131,0.13); font-size: 26px; -unity-text-align: middle-center; }
+#ability-upgrade .ability-upgrade-column--next .ability-upgrade-heading { background-color: rgba(248,187,43,0.35); }
+#ability-upgrade .ability-upgrade-description { flex-grow: 1; margin: 0; padding: 12px; font-size: 31px; -unity-text-align: middle-center; }
+#ability-upgrade .ability-upgrade-bonus { position: absolute; left: 38px; right: 38px; top: 466px; height: 79px; margin: 0; border-top-width: 1px; border-top-color: rgb(145,147,141); font-size: 26px; -unity-text-align: middle-center; }
+.ability-upgrade-actions { position: absolute; left: 126px; right: 126px; top: 560px; height: 73px; flex-direction: row; justify-content: center; }
+.ability-upgrade-price { flex-direction: row; align-items: center; justify-content: center; width: 260px; margin-right: 27px; border-width: 2px; border-color: rgb(26,34,41); border-radius: 16px; }
+.ability-upgrade-star { width: 58px; height: 58px; margin-right: 12px; background-image: url("/Assets/Content/ui/sprites/skills/icon_star.png"); -unity-background-scale-mode: scale-to-fit; }
+#ability-upgrade-cost { font-size: 29px; }
+#ability-upgrade .ability-upgrade-confirm { width: 289px; height: 73px; margin: 0; padding: 4px 14px; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 18; -unity-slice-right: 18; -unity-slice-top: 17; -unity-slice-bottom: 17; font-size: 34px; }
+#ability-upgrade .ability-upgrade-confirm:disabled { opacity: 0.5; }
+#ability-upgrade .ability-upgrade-owned { position: absolute; left: 390px; right: 65px; top: 637px; height: 29px; margin: 0; font-size: 21px; -unity-text-align: middle-center; }
+#ability-upgrade .ability-upgrade-status { position: absolute; left: 40px; right: 40px; top: 666px; height: 28px; margin: 0; font-size: 19px; -unity-text-align: middle-center; }
+
+#ability-upgrade .ability-upgrade-description { font-size: 28px; padding: 8px 12px; }
+#ability-upgrade .ability-upgrade-confirm--maximum { font-size: 23px; white-space: normal; padding: 0 12px; }
+.ability-upgrade-actions { top: 544px; }
+#ability-upgrade .ability-upgrade-owned { top: 618px; }
+#ability-upgrade .ability-upgrade-status { top: 646px; }
+#ability-upgrade.ability-upgrade--maximum { top: 160px; height: 534px; }
+#ability-upgrade.ability-upgrade--maximum .ability-upgrade-actions,
+#ability-upgrade.ability-upgrade--maximum .ability-upgrade-bonus,
+#ability-upgrade.ability-upgrade--maximum .ability-upgrade-owned,
+#ability-upgrade.ability-upgrade--maximum .ability-upgrade-status { display: none; }

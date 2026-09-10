@@ -22,6 +22,7 @@ namespace LostCyberHamster.UI
         DailyQuestRewardModal,
         ReturnActivitiesScreen,
         ActivityRewardModal,
+        AbilityUpgradeModal,
 
     }
 

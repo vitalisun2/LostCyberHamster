@@ -315,50 +315,6 @@
     padding-top: 186px;
 }
 
-/* Правило помещается между title (до176px) и Daily tabs (от208px). */
-.quests-daily-rule {
-    position: absolute;
-    left: 5%;
-    top: 178px;
-    width: 49%;
-    height: 40px;
-    margin: 0;
-    padding: 0;
-    display: none;
-    color: rgb(244, 248, 252);
-    background-color: rgba(9, 28, 45, 0.92);
-    border-radius: 6px;
-    font-size: 16px;
-    white-space: normal;
-    -unity-text-align: middle-center;
-}
-
-.quests-screen--compact .quests-content--daily {
-    padding-top: 228px;
-}
-
-.quests-daily-bonus {
-    position: absolute;
-    left: 57%;
-    top: 176px;
-    width: 38%;
-    height: 44px;
-    margin: 0;
-    padding: 4px 8px;
-    color: rgb(255, 244, 202);
-    background-color: rgb(17, 52, 75);
-    border-color: rgb(230, 194, 85);
-    border-width: 2px;
-    border-radius: 8px;
-    font-size: 15px;
-    white-space: normal;
-    -unity-text-align: middle-center;
-}
-
-.quests-screen--compact .quests-daily-rule {
-    font-size: 14px;
-}
-
 .quests-screen--compact .quests-container {
     height: 328px;
 }
@@ -433,4 +389,39 @@
     height: 30px;
 }
 
-.quests-content--daily { padding-top: 228px; }
+
+
+.quests-viewport { flex-grow: 1; width: 100%; height: 100%; justify-content: center; align-items: center; }
+.quests-scale-frame { position: relative; flex-shrink: 0; width: 1844px; height: 853px; }
+.quests-screen { position: absolute; left: 0; top: 0; width: 1844px; height: 853px; transform-origin: 0 0; }
+#questsscreen .quests-content { position: absolute; left: 442px; top: 236px; width: 964px; height: 502px; padding: 0; }
+#questsscreen .quests-tabs { width: 700px; height: 98px; flex-shrink: 0; }
+#questsscreen .quests-page { width: 100%; margin-top: 20px; padding: 0; }
+#questsscreen .quests-container { width: 964px; max-width: 100%; height: 380px; }
+#questsscreen .quest-card { width: 302px; max-width: 32%; height: 380px; margin: 0 14px; }
+#questsscreen .quest-item__frame { padding: 18px 22px; }
+#questsscreen .quest-item__image { width: 105px; height: 110px; }
+#questsscreen .quest-item__title { height: 82px; font-size: 24px; }
+#questsscreen .carousel-nav-button { position: absolute; bottom: -45px; }
+#questsscreen .carousel-nav-button--previous { left: 360px; }
+#questsscreen .carousel-nav-button--next { right: 360px; }
+.quests-daily-rule-panel { position: absolute; left: 70px; top: 323px; width: 347px; height: 212px; background-image: url("/Assets/Content/ui/sprites/quests/bubble_daily_rule.png"); -unity-background-scale-mode: stretch-to-fill; }
+.quests-daily-rule-icon { position: absolute; left: 8px; top: -24px; width: 70px; height: 70px; background-image: url("/Assets/Content/ui/sprites/skills/icon_info.png"); -unity-background-scale-mode: scale-to-fit; }
+#questsscreen .quests-daily-rule { position: absolute; left: 31px; right: 25px; top: 44px; height: 123px; margin: 0; color: rgb(42,29,15); font-size: 25px; white-space: normal; -unity-text-align: middle-center; }
+.quests-daily-bonus-panel { position: absolute; left: 1500px; top: 340px; width: 239px; height: 332px; }
+.quests-daily-pouch { position: absolute; left: 37px; top: 0; width: 176px; height: 145px; background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_coin_pouch.png"); -unity-background-scale-mode: scale-to-fit; }
+.quests-daily-tag { position: absolute; left: 0; top: 126px; width: 239px; height: 206px; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.17; }
+#questsscreen .quests-daily-bonus-title { position: absolute; left: 10px; right: 10px; top: 11px; height: 43px; margin: 0; font-size: 23px; color: rgb(42,29,15); white-space: normal; -unity-text-align: middle-center; }
+.quests-daily-amount-row { position: absolute; left: 28px; right: 28px; top: 52px; height: 42px; flex-direction: row; justify-content: center; align-items: center; }
+.quests-daily-coin { width: 34px; height: 34px; margin-right: 7px; background-image: url("/Assets/Content/ui/sprites/shared/hud_coins_icon.png"); -unity-background-scale-mode: scale-to-fit; }
+#questsscreen .quests-daily-amount { font-size: 32px; color: rgb(42,29,15); }
+.quests-daily-marks { position: absolute; left: 37px; right: 37px; top: 96px; height: 36px; flex-direction: row; justify-content: space-between; }
+#questsscreen .quests-daily-mark { width: 36px; height: 36px; margin: 0; border-width: 2px; border-color: rgb(52,70,30); border-radius: 18px; background-color: rgb(234,226,193); color: white; font-size: 29px; -unity-text-align: middle-center; }
+#questsscreen .quests-daily-mark--claimed { background-color: rgb(72,148,25); }
+#questsscreen .quests-daily-progress { position: absolute; top: 133px; left: 10px; right: 10px; height: 25px; margin: 0; font-size: 17px; color: rgb(42,29,15); -unity-text-align: middle-center; }
+#questsscreen .quests-daily-bonus { position: absolute; left: 19px; right: 19px; bottom: 9px; height: 43px; margin: 0; padding: 0; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 18; -unity-slice-right: 18; -unity-slice-top: 17; -unity-slice-bottom: 17; color: white; font-size: 24px; -unity-text-align: middle-center; }
+#questsscreen .quests-daily-bonus:disabled { opacity: 0.45; }
+#questsscreen .quests-daily-more { position: absolute; right: -13px; top: 0; height: 47px; margin: 0; padding: 6px 10px; color: rgb(42,29,15); font-size: 24px; rotate: 9deg; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; }
+
+#questsscreen .quests-daily-rule { left: 29px; right: 29px; top: 36px; height: 116px; font-size: 22px; }
+#questsscreen .quests-daily-bonus { bottom: 10px; height: 43px; font-size: 22px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-scale: 0.5; }

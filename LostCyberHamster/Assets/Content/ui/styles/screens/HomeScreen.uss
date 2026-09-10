@@ -156,107 +156,18 @@
     -unity-text-outline-width: 0;
 }
 
-.home-main {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-height: 0;
-    width: 100%;
-    padding-right: 6%;
-    padding-left: 6%;
-    flex-direction: row;
-    align-items: stretch;
-}
-
-.home-main__logo-column,
-.home-main__actions {
-    flex-grow: 1;
-    flex-shrink: 1;
-    width: 0;
-    min-width: 0;
-    min-height: 0;
-    justify-content: center;
-    align-items: center;
-}
-
-.home-main__logo-column {
-    padding-right: 3%;
-}
-
-.home-main__actions {
-    padding-left: 3%;
-}
-
-.home-screen--goal-space .home-main__actions {
-    padding-bottom: 140px;
-}
-
-.home-logo {
-    width: 100%;
-    height: 58%;
-    max-width: 600px;
-    max-height: 300px;
-    margin-bottom: 12px;
-    background-image: url("/Assets/Content/ui/sprites/home/logo_lost_cyber_hamster.png");
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.home-play-button {
-    width: 78%;
-    height: 48%;
-    min-height: 118px;
-    max-width: 528px;
-    max-height: 244px;
-    margin-bottom: 16px;
-    background-image: url("/Assets/Content/ui/sprites/home/button_play.png");
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.home-select-level-button {
-    width: 58%;
-    height: 23%;
-    min-height: 66px;
-    max-width: 396px;
-    max-height: 110px;
-    margin-top: 8px;
-    background-image: url("/Assets/Content/ui/sprites/home/button_select_level.png");
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.home-navigation {
-    flex-grow: 0;
-    flex-shrink: 0;
-    width: 100%;
-    height: 24%;
-    min-height: 130px;
-    max-height: 205px;
-    padding-bottom: 5px;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.home-navigation__buttons {
-    flex-grow: 1;
-    flex-shrink: 1;
-    width: 52%;
-    min-width: 660px;
-    max-width: 850px;
-    height: 100%;
-    max-height: 150px;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-
-.home-navigation__button {
-    flex-grow: 0;
-    flex-shrink: 1;
-    width: 19%;
-    height: 100%;
-    max-width: 147px;
-    max-height: 140px;
-    -unity-background-scale-mode: scale-to-fit;
-}
-
+.home-viewport { flex-grow: 1; width: 100%; height: 100%; justify-content: center; align-items: center; }
+.home-scale-frame { position: relative; flex-shrink: 0; width: 1844px; height: 853px; }
+.home-screen { position: absolute; left: 0; top: 0; width: 1844px; height: 853px; transform-origin: 0 0; overflow: visible; }
+.home-hud { position: absolute; top: 0; left: 0; }
+.home-hud__lane { padding-left: 96px; padding-right: 96px; }
+.home-goal-slot { position: absolute; left: 160px; top: 263px; width: 490px; height: 320px; }
+.home-logo { position: absolute; left: 735px; top: 91px; width: 380px; height: 251px; background-image: url("/Assets/Content/ui/sprites/home/logo_lost_cyber_hamster.png"); -unity-background-scale-mode: scale-to-fit; }
+#homescreen .home-play-button { position: absolute; left: 700px; top: 350px; width: 445px; height: 166px; background-image: url("/Assets/Content/ui/sprites/shared/next_goal/goal_header.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 220; -unity-slice-right: 220; -unity-slice-top: 220; -unity-slice-bottom: 220; -unity-slice-scale: 0.11; color: white; font-size: 86px; -unity-text-outline-width: 6px; -unity-text-outline-color: black; -unity-font-style: bold; }
+#homescreen .home-select-level-button { position: absolute; left: 751px; top: 531px; width: 343px; height: 73px; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; color: white; font-size: 30px; -unity-text-outline-width: 2px; -unity-text-outline-color: black; }
+.home-navigation { position: absolute; left: 510px; top: 680px; width: 830px; height: 140px; }
+.home-navigation__buttons { width: 100%; height: 100%; flex-direction: row; justify-content: space-between; align-items: flex-end; }
+.home-navigation__button { width: 145px; height: 140px; -unity-background-scale-mode: scale-to-fit; }
 .home-navigation__shop {
     background-image: url("/Assets/Content/ui/sprites/home/nav_shop.png");
 }
@@ -277,37 +188,22 @@
     background-image: url("/Assets/Content/ui/sprites/home/nav_league.png");
 }
 
-.return-home {
-    width: 100%;
-    max-width: 468px;
-    height: 158px;
-    flex-shrink: 0;
-    padding: 10px 18px;
-    background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png");
-    -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 60px;
-    -unity-slice-right: 60px;
-    -unity-slice-top: 60px;
-    -unity-slice-bottom: 60px;
-}
-.return-home__heading {
-    font-size: 17px;
-    height: 22px;
-    color: rgb(25, 35, 42);
-    -unity-font-style: bold;
-}
-.return-home__row {
-    min-height: 48px;
-    flex-shrink: 0;
-    margin: 0;
-    padding: 3px 6px;
-    font-size: 15px;
-    white-space: normal;
-    -unity-text-align: middle-left;
-    color: rgb(25, 35, 42);
-    background-color: rgba(55, 83, 106, 0.08);
-    border-width: 0;
-    border-radius: 7px;
-}
-.return-home__row--ready { background-color: rgb(255, 214, 102); }
-.return-home__status { font-size: 11px; height: 18px; color: rgb(51, 67, 71); white-space: normal; }
+
+.return-home { position: absolute; left: 1190px; top: 279px; width: 520px; }
+#homescreen .return-home__row { position: relative; width: 520px; height: 137px; margin: 0 0 21px; padding: 0; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.24; }
+.return-home__icon { position: absolute; left: 15px; top: 4px; width: 122px; height: 122px; -unity-background-scale-mode: scale-to-fit; }
+.return-home__icon--cycle { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_victory_stamp.png"); }
+.return-home__icon--week { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_calendar.png"); }
+#homescreen .return-home__title { position: absolute; left: 143px; right: 77px; top: 21px; height: 40px; margin: 0; color: rgb(13,32,48); font-size: 28px; -unity-text-align: middle-left; white-space: normal; }
+#homescreen .return-home__progress { position: absolute; left: 143px; right: 77px; top: 64px; height: 42px; margin: 0; color: rgb(13,32,48); font-size: 24px; -unity-text-align: middle-left; }
+.return-home__arrow { position: absolute; right: 23px; top: 33px; width: 52px; height: 66px; background-image: url("/Assets/Content/ui/sprites/shared/button_scroll_right.png"); -unity-background-scale-mode: scale-to-fit; }
+#homescreen .return-home__ready { position: absolute; right: 53px; top: -12px; margin: 0; padding: 2px 12px; color: white; background-color: rgb(58,126,32); border-color: rgb(19,49,25); border-width: 2px; border-radius: 9px; font-size: 19px; rotate: 3deg; }
+#homescreen .return-home__status { margin: 0 12px; color: white; font-size: 18px; white-space: normal; -unity-text-align: middle-center; -unity-text-outline-width: 1px; -unity-text-outline-color: black; }
+.return-home__row:hover { scale: 1.015 1.015; }
+.return-home__row:active { scale: 0.985 0.985; }
+
+#homescreen .home-play-button, #homescreen .home-select-level-button, #homescreen .return-home__title, #homescreen .return-home__progress { -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; }
+#homescreen .home-play-button { -unity-text-outline-width: 2px; font-size: 82px; }
+#homescreen .home-select-level-button { -unity-text-outline-width: 1px; font-size: 27px; }
+#homescreen .return-home__arrow { width: 59px; height: 73px; right: 22px; top: 29px; margin: 0; padding: 0 0 8px; color: white; font-size: 73px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: black; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; -unity-slice-scale: 0.75; }
+#homescreen .return-calendar-day { margin: 0; width: 122px; height: 122px; padding-top: 20px; color: rgb(13,32,48); font-size: 63px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; rotate: -8deg; }

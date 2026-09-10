@@ -257,6 +257,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - screens
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4a5dbe8c6addd746a45e5e0319e13c3
+    m_Address: AbilityUpgradeModal
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c972d53b9f235ef42acb52b0f807d93c
     m_Address: ability-icon/electric-strike
     m_ReadOnly: 0

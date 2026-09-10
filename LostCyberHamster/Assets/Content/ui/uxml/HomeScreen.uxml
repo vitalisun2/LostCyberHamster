@@ -1,7 +1,9 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Content/ui/styles/common.uss?fileID=7433441132597879392&amp;guid=9c9b2bc833fd5406cbe3980288b9d0d5&amp;type=3#common" />
     <Style src="../styles/screens/HomeScreen.uss" />
-    <engine:VisualElement name="homescreen" class="home-screen">
+    <engine:VisualElement name="home-viewport" class="home-viewport">
+      <engine:VisualElement name="home-scale-frame" class="home-scale-frame">
+       <engine:VisualElement name="homescreen" class="home-screen">
         <engine:VisualElement name="home__hud" class="home-hud">
             <LostCyberHamster.UI.SharedHudLane class="home-hud__lane">
                 <engine:VisualElement class="home-hud__side home-hud__left">
@@ -24,20 +26,26 @@
             </engine:VisualElement>
         </engine:VisualElement>
 
-        <engine:VisualElement class="home-main">
-            <engine:VisualElement class="home-main__logo-column">
-                <engine:VisualElement name="home__logo" class="home-logo" picking-mode="Ignore" />
-                <engine:VisualElement name="home-activities" class="return-home">
-                    <engine:Label name="home-activity-heading" class="return-home__heading" picking-mode="Ignore" />
-                    <engine:Button name="home-activity-cycle" class="return-home__row" />
-                    <engine:Button name="home-activity-week" class="return-home__row" />
-                    <engine:Label name="home-activity-status" class="return-home__status" picking-mode="Ignore" />
-                </engine:VisualElement>
-            </engine:VisualElement>
-            <engine:VisualElement class="home-main__actions">
-                <engine:Button name="btn_play" tooltip="Play" class="home-image-button home-play-button" />
-                <engine:Button name="btn_select-level" tooltip="Select Level" class="home-image-button home-select-level-button" />
-            </engine:VisualElement>
+        <engine:VisualElement name="home-goal-slot" class="home-goal-slot" picking-mode="Ignore" />
+        <engine:VisualElement name="home__logo" class="home-logo" picking-mode="Ignore" />
+        <engine:Button name="btn_play" class="home-image-button home-play-button" />
+        <engine:Button name="btn_select-level" class="home-image-button home-select-level-button" />
+        <engine:VisualElement name="home-activities" class="return-home">
+            <engine:Button name="home-activity-cycle" class="return-home__row">
+                <engine:VisualElement class="return-home__icon return-home__icon--cycle" picking-mode="Ignore" />
+                <engine:Label name="home-cycle-title" class="return-home__title" picking-mode="Ignore" />
+                <engine:Label name="home-cycle-progress" class="return-home__progress" picking-mode="Ignore" />
+                <engine:Label name="home-cycle-ready" class="return-home__ready" picking-mode="Ignore" />
+                <engine:Label text="›" class="return-home__arrow" picking-mode="Ignore" />
+            </engine:Button>
+            <engine:Button name="home-activity-week" class="return-home__row">
+                <engine:VisualElement class="return-home__icon return-home__icon--week" picking-mode="Ignore"><engine:Label text="7" class="return-calendar-day" picking-mode="Ignore" /></engine:VisualElement>
+                <engine:Label name="home-week-title" class="return-home__title" picking-mode="Ignore" />
+                <engine:Label name="home-week-progress" class="return-home__progress" picking-mode="Ignore" />
+                <engine:Label name="home-week-ready" class="return-home__ready" picking-mode="Ignore" />
+                <engine:Label text="›" class="return-home__arrow" picking-mode="Ignore" />
+            </engine:Button>
+            <engine:Label name="home-activity-status" class="return-home__status" picking-mode="Ignore" />
         </engine:VisualElement>
 
         <engine:VisualElement class="home-navigation">
@@ -49,5 +57,7 @@
                 <engine:Button name="btn_leaderboard" tooltip="League" class="home-image-button home-navigation__button home-navigation__league" />
             </engine:VisualElement>
         </engine:VisualElement>
+    </engine:VisualElement>
+      </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

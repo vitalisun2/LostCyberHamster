@@ -776,6 +776,7 @@
     <Compile Include="Assets\Scripts\Online\UnityGameClock.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelManager.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\CollectibleDecisionPointDetector.cs" />
+    <Compile Include="Assets\Scripts\UI\Modals\AbilityUpgradeModalController.cs" />
     <Compile Include="Assets\Scripts\GameManagerLogic\IInstaller.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveAdvance\PassiveAdvanceModel.cs" />
@@ -855,6 +856,7 @@
     <None Include="Assets\Content\ui\uxml\CloudSaveConflictModal.uxml" />
     <None Include="Assets\Content\ui\uxml\HealthBar.uxml" />
     <None Include="Assets\Content\ui\uxml\PlayButton.uxml" />
+    <None Include="Assets\Content\ui\uxml\AbilityUpgradeModal.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeButton.uxml" />
     <None Include="Assets\Content\ui\uxml\ReturnActivitiesScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\HomeScreen.uxml" />
@@ -876,6 +878,7 @@
     <None Include="Assets\Content\ui\uxml\JourneyCompleteModal.uxml" />
     <None Include="Assets\Content\ui\uxml\SettingsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\EnergyBar.uxml" />
+    <None Include="Assets\Content\ui\styles\components\ability-upgrade.uss" />
     <None Include="Assets\Content\ui\styles\utilities\sizing.uss" />
     <None Include="Assets\Content\ui\uxml\HealthItem.uxml" />
     <None Include="Assets\Content\ui\styles\global.uss" />

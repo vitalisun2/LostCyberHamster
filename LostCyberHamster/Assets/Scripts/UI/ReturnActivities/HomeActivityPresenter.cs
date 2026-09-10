@@ -6,25 +6,26 @@ using Vues.GameCore.ReturnActivities;
 
 namespace LostCyberHamster.UI
 {
-    /// <summary>Привязывает две строки Home к снимку и освобождает подписки вместе с деревом.</summary>
+    /// <summary>Показывает две самостоятельные активности Home в постоянном порядке.</summary>
     internal sealed class HomeActivityPresenter : IDisposable
     {
         private readonly VisualElement _root;
         private readonly Action<string> _open;
         private readonly Button _cycle;
         private readonly Button _week;
-        private readonly Label _status;
-        private readonly Label _heading;
         private readonly IVisualElementScheduledItem _timer;
 
         public HomeActivityPresenter(VisualElement root, Action<string> open)
         {
+            // Каждая художественная полоса — одно действие, внутренние слои пропускают нажатия.
             _root = root; _open = open;
             _cycle = root.Q<Button>("home-activity-cycle");
             _week = root.Q<Button>("home-activity-week");
-            _status = root.Q<Label>("home-activity-status");
-            _heading = root.Q<Label>("home-activity-heading");
+            root.Q<Label>("home-cycle-title").text = ActivityUiText.Get("cycle");
+            root.Q<Label>("home-week-title").text = ActivityUiText.Get("week");
             _cycle.clicked += OpenCycle; _week.clicked += OpenWeek;
+
+            // Подписки принадлежат текущему экранному дереву.
             ReturnActivityService.Changed += Refresh;
             GameDataManager.ProfileChanged += Refresh;
             _timer = root.schedule.Execute(Tick).Every(1000);
@@ -43,25 +44,36 @@ namespace LostCyberHamster.UI
 
         private void Refresh()
         {
+            // Постоянное место и краткие отдельные счётчики сохраняют читаемость Home.
             var state = ReturnActivityService.GetSnapshot();
-            _status.text = ActivityUiText.Status(compact: true);
-            _heading.text = ActivityUiText.Get("activities");
             _cycle.SetEnabled(state != null); _week.SetEnabled(state != null);
-            if (state == null) { _cycle.text = _week.text = ActivityUiText.Get("loading"); return; }
+            var cycle = _root.Q<Label>("home-cycle-progress");
+            var week = _root.Q<Label>("home-week-progress");
+            if (state == null) cycle.text = week.text = ActivityUiText.Get("loading");
+            else
+            {
+                int step = state.Step == 7 && state.LastCreditedDay != ActivityDayPolicy.Day(ReturnActivityService.UtcNow) ? 0 : state.Step;
+                cycle.text = Text("retention_cycle_short", step);
+                week.text = Text("retention_week_short", Math.Min(state.Week.TargetWins, state.Week.AttemptIds.Count),
+                    state.Week.TargetWins, Math.Min(state.Week.TargetDays, state.Week.Days.Count), state.Week.TargetDays);
+            }
 
-            // Порядок меняется только при смене достижимого действия, target сохраняет свой kind.
-            var utc = ReturnActivityService.UtcNow;
-            _cycle.text = HomeActivitySelector.Cycle(state, utc);
-            _week.text = HomeActivitySelector.Week(state, utc);
-            bool weekFirst = HomeActivitySelector.WeekFirst(state, utc);
-            var first = weekFirst ? _week : _cycle;
-            var last = weekFirst ? _cycle : _week;
-            if (_root.IndexOf(first) > _root.IndexOf(last)) first.PlaceBehind(last);
-            _cycle.EnableInClassList("return-home__row--ready", state.Rewards.Any(reward => reward.Kind == "cycle" && !reward.Claimed));
-            _week.EnableInClassList("return-home__row--ready", state.Rewards.Any(reward => reward.Kind == "week" && !reward.Claimed));
-            int count = state.Rewards.Count(reward => !reward.Claimed);
-            if (count > 0) _heading.text = ActivityUiText.Get("ready_count", count);
+            // Готовность награды не подменяет уже заработанный прогресс.
+            foreach (string kind in new[] { "cycle", "week" })
+            {
+                var ready = _root.Q<Label>("home-" + kind + "-ready");
+                ready.text = Text("retention_ready");
+                ready.style.display = state?.Rewards.Any(r => r.Kind == kind && (!r.Claimed || !r.Presented)) == true
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            var status = _root.Q<Label>("home-activity-status");
+            bool needsAttention = ReturnActivityRecovery.IsRequired || !ReturnActivityService.CanMutate || ReturnActivityService.IsClockBlocked;
+            status.text = needsAttention ? ActivityUiText.Status(compact: true) : string.Empty;
+            status.style.display = needsAttention ? DisplayStyle.Flex : DisplayStyle.None;
         }
+
+        private static string Text(string key, params object[] values) =>
+            string.Format(LocalizationManager.GetLocalizedString(key), values);
 
         public void Dispose()
         {

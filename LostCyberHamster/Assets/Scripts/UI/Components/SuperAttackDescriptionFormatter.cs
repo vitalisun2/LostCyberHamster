@@ -26,6 +26,27 @@ namespace LostCyberHamster.UI
             }
         }
 
+        public static string Primary(SuperAttackData ability, int level)
+        {
+            var data = SuperAttackLevelResolver.Get(ability, level);
+            switch (ability.Id)
+            {
+                case 1:
+                    return Format("retention_shield_primary", data.Duration).Replace("\n", " ") +
+                        (data.DestroysOnCollision ? "\n" + Format("retention_destroy") : string.Empty);
+                case 2: return Format("retention_electric_primary", data.RangeMultiplier * 100);
+                case 3: return Format("retention_skate_primary", data.Duration, data.JumpCombinations);
+                default: return Describe(ability, level);
+            }
+        }
+
+        public static string Bonus(SuperAttackData ability, int level)
+        {
+            var data = SuperAttackLevelResolver.Get(ability, level);
+            return data.DropChance > 0 && data.MaximumDrops > 0
+                ? Format("retention_bonus_details", data.DropChance * 100, data.MaximumDrops) : string.Empty;
+        }
+
         public static string Upgrade(SuperAttackData ability, int level)
         {
             if (level >= SuperAttackLevelResolver.MaximumLevel) return Format("progression_maximum");

@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using Assets.Scripts.Tutorial;
 using GameManagement.Progress;
+using UnityEngine;
 using UnityEngine.UIElements;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -48,9 +49,8 @@ namespace LostCyberHamster.UI
 
         protected override ScreenLayout CreateLayout(VisualElement content)
         {
-            var screen = content.Q<VisualElement>("questsscreen");
-            return new ScreenLayout(screen, size =>
-                screen.EnableInClassList("quests-screen--compact", size.y < 760f));
+            return ScreenLayout.Fit(content.Q("quests-viewport"), content.Q("quests-scale-frame"),
+                content.Q("questsscreen"), new Vector2(1844, 853));
         }
 
         protected override void BindView()
@@ -97,14 +97,30 @@ namespace LostCyberHamster.UI
             IReadOnlyList<Quest> quests = ActiveQuests;
             int pageSize = ConfigurationManager.Config.DisplayQuestsCount;
             _contentRoot.Q<VisualElement>("quests-content").EnableInClassList("quests-content--daily", _showDailyTasks);
-            _contentRoot.Q<Label>("quests-daily-rule").style.display =
-                _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
-            DailyBonusButton.style.display = _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            _contentRoot.Q("quests-daily-rule-panel").style.display = _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
+            _contentRoot.Q("quests-daily-bonus-panel").style.display = _showDailyTasks ? DisplayStyle.Flex : DisplayStyle.None;
             int claimed = QuestManager.DailyQuests.Count(quest => quest.IsRewardClaimed);
             var bonus = QuestManager.GetDailyCommonReward();
-            DailyBonusButton.text = bonus == null
-                ? string.Format(LocalizationManager.GetLocalizedString("progression_daily_progress"), claimed, QuestManager.DailyCommonRewardAmount)
-                : string.Format(LocalizationManager.GetLocalizedString("progression_daily_available"), bonus.Amount, bonus.RemainingRewards + 1);
+            _contentRoot.Q<Label>("quests-daily-bonus-title").text = LocalizationManager.GetLocalizedString(
+                bonus != null && claimed < 3 ? "retention_saved_bonus" : "retention_set_bonus");
+            _contentRoot.Q<Label>("quests-daily-amount").text = (bonus?.Amount ?? QuestManager.DailyCommonRewardAmount).ToString();
+            var more = _contentRoot.Q<Label>("quests-daily-more");
+            more.text = bonus?.RemainingRewards > 0 ? string.Format(LocalizationManager.GetLocalizedString("retention_more_rewards"), bonus.RemainingRewards) : string.Empty;
+            more.style.display = bonus?.RemainingRewards > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+
+            // Три отметки относятся к Claim текущего набора; отложенный приз показан отдельно.
+            var marks = _contentRoot.Q("quests-daily-marks");
+            marks.Clear();
+            for (int i = 0; i < 3; i++)
+            {
+                var mark = new Label(i < claimed ? "✓" : "") { pickingMode = PickingMode.Ignore };
+                mark.AddToClassList("quests-daily-mark");
+                mark.EnableInClassList("quests-daily-mark--claimed", i < claimed);
+                marks.Add(mark);
+            }
+            _contentRoot.Q<Label>("quests-daily-progress").text = string.Format(
+                LocalizationManager.GetLocalizedString("retention_daily_claims"), claimed);
+            DailyBonusButton.text = LocalizationManager.GetLocalizedString("retention_claim");
             DailyBonusButton.SetEnabled(bonus != null);
 
             // Нормализуем страницу после смены набора или количества квестов.

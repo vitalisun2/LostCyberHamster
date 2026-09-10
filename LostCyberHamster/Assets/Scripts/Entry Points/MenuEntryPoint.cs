@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
 using Assets.Scripts.Tutorial;
@@ -89,7 +89,7 @@ namespace Assets.Scripts.Entry_Points
                 new HomeScreenController(_uiDocument, OpenReturnActivities),
                 new ReturnActivitiesScreenController(_uiDocument, ShowReturnActivityReward, () => SceneManager.LoadScene("Game")),
                 new ActivityRewardModalController(_uiDocument, () => _uiManager.CloseModal(ScreenEnum.ActivityRewardModal)),
-                new CharacterDevelopmentScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager)),
+                new CharacterDevelopmentScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager), ShowAbilityUpgrade),
                 new SettingsScreenController(
                     _uiDocument,
                     _accountService,
@@ -97,7 +97,8 @@ namespace Assets.Scripts.Entry_Points
                     _cloudSyncService),
                 new AccountPromptModalController(_uiDocument),
                 new CloudSaveConflictModalController(_uiDocument),
-                new CharacterScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager)),
+                new CharacterScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager), ShowAbilityUpgrade),
+                new AbilityUpgradeModalController(_uiDocument, CloseAbilityUpgrade),
                 new QuestsScreenController(_uiDocument),
                 selectLevelScreenController,
                 leaderboardScreenController,
@@ -171,6 +172,26 @@ namespace Assets.Scripts.Entry_Points
         private void CloseDailyQuestRewardModal()
         {
             _uiManager.CloseModal(ScreenEnum.DailyQuestRewardModal);
+        }
+
+        private async void ShowAbilityUpgrade(int abilityId)
+        {
+            // Сравнение открывается только поверх текущего экрана развития или экипировки.
+            if (_uiManager.HasModalOrTransition || _uiManager.HasPriorityPresentation ||
+                (_uiManager.CurrentScreen != ScreenEnum.CharacterDevelopmentScreen &&
+                 _uiManager.CurrentScreen != ScreenEnum.CharacterScreen)) return;
+            _uiManager.GetController<AbilityUpgradeModalController>().SetAbility(abilityId);
+            await _uiManager.ShowModalAsync(ScreenEnum.AbilityUpgradeModal);
+        }
+
+        private void CloseAbilityUpgrade(bool changed)
+        {
+            _uiManager.CloseModal(ScreenEnum.AbilityUpgradeModal);
+            if (!changed) return;
+            if (_uiManager.CurrentScreen == ScreenEnum.CharacterScreen)
+                _uiManager.GetController<CharacterScreenController>().RefreshAfterUpgrade();
+            else if (_uiManager.CurrentScreen == ScreenEnum.CharacterDevelopmentScreen)
+                _uiManager.GetController<CharacterDevelopmentScreenController>().RefreshAfterUpgrade();
         }
 
         private void OpenReturnActivities(string kind)

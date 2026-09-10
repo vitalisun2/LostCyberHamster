@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c972d53b9f235ef42acb52b0f807d93c
+guid: 4eb22be4f6a1205489faa8aeb1a7dad8
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7762568901318666766
-    second: icon_ability_electric_strike_0
+      213: -6134361519386235796
+    second: icon_ability_energy_shield_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -75,7 +75,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -139,7 +139,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: icon_ability_electric_strike_0
+      name: icon_ability_energy_shield_0
       rect:
         serializedVersion: 2
         x: 0
@@ -149,34 +149,34 @@ TextureImporter:
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData:
+      customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e0ae793b94f2abb60800000000000000
-      internalID: 7762568901318666766
+      spriteID: c6c682903be5edaa0800000000000000
+      internalID: -6134361519386235796
       vertices: []
-      indices:
+      indices: 
       edges: []
       weights: []
     outline: []
-    customData:
+    customData: 
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
-    indices:
+    indices: 
     edges: []
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      icon_ability_electric_strike_0: 7762568901318666766
-  mipmapLimitGroupName:
+      icon_ability_energy_shield_0: -6134361519386235796
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  userData:
+  userData: 
   assetBundleName: ui
-  assetBundleVariant:
+  assetBundleVariant: 

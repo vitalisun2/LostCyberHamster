@@ -46,6 +46,7 @@ namespace LostCyberHamster.UI
         private string _displayedAbilityProfile;
         private long _displayedAbilityGeneration;
         private readonly Action _resume;
+        private readonly Action<int> _showUpgrade;
         private DevelopmentReturnButton _returnButton;
         private NextGoalCandidate _nextGoalForScroll;
         private IVisualElementScheduledItem _nextGoalScrollSchedule;
@@ -96,10 +97,11 @@ namespace LostCyberHamster.UI
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterScreen;
 
-        public CharacterScreenController(UIDocument uiDocument, Action resume = null)
+        public CharacterScreenController(UIDocument uiDocument, Action resume = null, Action<int> showUpgrade = null)
             : base(uiDocument)
         {
             _resume = resume;
+            _showUpgrade = showUpgrade;
         }
 
         protected override string ScreenBackgroundAddress => BackgroundAddress;
@@ -290,30 +292,8 @@ namespace LostCyberHamster.UI
                 _abilityIcons[ability.Id] = icon;
             }
 
-            string previewAddress = string.IsNullOrWhiteSpace(
-                ability.EquipmentPreviewAddress)
-                ? ability.IconAddress
-                : ability.EquipmentPreviewAddress;
-            if (string.Equals(
-                    previewAddress,
-                    ability.IconAddress,
-                    StringComparison.Ordinal))
-            {
-                if (icon != null)
-                {
-                    _abilityPreviews[ability.Id] = icon;
-                }
-
-                return;
-            }
-
-            Sprite preview = await LoadAbilitySpriteAsync(
-                previewAddress,
-                cancellationToken);
-            if (preview != null)
-            {
-                _abilityPreviews[ability.Id] = preview;
-            }
+            // Один спрайт используется в списке, превью Hero и окне улучшения.
+            if (icon != null) _abilityPreviews[ability.Id] = icon;
         }
 
         private async Task<Sprite> LoadAbilitySpriteAsync(
@@ -646,11 +626,15 @@ namespace LostCyberHamster.UI
             _displayedAbilityLevel = SuperAttackLevelResolver.GetLevel(GameDataManager.PlayerData, ability.Id);
             _displayedAbilityProfile = GameDataManager.ProfileId;
             _displayedAbilityGeneration = GameDataManager.Generation;
-            AbilityPreviewDescription.text = SuperAttackDescriptionFormatter.Roman(_displayedAbilityLevel) + ": " +
-                SuperAttackDescriptionFormatter.Describe(ability, _displayedAbilityLevel);
+            _contentRoot.Q<Label>("hero-ability-name").text = Localize(ability.NameLocalizationKey);
+            _contentRoot.Q<Label>("hero-ability-tier").text = SuperAttackDescriptionFormatter.Roman(_displayedAbilityLevel);
+            AbilityPreviewDescription.text = SuperAttackDescriptionFormatter.Describe(ability, _displayedAbilityLevel);
             AbilityUpgradeButton.style.display = DisplayStyle.Flex;
-            AbilityUpgradeButton.text = SuperAttackDescriptionFormatter.Upgrade(ability, _displayedAbilityLevel);
-            AbilityUpgradeButton.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, _displayedAbilityLevel));
+            bool maximum = _displayedAbilityLevel >= SuperAttackLevelResolver.MaximumLevel;
+            AbilityUpgradeButton.text = Localize(maximum ? "progression_maximum" : "retention_upgrade");
+            AbilityUpgradeButton.EnableInClassList("hero-ability-upgrade--maximum", maximum);
+            _contentRoot.Q<Label>("hero-upgrade-price").style.display = maximum ? DisplayStyle.None : DisplayStyle.Flex;
+            AbilityUpgradeButton.SetEnabled(true);
             if (_abilityPreviews.TryGetValue(ability.Id, out Sprite preview))
             {
                 AbilityPreviewImage.style.backgroundImage =
@@ -663,20 +647,23 @@ namespace LostCyberHamster.UI
 
             bool isActive =
                 SuperAttackService.ActiveSuperAttackId == ability.Id;
-            AbilitySelectButton.text = Localize("equipment_equip");
-            AbilitySelectButton.style.display = isActive
-                ? DisplayStyle.None
-                : DisplayStyle.Flex;
+            AbilitySelectButton.text = Localize(isActive ? "equipment_equipped" : "equipment_equip");
+            AbilitySelectButton.style.display = DisplayStyle.Flex;
+            AbilitySelectButton.SetEnabled(!isActive);
+            AbilitySelectButton.EnableInClassList("hero-select-button--selected", isActive);
+        }
+
+        /// <summary>Обновляет текущую способность после покупки, сохраняя вкладку и выбор игрока.</summary>
+        public void RefreshAfterUpgrade()
+        {
+            ShowSelectedAbility();
         }
 
         private void OnAbilityUpgradeClicked(ClickEvent clickEvent)
         {
             if (_activeTab != HeroTab.Abilities || _displayedAbilityProfile != GameDataManager.ProfileId ||
                 _displayedAbilityGeneration != GameDataManager.Generation) return;
-            AbilityUpgradeButton.SetEnabled(false);
-            try { CharacterDevelopmentService.TryUpgradeSuperAttack(_selectedAbilityId, _displayedAbilityLevel); }
-            catch (Exception exception) { Debug.LogException(exception); }
-            ShowSelectedAbility();
+            _showUpgrade?.Invoke(_selectedAbilityId);
         }
 
         private void OnAbilitySelectClicked(ClickEvent clickEvent)

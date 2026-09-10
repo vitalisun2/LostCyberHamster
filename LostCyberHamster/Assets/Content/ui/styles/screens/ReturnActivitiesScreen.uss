@@ -1,21 +1,59 @@
-.return-screen { flex-grow: 1; padding: 16px 26px; }
-.return-header { flex-direction: row; align-items: center; margin-bottom: 12px; }
-.return-title { flex-grow: 1; font-size: 30px; color: white; -unity-font-style: bold; -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: black; }
-.return-scroll { flex-grow: 1; min-height: 0; }
-.return-balances { flex-direction: row; justify-content: center; height: 58px; margin-bottom: 6px; }
-.return-columns { flex-direction: row; align-items: stretch; }
-.return-panel { flex-grow: 1; flex-shrink: 1; width: 0; min-width: 0; padding: 22px; margin: 5px; background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60px; -unity-slice-right: 60px; -unity-slice-top: 60px; -unity-slice-bottom: 60px; }
-.return-panel--selected { border-left-width: 4px; border-left-color: rgb(239, 176, 40); }
-.return-heading { font-size: 23px; -unity-font-style: bold; white-space: normal; color: rgb(29, 41, 47); margin-bottom: 10px; }
-.return-text { font-size: 17px; white-space: normal; color: rgb(29, 41, 47); margin-bottom: 8px; }
-.return-days { flex-direction: row; margin-bottom: 8px; }
-.return-day { flex-grow: 1; flex-shrink: 1; width: 0; min-width: 0; min-height: 88px; font-size: 16px; white-space: normal; -unity-text-align: middle-center; color: rgb(29, 41, 47); background-color: rgb(218, 225, 224); border-radius: 12px; margin: 3px; padding: 6px; }
-.return-day--earned { background-color: rgb(190, 223, 180); }
-.return-day--final { border-width: 3px; border-color: rgb(225, 167, 40); }
-.return-button { min-height: 48px; padding: 8px 20px; font-size: 18px; white-space: normal; color: rgb(25, 35, 42); background-color: rgb(241, 234, 211); border-radius: 12px; border-width: 2px; border-color: rgb(30, 41, 45); }
-.return-button--primary { background-color: rgb(255, 199, 55); -unity-font-style: bold; }
-.return-button:disabled { opacity: 0.55; }
-.return-pending { margin-top: 12px; }
-.return-week-progress { margin-top: 12px; }
-.return-footer { font-size: 16px; white-space: normal; -unity-text-align: middle-center; color: white; -unity-text-outline-width: 1px; -unity-text-outline-color: black; margin-top: 8px; }
-.return-recover { margin: 10px; }
+.return-viewport { width: 100%; height: 100%; flex-grow: 1; justify-content: center; align-items: center; background-color: transparent; }
+.return-scale-frame { position: relative; width: 1844px; height: 853px; flex-shrink: 0; }
+.return-screen { position: absolute; width: 1844px; height: 853px; transform-origin: 0 0; }
+#return-screen .unity-text-element { color: rgb(13,32,48); -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; -unity-text-outline-width: 0; white-space: normal; }
+.return-balances { position: absolute; top: 6px; left: 96px; flex-direction: row; }
+.return-paper { position: absolute; left: 302px; top: 105px; width: 1240px; height: 643px; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.7; }
+#return-screen .return-title { position: absolute; left: 225px; right: 225px; top: -26px; height: 128px; margin: 0; padding: 10px 22px; font-size: 57px; color: rgb(255,218,78); -unity-text-outline-width: 3px; -unity-text-outline-color: black; -unity-text-align: middle-center; background-image: url("/Assets/Content/ui/sprites/shared/retention/ribbon_activity_title.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 170; -unity-slice-right: 170; -unity-slice-top: 45; -unity-slice-bottom: 45; -unity-slice-scale: 0.36; }
+#return-screen .return-close { position: absolute; right: 36px; top: 28px; width: 67px; height: 68px; margin: 0; padding: 0; color: white; font-size: 60px; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; }
+.return-cycle-panel,.return-week-panel { position: absolute; left: 40px; right: 40px; top: 113px; height: 315px; }
+#return-screen .return-heading { margin: 0; height: 42px; font-size: 33px; -unity-text-align: middle-center; }
+#return-screen .return-rule { margin: 0; height: 42px; font-size: 24px; -unity-text-align: middle-center; }
+.return-days { position: absolute; left: 0; right: 0; top: 91px; height: 225px; flex-direction: row; justify-content: space-between; }
+.return-day { width: 150px; height: 225px; align-items: center; }
+#return-screen .return-day__title { height: 32px; margin: 0 0 5px; font-size: 23px; -unity-text-align: middle-center; }
+.return-day__stamp { position: relative; width: 123px; height: 123px; background-image: url("/Assets/Content/ui/sprites/shared/retention/frame_reward_stamp.png"); -unity-background-scale-mode: stretch-to-fill; }
+.return-day__stamp--earned { -unity-background-image-tint-color: rgb(182,226,152); }
+.return-day__stamp--ready { -unity-background-image-tint-color: rgb(255,214,72); scale: 1.05 1.05; }
+.return-day__coin { position: absolute; left: 23px; top: 22px; width: 78px; height: 80px; background-image: url("/Assets/Content/ui/sprites/shared/hud_coins_icon.png"); -unity-background-scale-mode: scale-to-fit; }
+.return-day__gem { position: absolute; right: 3px; bottom: 5px; width: 62px; height: 62px; background-image: url("/Assets/Content/ui/sprites/shared/hud_gems_icon.png"); -unity-background-scale-mode: scale-to-fit; }
+#return-screen .return-day__amount { width: 158px; height: 63px; margin: 9px 0 0; font-size: 22px; -unity-text-align: upper-center; }
+#return-screen .return-day__check { position: absolute; right: -8px; bottom: -8px; width: 43px; height: 43px; margin: 0; background-color: rgb(58,126,32); color: white; font-size: 35px; border-width: 2px; border-color: rgb(20,62,22); border-radius: 22px; -unity-text-align: middle-center; }
+#return-screen .return-day__ready { position: absolute; left: -6px; right: -6px; bottom: -4px; height: 37px; margin: 0; background-color: rgb(255,255,232); color: rgb(39,109,39); font-size: 23px; border-width: 3px; border-color: rgb(39,109,39); border-radius: 5px; -unity-text-align: middle-center; rotate: -7deg; }
+.return-reward { position: absolute; left: 44px; right: 44px; top: 447px; height: 150px; border-top-width: 1px; border-top-color: rgb(146,139,108); }
+.return-pouch { position: absolute; left: 120px; top: 13px; width: 190px; height: 137px; background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_coin_pouch.png"); -unity-background-scale-mode: scale-to-fit; }
+#return-screen .return-reward-title { position: absolute; left: 345px; top: 16px; width: 300px; height: 40px; margin: 0; font-size: 29px; -unity-text-align: middle-center; }
+#return-screen .return-reward-amount { position: absolute; left: 320px; top: 62px; width: 350px; height: 56px; margin: 0; font-size: 36px; -unity-text-align: middle-center; }
+#return-screen .return-pending { position: absolute; left: 330px; top: 116px; width: 325px; height: 25px; margin: 0; font-size: 20px; -unity-text-align: middle-center; }
+#return-screen .return-action { position: absolute; right: 80px; top: 42px; width: 357px; height: 91px; margin: 0; padding: 6px 14px; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 18; -unity-slice-right: 18; -unity-slice-top: 17; -unity-slice-bottom: 17; color: white; font-size: 44px; -unity-text-outline-width: 2px; -unity-text-outline-color: black; }
+#return-screen .return-action:disabled { opacity: 0.55; }
+#return-screen .return-status { position: absolute; left: 62px; right: 62px; top: 596px; height: 34px; margin: 0; font-size: 21px; -unity-text-align: middle-center; }
+#return-screen .return-calendar { position: absolute; left: 330px; right: 330px; top: 769px; height: 45px; margin: 0; font-size: 21px; color: white; -unity-text-outline-width: 1px; -unity-text-outline-color: black; -unity-text-align: middle-center; }
+#return-screen .return-recover { position: absolute; left: 175px; right: 175px; top: 650px; min-height: 58px; font-size: 22px; white-space: normal; }
+#return-screen .return-week-deadline { margin: 0; height: 43px; font-size: 27px; -unity-text-align: middle-center; }
+.return-week-columns { position: absolute; left: 110px; right: 110px; top: 61px; height: 195px; flex-direction: row; justify-content: space-between; }
+.return-week-card { width: 440px; height: 195px; padding: 13px 23px; background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60; -unity-slice-right: 60; -unity-slice-top: 60; -unity-slice-bottom: 60; }
+#return-screen .return-week-heading { margin: 0; height: 39px; font-size: 28px; -unity-text-align: middle-center; }
+#return-screen .return-week-count { margin: 0; height: 91px; font-size: 67px; -unity-text-align: middle-center; }
+.return-progress { height: 29px; padding: 5px; border-width: 2px; border-color: rgb(18,28,31); border-radius: 16px; background-color: rgb(36,52,60); }
+.return-progress-fill { height: 100%; border-radius: 9px; background-image: url("/Assets/Content/ui/sprites/shared/progress_fill_blue.png"); -unity-background-scale-mode: stretch-to-fill; }
+#return-screen .return-week-hint { position: absolute; left: 65px; right: 65px; top: 270px; height: 44px; margin: 0; font-size: 28px; -unity-text-align: middle-center; }
+
+#return-screen .return-balances .unity-text-element { color: white; -unity-text-outline-width: 1px; -unity-text-outline-color: black; }
+#return-screen .return-title { -unity-text-outline-width: 1px; }
+#return-screen .return-action { -unity-text-outline-width: 1px; }
+.return-week-columns { left: 26px; right: 26px; top: 62px; height: 212px; flex-direction: column; }
+.return-week-card { position: relative; width: 100%; height: 100px; padding: 0; background-image: none; background-color: rgba(255,249,222,0.48); border-width: 2px; border-radius: 18px; border-color: rgb(187,161,106); }
+.return-week-icon { position: absolute; left: 15px; top: 5px; width: 88px; height: 88px; -unity-background-scale-mode: scale-to-fit; }
+.return-week-icon--wins { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_victory_stamp.png"); }
+.return-week-icon--days { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_calendar.png"); }
+#return-screen .return-week-heading { position: absolute; left: 119px; top: 8px; width: 295px; height: 80px; font-size: 28px; -unity-text-align: middle-left; }
+#return-screen .return-week-count { position: absolute; right: 18px; top: 8px; width: 148px; height: 80px; font-size: 42px; }
+.return-week-slots { position: absolute; left: 428px; top: 19px; height: 60px; width: 374px; flex-direction: row; align-items: center; }
+#return-screen .return-week-slot { width: 57px; height: 57px; margin: 0 9px 0 0; border-width: 2px; border-radius: 10px; border-color: rgb(145,145,127); background-color: rgba(156,175,183,0.18); color: white; font-size: 37px; -unity-text-align: middle-center; }
+#return-screen .return-week-slot--complete { border-color: rgb(21,71,108); background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; -unity-slice-scale: 0.6; }
+#return-screen .return-week-hint { top: 281px; height: 37px; font-size: 26px; }
+#return-screen.return-screen--week .return-title { background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; color: rgb(13,32,48); -unity-text-outline-width: 0; }
+#return-screen.return-screen--recovery .return-reward { display: none; }
+#return-screen.return-screen--recovery .return-status { top: 451px; height: 101px; left: 110px; right: 110px; font-size: 24px; }
+#return-screen.return-screen--recovery .return-recover { top: 562px; left: 260px; right: 260px; height: 65px; margin: 0; padding: 4px 18px; color: white; font-size: 23px; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; }

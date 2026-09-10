@@ -110,11 +110,14 @@ namespace LostCyberHamster.UI
 
         protected override ScreenLayout CreateLayout(VisualElement content)
         {
-            return new ScreenLayout(content.Q<VisualElement>("homescreen"));
+            return ScreenLayout.Fit(content.Q("home-viewport"), content.Q("home-scale-frame"),
+                content.Q("homescreen"), new Vector2(1844f, 853f));
         }
 
         protected override void BindView()
         {
+            _buttonStart.text = LocalizationManager.GetLocalizedString("retention_play");
+            _buttonSelectLevel.text = LocalizationManager.GetLocalizedString("retention_select_level");
             RefreshExperiencePanel();
         }
 

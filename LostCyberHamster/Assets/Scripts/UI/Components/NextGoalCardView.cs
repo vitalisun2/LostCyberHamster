@@ -21,6 +21,7 @@ namespace LostCyberHamster.UI
         private readonly Button _primary;
         private readonly Button _dismiss;
         private readonly List<VisualElement> _observed = new List<VisualElement>(6);
+        private readonly VisualElement _homeSlot;
         private readonly VisualElement _homeSelect;
         private readonly VisualElement _homeNavigation;
         private readonly VisualElement _homeActivities;
@@ -43,6 +44,7 @@ namespace LostCyberHamster.UI
         {
             // Сохраняем опорные элементы уже построенного экрана.
             _host = host ?? throw new ArgumentNullException(nameof(host));
+            _homeSlot = host.Q("home-goal-slot");
             _homeSelect = host.Q("btn_select-level");
             _homeNavigation = host.Q(className: "home-navigation");
             _homeActivities = host.Q("home-activities");
@@ -114,6 +116,7 @@ namespace LostCyberHamster.UI
                 Observe(_host);
                 Observe(_host.Q("select-level-design"));
                 Observe(_host.Q(className: "game-result-modal__design"));
+                Observe(_homeSlot);
                 Observe(_homeSelect);
                 Observe(_homeNavigation);
                 Observe(_homeActivities);
@@ -129,30 +132,16 @@ namespace LostCyberHamster.UI
             if (!Usable(safe)) return SetVisible(false);
             bool home = _placement == NextGoalCardPlacement.Home;
             float width = home ? 480f : 360f;
-            float height = home ? 188f : 330f;
+            float height = home ? 320f : 330f;
             float scale;
             Rect slot;
             if (home)
             {
-                // Домашняя цель занимает только правый промежуток над нижней навигацией.
-                var select = _homeSelect;
-                var navigation = _homeNavigation;
-                if (!Visible(select) || !Visible(navigation)) return SetVisible(false);
-                Rect selectRect = LocalRect(select);
-                Rect navRect = LocalRect(navigation);
-                float basis = Mathf.Min(safe.width / ArtboardWidth, safe.height / ArtboardHeight);
-                float gap = 10f * basis;
-                float left = safe.center.x + gap;
-                var activities = _homeActivities;
-                if (Visible(activities)) left = Mathf.Max(left, LocalRect(activities).xMax + gap);
-                slot = Rect.MinMaxRect(left, selectRect.yMax + gap, safe.xMax - gap,
-                    Mathf.Min(safe.yMax, navRect.yMin) - gap);
-                if (!Usable(slot)) return SetVisible(false);
-                scale = Mathf.Min(basis, Mathf.Min(slot.width / width, slot.height / height));
-                if (scale < basis * .7f) return SetVisible(false);
-                float x = Mathf.Clamp(selectRect.center.x - width * scale / 2f,
-                    slot.xMin, slot.xMax - width * scale);
-                slot = new Rect(x, slot.yMin, width * scale, height * scale);
+                // Цель занимает отдельный левый слот, центральные действия сохраняют положение.
+                if (!Visible(_homeSlot)) return SetVisible(false);
+                slot = LocalRect(_homeSlot);
+                scale = Mathf.Min(slot.width / width, slot.height / height);
+                slot = new Rect(slot.center.x - width * scale / 2f, slot.yMin, width * scale, height * scale);
             }
             else
             {

@@ -30,10 +30,14 @@
                         </ui:VisualElement>
                         <ui:VisualElement name="hero-abilities-page" class="hero-page hero-page--abilities">
                             <ui:VisualElement class="hero-preview-panel">
+                                <ui:Label name="hero-ability-tier" class="hero-ability-tier" picking-mode="Ignore" />
+                                <ui:Label name="hero-ability-name" class="hero-ability-name" picking-mode="Ignore" />
                                 <ui:VisualElement name="hero-ability-preview-image" class="hero-ability-preview-image" picking-mode="Ignore" />
                                 <ui:Label name="hero-ability-preview-description" class="hero-ability-description" picking-mode="Ignore" />
                                 <ui:Button name="hero-ability-select" class="hero-select-button" />
-                                <ui:Button name="hero-ability-upgrade" class="hero-ability-upgrade" />
+                                <ui:Button name="hero-ability-upgrade" class="hero-ability-upgrade">
+                                    <ui:Label name="hero-upgrade-price" text="★ 1" class="hero-upgrade-price" picking-mode="Ignore" />
+                                </ui:Button>
                             </ui:VisualElement>
                             <ui:ScrollView name="hero-ability-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="hero-slots-scroll">
                                 <ui:VisualElement name="hero-ability-slots" class="hero-slots" />

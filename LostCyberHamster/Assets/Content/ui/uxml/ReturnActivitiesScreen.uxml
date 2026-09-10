@@ -1,41 +1,47 @@
-<engine:UXML xmlns:engine="UnityEngine.UIElements" editor-extension-mode="False">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
     <Style src="../styles/screens/ReturnActivitiesScreen.uss" />
-    <engine:VisualElement name="return-screen" class="return-screen">
-        <engine:VisualElement class="return-header">
-            <engine:Button name="return-back" class="return-button" />
-            <engine:Label name="return-title" class="return-title" />
-            <engine:Button name="return-play" class="return-button return-button--primary" />
-        </engine:VisualElement>
-        <engine:VisualElement class="return-balances">
-            <LostCyberHamster.UI.SharedCoinsButton />
-            <LostCyberHamster.UI.SharedGemsButton />
-        </engine:VisualElement>
-        <engine:ScrollView class="return-scroll">
-            <engine:VisualElement class="return-columns">
-                <engine:VisualElement name="return-cycle-panel" class="return-panel">
-                    <engine:Label name="return-cycle-title" class="return-heading" />
-                    <engine:Label name="return-cycle-rule" class="return-text" />
-                    <engine:Label name="return-cycle-progress" class="return-text" />
-                    <engine:VisualElement name="return-days-first" class="return-days" />
-                    <engine:VisualElement name="return-days-second" class="return-days" />
-                    <engine:Label name="return-cycle-pending" class="return-text return-pending" />
-                    <engine:Button name="return-cycle-claim" class="return-button return-button--primary" />
-                </engine:VisualElement>
-                <engine:VisualElement name="return-week-panel" class="return-panel">
-                    <engine:Label name="return-week-title" class="return-heading" />
-                    <engine:Label name="return-week-rule" class="return-text" />
-                    <engine:Label name="return-week-progress" class="return-heading return-week-progress" />
-                    <engine:Label name="return-week-reward" class="return-heading" />
-                    <engine:Label name="return-week-deadline" class="return-text" />
-                    <engine:Label name="return-week-unreachable" class="return-text" />
-                    <engine:Label name="return-next-week" class="return-text" />
-                    <engine:Label name="return-week-pending" class="return-text return-pending" />
-                    <engine:Button name="return-week-claim" class="return-button return-button--primary" />
-                </engine:VisualElement>
-            </engine:VisualElement>
-            <engine:Label name="return-calendar" class="return-footer" />
-            <engine:Label name="return-status" class="return-footer" />
-            <engine:Button name="return-recover" class="return-button return-recover" />
-        </engine:ScrollView>
-    </engine:VisualElement>
-</engine:UXML>
+    <ui:VisualElement name="return-viewport" class="return-viewport">
+      <ui:VisualElement name="return-scale-frame" class="return-scale-frame">
+        <ui:VisualElement name="return-screen" class="return-screen">
+            <ui:VisualElement class="return-balances"><LostCyberHamster.UI.SharedCoinsButton /><LostCyberHamster.UI.SharedGemsButton /></ui:VisualElement>
+            <ui:VisualElement class="return-paper">
+                <ui:Label name="return-title" class="return-title" picking-mode="Ignore" />
+                <ui:Button name="return-back" text="×" class="return-close" />
+                <ui:VisualElement name="return-cycle-panel" class="return-cycle-panel" picking-mode="Ignore">
+                    <ui:Label name="return-cycle-progress" class="return-heading" />
+                    <ui:Label name="return-cycle-rule" class="return-rule" />
+                    <ui:VisualElement name="return-days-first" class="return-days" />
+                </ui:VisualElement>
+                <ui:VisualElement name="return-week-panel" class="return-week-panel" picking-mode="Ignore">
+                    <ui:Label name="return-week-deadline" class="return-week-deadline" />
+                    <ui:VisualElement class="return-week-columns">
+                        <ui:VisualElement class="return-week-card">
+                            <ui:VisualElement class="return-week-icon return-week-icon--wins" picking-mode="Ignore" />
+                            <ui:Label name="return-wins-title" class="return-week-heading" />
+                            <ui:Label name="return-wins-count" class="return-week-count" />
+                            <ui:VisualElement name="return-wins-slots" class="return-week-slots" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="return-week-card">
+                            <ui:VisualElement class="return-week-icon return-week-icon--days" picking-mode="Ignore" />
+                            <ui:Label name="return-days-title" class="return-week-heading" />
+                            <ui:Label name="return-days-count" class="return-week-count" />
+                            <ui:VisualElement name="return-days-slots" class="return-week-slots" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="return-week-hint" class="return-week-hint" />
+                </ui:VisualElement>
+                <ui:VisualElement class="return-reward">
+                    <ui:VisualElement class="return-pouch" picking-mode="Ignore" />
+                    <ui:Label name="return-reward-title" class="return-reward-title" picking-mode="Ignore" />
+                    <ui:Label name="return-reward-amount" class="return-reward-amount" picking-mode="Ignore" />
+                    <ui:Label name="return-pending" class="return-pending" picking-mode="Ignore" />
+                    <ui:Button name="return-action" class="return-action" />
+                </ui:VisualElement>
+                <ui:Label name="return-status" class="return-status" picking-mode="Ignore" />
+                <ui:Button name="return-recover" class="return-recover" />
+            </ui:VisualElement>
+            <ui:Label name="return-calendar" class="return-calendar" picking-mode="Ignore" />
+        </ui:VisualElement>
+      </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

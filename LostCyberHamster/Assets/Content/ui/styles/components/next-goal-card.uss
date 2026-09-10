@@ -157,62 +157,17 @@
 #next-goal-card .next-goal-card__action:active,
 #next-goal-card .next-goal-card__dismiss:active { opacity: 0.65; }
 
-#next-goal-card.next-goal-card--home .next-goal-card__header {
-    left: 42px;
-    right: 100px;
-    top: 0;
-    height: 38px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__heading {
-    left: 34px;
-    top: 1px;
-    height: 33px;
-    font-size: 21px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__icon {
-    left: 14px;
-    top: -9px;
-    width: 60px;
-    height: 58px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__text {
-    left: 24px;
-    right: 100px;
-    top: 40px;
-    height: 64px;
-    font-size: 22px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__detail {
-    left: 22px;
-    right: auto;
-    top: 108px;
-    width: 210px;
-    height: 64px;
-    font-size: 16px;
-}
-#next-goal-card.next-goal-card--home.next-goal-card--progress .next-goal-card__detail {
-    top: 127px;
-    height: 45px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__progress {
-    left: 22px;
-    right: auto;
-    top: 112px;
-    width: 210px;
-    height: 14px;
-    padding: 2px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__action {
-    left: 248px;
-    right: 18px;
-    top: 111px;
-    height: 63px;
-    padding: 3px 9px 9px;
-    font-size: 18px;
-}
-#next-goal-card.next-goal-card--home .next-goal-card__dismiss {
-    top: 1px;
-    right: 8px;
-    height: 74px;
-    font-size: 58px;
-}
+
+#next-goal-card.next-goal-card--home { background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.4; }
+#next-goal-card.next-goal-card--home .next-goal-card__header { left: 46px; right: 90px; top: 26px; height: 45px; }
+#next-goal-card.next-goal-card--home .next-goal-card__heading { left: 48px; right: 6px; top: 2px; height: 40px; font-size: 24px; }
+#next-goal-card.next-goal-card--home .next-goal-card__icon { left: 24px; top: 20px; width: 76px; height: 76px; }
+#next-goal-card.next-goal-card--home .next-goal-card__text { left: 30px; right: 30px; top: 99px; height: 76px; font-size: 30px; }
+#next-goal-card.next-goal-card--home .next-goal-card__detail { left: 26px; right: 26px; top: 173px; height: 45px; font-size: 24px; }
+#next-goal-card.next-goal-card--home.next-goal-card--progress .next-goal-card__text { top: 88px; height: 74px; }
+#next-goal-card.next-goal-card--home.next-goal-card--progress .next-goal-card__detail { top: 181px; height: 43px; }
+#next-goal-card.next-goal-card--home .next-goal-card__progress { left: 50px; right: 50px; top: 165px; height: 16px; }
+#next-goal-card.next-goal-card--home .next-goal-card__action { left: 80px; right: 80px; top: 229px; height: 65px; font-size: 27px; }
+#next-goal-card.next-goal-card--home .next-goal-card__dismiss { top: 21px; right: 24px; width: 61px; height: 64px; font-size: 52px; }
+
+#next-goal-card.next-goal-card--home .next-goal-card__action { -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; -unity-text-outline-width: 1px; }

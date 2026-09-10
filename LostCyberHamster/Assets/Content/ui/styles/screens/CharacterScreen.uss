@@ -361,12 +361,15 @@
     background-color: rgb(74, 126, 156); border-radius: 16px;
     color: white; font-size: 26px; -unity-font-style: bold;
 }
-.hero-ability-preview-image { top: 48px; height: 177px; }
-.hero-ability-description { top: 229px; height: 88px; font-size: 22px; }
-.hero-ability-upgrade {
-    position: absolute; left: 8%; bottom: 82px; width: 84%; height: 74px;
-    background-color: rgb(74, 126, 156); border-radius: 12px;
-    color: white; font-size: 18px; white-space: normal; -unity-text-align: middle-center;
-}
-.hero-ability-upgrade:disabled { opacity: 0.75; }
-#hero-ability-select { bottom: 16px; height: 60px; }
+
+#hero-screen .hero-ability-tier { position: absolute; left: 26px; top: 18px; width: 58px; height: 60px; margin: 0; border-width: 3px; border-color: rgb(22,24,24); border-radius: 30px; background-image: url("/Assets/Content/ui/sprites/shared/next_goal/goal_header.png"); -unity-background-scale-mode: stretch-to-fill; color: rgb(13,32,48); font-size: 38px; -unity-text-align: middle-center; }
+#hero-screen .hero-ability-name { position: absolute; left: 97px; right: 18px; top: 14px; height: 73px; margin: 0; color: rgb(13,32,48); font-size: 30px; white-space: normal; -unity-text-align: middle-left; }
+.hero-ability-preview-image { top: 82px; height: 180px; }
+#hero-screen .hero-ability-description { left: 6%; width: 88%; top: 268px; height: 96px; font-size: 23px; color: rgb(13,32,48); }
+#hero-screen .hero-ability-upgrade { position: absolute; left: 5%; bottom: 35px; width: 54%; height: 78px; margin: 0; padding: 0 70px 0 13px; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 18; -unity-slice-right: 18; -unity-slice-top: 17; -unity-slice-bottom: 17; color: rgb(13,32,48); font-size: 26px; white-space: normal; -unity-text-align: middle-center; }
+#hero-screen .hero-ability-upgrade--maximum { padding-right: 13px; }
+#hero-screen .hero-upgrade-price { position: absolute; right: 12px; top: 15px; height: 47px; margin: 0; color: rgb(13,32,48); font-size: 29px; -unity-text-align: middle-center; }
+#hero-screen #hero-ability-select { left: 63%; bottom: 39px; width: 32%; height: 70px; translate: 0 0; font-size: 23px; padding: 0 7px; }
+#hero-screen .hero-select-button--selected { background-image: none; background-color: rgb(212,231,191); border-width: 2px; border-radius: 14px; border-color: rgb(50,111,35); color: rgb(24,48,22); opacity: 1; }
+
+#hero-abilities-page .hero-slot__name { width: auto; right: 110px; font-size: 28px; }

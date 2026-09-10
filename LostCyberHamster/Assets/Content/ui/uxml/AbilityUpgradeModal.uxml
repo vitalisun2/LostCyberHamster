@@ -1,0 +1,39 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="../styles/components/ability-upgrade.uss" />
+    <ui:VisualElement name="ability-upgrade-viewport" class="ability-upgrade-viewport">
+        <ui:VisualElement name="ability-upgrade-frame" class="ability-upgrade-frame">
+            <ui:VisualElement name="ability-upgrade-design" class="ability-upgrade-design">
+                <ui:VisualElement name="ability-upgrade" class="ability-upgrade">
+                    <ui:Button name="ability-upgrade-close" text="×" class="ability-upgrade-close" />
+                    <ui:VisualElement name="ability-upgrade-icon" class="ability-upgrade-icon" picking-mode="Ignore" />
+                    <ui:Label name="ability-upgrade-title" class="ability-upgrade-title" picking-mode="Ignore" />
+                    <ui:VisualElement name="ability-upgrade-tiers" class="ability-upgrade-tiers" picking-mode="Ignore">
+                        <ui:Label name="ability-current-tier" class="ability-upgrade-tier" />
+                        <ui:Label text="→" class="ability-upgrade-arrow" />
+                        <ui:Label name="ability-next-tier" class="ability-upgrade-tier ability-upgrade-tier--next" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ability-upgrade-comparison" picking-mode="Ignore">
+                        <ui:VisualElement name="ability-current-panel" class="ability-upgrade-column">
+                            <ui:Label name="ability-current-heading" class="ability-upgrade-heading" />
+                            <ui:Label name="ability-current-description" class="ability-upgrade-description" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="ability-next-panel" class="ability-upgrade-column ability-upgrade-column--next">
+                            <ui:Label name="ability-next-heading" class="ability-upgrade-heading" />
+                            <ui:Label name="ability-next-description" class="ability-upgrade-description" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Label name="ability-upgrade-bonus" class="ability-upgrade-bonus" picking-mode="Ignore" />
+                    <ui:VisualElement class="ability-upgrade-actions">
+                        <ui:VisualElement name="ability-upgrade-price" class="ability-upgrade-price" picking-mode="Ignore">
+                            <ui:VisualElement class="ability-upgrade-star" />
+                            <ui:Label name="ability-upgrade-cost" />
+                        </ui:VisualElement>
+                        <ui:Button name="ability-upgrade-confirm" class="ability-upgrade-confirm" />
+                    </ui:VisualElement>
+                    <ui:Label name="ability-upgrade-owned" class="ability-upgrade-owned" picking-mode="Ignore" />
+                    <ui:Label name="ability-upgrade-status" class="ability-upgrade-status" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

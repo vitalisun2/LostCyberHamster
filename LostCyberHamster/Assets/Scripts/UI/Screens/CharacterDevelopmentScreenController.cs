@@ -38,6 +38,7 @@ namespace LostCyberHamster.UI
         private readonly List<Texture2D> _generatedPreviewTextures = new();
         private CancellationTokenSource _abilityIconCancellation;
         private readonly Action _resume;
+        private readonly Action<int> _showUpgrade;
         private DevelopmentReturnButton _returnButton;
         private NextGoalCandidate _nextGoalForScroll;
         private IVisualElementScheduledItem _nextGoalScrollSchedule;
@@ -73,10 +74,11 @@ namespace LostCyberHamster.UI
         protected override ScreenEnum _screenAssetName =>
             ScreenEnum.CharacterDevelopmentScreen;
 
-        public CharacterDevelopmentScreenController(UIDocument uiDocument, Action resume = null)
+        public CharacterDevelopmentScreenController(UIDocument uiDocument, Action resume = null, Action<int> showUpgrade = null)
             : base(uiDocument)
         {
             _resume = resume;
+            _showUpgrade = showUpgrade;
         }
 
         protected override string ScreenBackgroundAddress => BackgroundAddress;
@@ -330,42 +332,34 @@ namespace LostCyberHamster.UI
             DevelopmentCardState state)
         {
             int level = SuperAttackLevelResolver.GetLevel(GameDataManager.PlayerData, ability.Id);
-            var card = CreateCard(
-                $"development-ability-card-{ability.Id}",
-                Localize(ability.NameLocalizationKey) + (state == DevelopmentCardState.Unlocked
-                    ? " " + SuperAttackDescriptionFormatter.Roman(level) : string.Empty),
-                state,
-                false,
-                null,
-                CharacterDevelopmentService.CanUnlockSuperAttack(ability.Id),
+            var card = CreateCard($"development-ability-card-{ability.Id}", Localize(ability.NameLocalizationKey),
+                state, false, null, CharacterDevelopmentService.CanUnlockSuperAttack(ability.Id),
                 () => OnUnlockAbilityClicked(ability.Id));
+            card.AddToClassList("development-card--ability");
             if (state != DevelopmentCardState.Unlocked) return card;
-            var description = new Label(SuperAttackDescriptionFormatter.Compact(ability, level) +
-                (level < SuperAttackLevelResolver.MaximumLevel ? "\n→ " + SuperAttackDescriptionFormatter.Compact(ability, level + 1) : string.Empty));
-            description.AddToClassList("development-card__parameters");
-            card.Add(description);
-            var upgrade = new Button { text = SuperAttackDescriptionFormatter.UpgradeAction(level),
-                tooltip = SuperAttackDescriptionFormatter.Upgrade(ability, level) };
-            var profile = GameDataManager.ProfileId;
-            var generation = GameDataManager.Generation;
+
+            // Уровень вынесен в медальон; параметры доступны в общем окне сравнения.
+            var tier = new Label(SuperAttackDescriptionFormatter.Roman(level)) { pickingMode = PickingMode.Ignore };
+            tier.AddToClassList("development-card__tier");
+            card.Q(className: "development-card__node").Add(tier);
+            bool maximum = level >= SuperAttackLevelResolver.MaximumLevel;
+            var upgrade = new Button(() => _showUpgrade?.Invoke(ability.Id));
             upgrade.AddToClassList("development-card__upgrade");
-            upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
-            upgrade.clicked += () =>
+            upgrade.EnableInClassList("development-card__upgrade--maximum", maximum);
+            upgrade.text = Localize(maximum ? "progression_maximum" : "retention_upgrade");
+            if (!maximum)
             {
-                if (profile != GameDataManager.ProfileId || generation != GameDataManager.Generation) return;
-                upgrade.SetEnabled(false);
-                try
-                {
-                    if (CharacterDevelopmentService.TryUpgradeSuperAttack(ability.Id, level)) RefreshAfterUnlock();
-                    else upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                    upgrade.SetEnabled(CharacterDevelopmentService.CanUpgradeSuperAttack(ability.Id, level));
-                }
-            };
+                var cost = new Label("★ 1") { pickingMode = PickingMode.Ignore };
+                cost.AddToClassList("development-card__upgrade-cost");
+                upgrade.Add(cost);
+            }
             card.Add(upgrade);
+
+            // Нажатие на саму способность также открывает описание, покупка выполняется в окне.
+            var details = new Button(() => _showUpgrade?.Invoke(ability.Id));
+            details.AddToClassList("development-card__details");
+            details.tooltip = Localize(ability.NameLocalizationKey);
+            card.Add(details);
             return card;
         }
 
@@ -671,6 +665,9 @@ namespace LostCyberHamster.UI
                 RefreshAfterUnlock();
             }
         }
+
+        /// <summary>Обновляет очки и карточки после подтверждённого улучшения.</summary>
+        public void RefreshAfterUpgrade() => RefreshAfterUnlock();
 
         private async void RefreshAfterUnlock()
         {
