@@ -5,6 +5,7 @@
 ## Карта разделов
 
 - [Unity CLI](#unity-cli)
+- [Галерея UI](#галерея-ui)
 - [Automation Bridge](#automation-bridge)
 - [Diagnostic Log](#diagnostic-log)
 - [Android Device Logs через ngrok + Dropbox](#android-device-logs-через-ngrok--dropbox)
@@ -39,6 +40,20 @@ unity command lch_skins_validate --format json
 - `lch_skins_validate` — проверить skin assets и Addressables.
 
 Test-level скрипты принимают `-Transport Auto|Cli|Bridge`. `Auto` использует CLI первым. Bridge остаётся fallback. Оба пути используют одну очередь и одинаковый `[TEST RESULT]`.
+
+## Галерея UI
+
+[Проектный скилл](../../.agents/skills/unity-ui-gallery/SKILL.md) исследует экраны фичи/flow и использует общий захват Unity и готовый HTML-шаблон. Он переносится через Git и не содержит API игры.
+
+Адаптер этой игры: `tools/ui_gallery/ProjectAdapter.cs` и `Fixtures.cs`. Библиотека основных состояний: `tools/ui_gallery/plans/core.json`. Для запроса выбрать нужные кейсы/состояния и сохранить отдельный план в `.temp`; новые UI-кейсы дополнять после проверки текущих контроллеров. DEV и дизайн-разбор — только по запросу.
+
+```powershell
+python .agents/skills/unity-ui-gallery/scripts/gallery.py capture --project LostCyberHamster --adapter tools/ui_gallery/ProjectAdapter.cs tools/ui_gallery/Fixtures.cs --plan .temp/ui-gallery/plan.json --out .temp/ui-gallery/capture --lock-file .worktrees/.integration-lock
+```
+
+Исходное состояние: чистая Bootstrap или Menu сцена, Play Mode остановлен. Адаптер открывает изолированный профиль, вызывает реальные экраны, восстанавливает исходный профиль. Game UI снимается на статичном игровом фоне без запуска мира. Результат: `index.html`, PNG, `manifest.json`, статусы съёмки и восстановления. `capture` останавливается на первом неснятом состоянии и оставляет частичную галерею с отметкой.
+
+Зависимости: Python 3, настроенный Unity CLI/Pipeline, Newtonsoft.Json из Unity packages. C# инструмента лежит вне Assets и выполняется через run_script; продуктовая сборка его не включает.
 
 ## Automation Bridge fallback
 

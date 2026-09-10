@@ -1,0 +1,32 @@
+// Working read-only adapter: captures the initially visible UI Toolkit document.
+// Project adapters can replace it with their own screen/data preparation.
+namespace UiGallery
+{
+    using System;
+    using System.Threading.Tasks;
+    using UnityEngine;
+    using UnityEngine.UIElements;
+    public sealed class GalleryProjectAdapter : IProjectAdapter
+    {
+        public bool RestorationVerified => true; // This adapter changes no project state.
+        public async Task Begin(Context context)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                if (!Application.isPlaying) throw new OperationCanceledException();
+                context.Document = UnityEngine.Object.FindFirstObjectByType<UIDocument>();
+                if (context.Document != null && context.Root.panel != null) return;
+                await Task.Delay(100);
+            }
+            throw new InvalidOperationException("No active UIDocument; supply a project adapter");
+        }
+        public Task Reset(Context context) => Task.CompletedTask;
+        public Task Prepare(Context context, Shot shot)
+        {
+            if (shot.fixture != "current") throw new ArgumentException("This adapter supports only 'current'");
+            shot.method = "Текущий экран UI Toolkit; данные и переходы не изменялись";
+            return Task.CompletedTask;
+        }
+        public void Restore(Context context) { }
+    }
+}

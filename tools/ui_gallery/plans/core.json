@@ -1,0 +1,411 @@
+{
+  "title": "Основные экраны — библиотека состояний",
+  "cases": [
+    {
+      "id": "daily",
+      "title": "Ежедневные задания",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs",
+      "states": [
+        {
+          "id": "empty",
+          "title": "Без прогресса",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "empty"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "partial",
+          "title": "Частичный прогресс",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "partial"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "ready",
+          "title": "Награда доступна",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "ready"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "claimed",
+          "title": "Награда получена",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "claimed"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "story",
+      "title": "Сюжетные задания",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs",
+      "states": [
+        {
+          "id": "empty",
+          "title": "Без прогресса",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "empty"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "partial",
+          "title": "Частичный прогресс",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "partial"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "ready",
+          "title": "Награда доступна",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "ready"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "claimed",
+          "title": "Награда получена",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "claimed"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "skills",
+      "title": "Развитие способностей",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/CharacterDevelopmentScreenController.cs",
+      "states": [
+        {
+          "id": "locked",
+          "title": "Закрыто",
+          "fixture": "skills",
+          "data": {
+            "mode": "locked",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tiers",
+          "title": "Ступени I / II / III",
+          "fixture": "skills",
+          "data": {
+            "mode": "tiers",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "no-points",
+          "title": "Нет очков",
+          "fixture": "skills",
+          "data": {
+            "mode": "no-points",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "level-gate",
+          "title": "Ограничение по уровню",
+          "fixture": "skills",
+          "data": {
+            "mode": "level-gate",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "max",
+          "title": "Максимум",
+          "fixture": "skills",
+          "data": {
+            "mode": "max",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "title": "Экипировка способности",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/CharacterScreenController.cs",
+      "states": [
+        {
+          "id": "locked",
+          "title": "Закрыто",
+          "fixture": "hero",
+          "data": {
+            "mode": "locked",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tiers",
+          "title": "Ступени I / II / III",
+          "fixture": "hero",
+          "data": {
+            "mode": "tiers",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "no-points",
+          "title": "Нет очков",
+          "fixture": "hero",
+          "data": {
+            "mode": "no-points",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "level-gate",
+          "title": "Ограничение по уровню",
+          "fixture": "hero",
+          "data": {
+            "mode": "level-gate",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "max",
+          "title": "Максимум",
+          "fixture": "hero",
+          "data": {
+            "mode": "max",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "levelup",
+      "title": "Повышение уровня",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/LevelUpModalController.cs",
+      "states": [
+        {
+          "id": "first",
+          "title": "Первое повышение",
+          "fixture": "levelup",
+          "data": {
+            "mode": "first"
+          },
+          "expected": [
+            "level-up-title",
+            "level-up-transition"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "normal",
+          "title": "Обычное повышение",
+          "fixture": "levelup",
+          "data": {
+            "mode": "normal"
+          },
+          "expected": [
+            "level-up-title",
+            "level-up-transition"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "multi",
+          "title": "Несколько уровней",
+          "fixture": "levelup",
+          "data": {
+            "mode": "multi"
+          },
+          "expected": [
+            "level-up-title",
+            "level-up-transition"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "win",
+      "title": "Победа",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/WinModalController.cs",
+      "states": [
+        {
+          "id": "no-xp",
+          "title": "Без XP",
+          "fixture": "win",
+          "data": {
+            "xp": 0,
+            "score": 1200,
+            "stars": 1
+          },
+          "expected": [
+            "win-modal",
+            "win_run_score"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "xp",
+          "title": "С XP",
+          "fixture": "win",
+          "data": {
+            "xp": 20,
+            "score": 2400,
+            "stars": 3
+          },
+          "expected": [
+            "win-modal",
+            "win_run_score"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "pause",
+      "title": "Пауза",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/PauseModalController.cs",
+      "states": [
+        {
+          "id": "normal",
+          "title": "Обычная",
+          "fixture": "pause",
+          "data": {
+            "mode": "normal"
+          },
+          "expected": [
+            "pause-modal",
+            "btn__play"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tutorial",
+          "title": "Обучение",
+          "fixture": "pause",
+          "data": {
+            "mode": "tutorial"
+          },
+          "expected": [
+            "pause-modal",
+            "btn__play"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "lose",
+      "title": "Поражение",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/LoseModalController.cs",
+      "states": [
+        {
+          "id": "live",
+          "title": "Текущее состояние рекламы",
+          "fixture": "lose",
+          "data": {
+            "mode": "live"
+          },
+          "expected": [
+            "lose-modal",
+            "btn__watch-ads"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    }
+  ]
+}
