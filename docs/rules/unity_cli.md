@@ -140,7 +140,7 @@ Test-level run не сохраняет временный test address в Player
 
 Проектные правила сохраняются:
 
-- финальный C# gate остаётся `regenerate_project_files` и `dotnet build --no-restore`;
+- после `regenerate_project_files` и `dotnet build --no-restore` обязателен минимальный запуск игры в Editor до стартового экрана с проверкой новых ошибок Console; затем остановка пробного запуска;
 - Unity recompile, Test Runner и дополнительные проверки запускаются только по явному запросу;
 - Android build идёт через `tools/build/build_android_telegram.ps1`; `-UnityLauncher Auto` предпочитает CLI;
 - CLI не заменяет build manifest, source snapshot, signing и Telegram delivery.

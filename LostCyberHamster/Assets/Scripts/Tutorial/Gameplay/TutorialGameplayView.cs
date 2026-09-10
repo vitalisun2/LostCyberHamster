@@ -357,7 +357,11 @@ namespace Assets.Scripts.Tutorial
             // Урок располагается ниже обеих строк HUD, включая компактную раскладку счётчиков.
             _headerTop = Mathf.Max(safe.yMin, hudBottom) + 14f * _artScale;
             SetArtPosition(_headerRoot, safe.center.x - 100f * _artScale, _headerTop);
-            SetArtPosition(_skipButton, safe.center.x - 136f * _artScale, safe.yMax - 82f * _artScale);
+            // Уменьшаем кнопку вместе с текстом, сохраняя центр и нижний отступ.
+            float skipScale = _artScale / 1.5f;
+            _skipButton.style.left = safe.center.x - 136f * skipScale;
+            _skipButton.style.top = safe.yMax - 68f * skipScale - 14f * _artScale;
+            _skipButton.style.scale = new Scale(new Vector3(skipScale, skipScale, 1f));
             if (_isPromptVisible)
             {
                 QueueFocusRefresh();

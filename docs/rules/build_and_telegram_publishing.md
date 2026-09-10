@@ -44,6 +44,7 @@ source worktree
 - Android development APK должны подписываться общим локальным dev keystore; настройка и перенос между ноутбуками описаны в `docs/android_dev_signing.md`.
 - Windows build и non-development/release build делать только по явному запросу пользователя.
 - Артефакты сохраняются под `Builds/telegram-buffer`.
+- Sandbox postprocessor задаёт `org.gradle.workers.max=2` и `org.gradle.parallel=false` в generated `gradle.properties`. Это ограничивает одновременную упаковку ассетов внутри heap Gradle. Настройка проверена Android-сборкой после `Java heap space` на `:launcher:compressDebugAssets`; кэши сохраняются.
 - Build summary, Telegram caption и финальный ответ должны явно указывать `buildId`, source branch, short commit и dirty-tree state.
 
 ## Warm Android Build Sandbox

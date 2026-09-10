@@ -14,7 +14,7 @@
 #next-goal-card .next-goal-card__header {
     position: absolute;
     left: 38px;
-    right: 42px;
+    right: 96px;
     top: 5px;
     height: 54px;
     background-image: url("/Assets/Content/ui/sprites/shared/next_goal/goal_header.png");
@@ -54,7 +54,7 @@
     right: 10px;
     top: 5px;
     height: 40px;
-    font-size: 23px;
+    font-size: 20px;
 }
 
 #next-goal-card .next-goal-card__text {
@@ -135,13 +135,21 @@
 
 #next-goal-card .next-goal-card__dismiss {
     right: 5px;
-    top: 7px;
-    width: 40px;
-    height: 42px;
+    top: -14px;
+    width: 80px;
+    height: 84px;
     padding: 0;
-    font-size: 32px;
-    color: rgb(39, 54, 64);
-    -unity-text-outline-width: 0;
+    background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 30;
+    -unity-slice-right: 30;
+    -unity-slice-top: 24;
+    -unity-slice-bottom: 24;
+    -unity-slice-scale: 0.6;
+    font-size: 64px;
+    color: white;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: rgb(13, 32, 48);
 }
 
 #next-goal-card .next-goal-card__action:hover,
@@ -151,7 +159,7 @@
 
 #next-goal-card.next-goal-card--home .next-goal-card__header {
     left: 42px;
-    right: 48px;
+    right: 100px;
     top: 0;
     height: 38px;
 }
@@ -169,7 +177,7 @@
 }
 #next-goal-card.next-goal-card--home .next-goal-card__text {
     left: 24px;
-    right: 24px;
+    right: 100px;
     top: 40px;
     height: 64px;
     font-size: 22px;
@@ -205,6 +213,6 @@
 #next-goal-card.next-goal-card--home .next-goal-card__dismiss {
     top: 1px;
     right: 8px;
-    height: 37px;
-    font-size: 29px;
+    height: 74px;
+    font-size: 58px;
 }

@@ -22,6 +22,10 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            // Ограничиваем одновременную упаковку ассетов внутри общего heap Gradle.
+            WriteProperty(Path.Combine(gradleRoot, "gradle.properties"), "org.gradle.workers.max", "2");
+            WriteProperty(Path.Combine(gradleRoot, "gradle.properties"), "org.gradle.parallel", "false");
+
             var cmakeDir = GetUnityBundledCmakeDir();
             if (!Directory.Exists(cmakeDir))
             {
@@ -29,7 +33,7 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
-            WriteLocalProperty(Path.Combine(gradleRoot, "local.properties"), "cmake.dir", cmakeDir);
+            WriteProperty(Path.Combine(gradleRoot, "local.properties"), "cmake.dir", cmakeDir);
         }
 
         private static string FindGradleRoot(string path)
@@ -62,17 +66,17 @@ namespace LostCyberHamster.Editor
                 "3.22.1");
         }
 
-        private static void WriteLocalProperty(string localPropertiesPath, string key, string value)
+        private static void WriteProperty(string propertiesPath, string key, string value)
         {
             var escapedValue = value.Replace("\\", "\\\\").Replace(":", "\\:");
-            var lines = File.Exists(localPropertiesPath)
-                ? File.ReadAllLines(localPropertiesPath)
+            var lines = File.Exists(propertiesPath)
+                ? File.ReadAllLines(propertiesPath)
                     .Where(line => !line.StartsWith($"{key}=", StringComparison.Ordinal))
                     .ToList()
                 : new List<string>();
 
             lines.Add($"{key}={escapedValue}");
-            File.WriteAllLines(localPropertiesPath, lines);
+            File.WriteAllLines(propertiesPath, lines);
             Debug.Log($"Configured Android Gradle {key}: {value}");
         }
     }
