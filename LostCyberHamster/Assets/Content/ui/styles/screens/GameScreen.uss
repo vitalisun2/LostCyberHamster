@@ -136,6 +136,13 @@
     transition-timing-function: ease-out;
 }
 
+.game-control.game-control--purchase:disabled {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    opacity: 0.5;
+    scale: 1 1;
+}
+
 .game-control--buy-energy {
     top: 20%;
 }
@@ -165,6 +172,23 @@
 
 .game-control__purchase-icon--mana {
     background-image: url("/Assets/Content/ui/sprites/in_game_hud/hud_icon_mana_bottle.png");
+}
+
+#gamescreen .game-control__price {
+    position: absolute;
+    left: 8px;
+    bottom: -20px;
+    width: 76px;
+    height: 34px;
+    margin: 0;
+    padding: 0;
+    color: white;
+    font-size: 28px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 3px;
+    -unity-text-outline-color: rgb(9, 28, 45);
+    white-space: nowrap;
 }
 
 .game-control__coins {

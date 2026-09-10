@@ -33,10 +33,12 @@
             </engine:VisualElement>
             <engine:Button name="btn_buy_energy" class="game-control game-control--purchase game-control--buy-energy">
                 <engine:VisualElement class="game-control__purchase-icon game-control__purchase-icon--energy" />
+                <engine:Label name="energy-refill-price" class="game-control__price" picking-mode="Ignore" />
                 <engine:VisualElement class="game-control__coins" />
             </engine:Button>
             <engine:Button name="btn_buy_ulta" class="game-control game-control--purchase game-control--buy-mana">
                 <engine:VisualElement class="game-control__purchase-icon game-control__purchase-icon--mana" />
+                <engine:Label name="ultra-refill-price" class="game-control__price" picking-mode="Ignore" />
                 <engine:VisualElement class="game-control__coins" />
             </engine:Button>
             <engine:VisualElement class="game-screen__actions" picking-mode="Ignore">

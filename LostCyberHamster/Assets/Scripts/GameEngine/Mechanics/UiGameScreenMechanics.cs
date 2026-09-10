@@ -1,7 +1,9 @@
 ﻿using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using System;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
+using Assets.Scripts.Tutorial;
 using Atomic.Elements;
 using LostCyberHamster.UI;
 using UnityEngine;
@@ -11,6 +13,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
 {
     public class UiGameScreenMechanics
     {
+        private const int EnergyRefillPrice = 50;
+        private const int UltraRefillPrice = 100;
+        private readonly RunCoinBudget _runCoinBudget = new();
+        private bool _refillInProgress;
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
         private readonly Hamster _character;
@@ -22,7 +28,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _superJumpEvent;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
         private int _lastRunScore = -1;
-        private int _runCoins;
         private int _runCrystals;
         private bool _wasSkateboardActive;
 
@@ -46,6 +51,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetBuyEnergyAction(OnBuyEnergy);
             _gameScreenController.SetUltraAction(OnUlta);
             _gameScreenController.SetBuyUltraAction(OnBuyUltra);
+            _gameScreenController.SetRefillPrices(EnergyRefillPrice, UltraRefillPrice);
         }
 
         public void Subscribe()
@@ -59,6 +65,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             // Слушаем добычу уровня в течение жизни игровой сцены, включая паузу HUD.
             GameEventsManager.OnCoinCollected += OnCoinCollected;
             GameEventsManager.OnCrystalsCollected += OnCrystalsCollected;
+            ResourceManager.BalanceChanged += OnBalanceChanged;
         }
 
         public void SyncState()
@@ -74,7 +81,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             SyncUltraControls();
             OnEnergyChanged(_character.Energy.Value);
             SyncRunScore();
-            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
+            SyncRunResources();
+            SyncRefillAvailability();
         }
 
         public void Unsubscribe()
@@ -87,18 +95,30 @@ namespace Assets.Scripts.GameEngine.Mechanics
             // Завершаем отслеживание добычи уходящего уровня.
             GameEventsManager.OnCoinCollected -= OnCoinCollected;
             GameEventsManager.OnCrystalsCollected -= OnCrystalsCollected;
+            ResourceManager.BalanceChanged -= OnBalanceChanged;
         }
 
         private void OnCoinCollected(int amount)
         {
-            _runCoins = AddCollectedAmount(_runCoins, amount);
-            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
+            _runCoinBudget.RecordCollection(amount);
+            SyncRunResources();
+            SyncRefillAvailability();
         }
 
         private void OnCrystalsCollected(int amount)
         {
             _runCrystals = AddCollectedAmount(_runCrystals, amount);
-            _gameScreenController?.SetRunResources(_runCoins, _runCrystals);
+            SyncRunResources();
+        }
+
+        private void SyncRunResources() =>
+            _gameScreenController?.SetRunResources(_runCoinBudget.AvailableCoins, _runCrystals);
+
+        private void OnBalanceChanged(ResourceType resource, int balance)
+        {
+            if (resource != ResourceType.Coins) return;
+            SyncRunResources();
+            SyncRefillAvailability();
         }
 
         /// <summary>Суммирует положительную добычу без переполнения счётчика.</summary>
@@ -115,11 +135,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnUltaChargeAmountChanged(int value)
         {
             _gameScreenController?.SetUltraValue(value);
+            SyncRefillAvailability();
         }
 
         private void OnEnergyChanged(int energy)
         {
             _gameScreenController?.SetEnergy(energy);
+            SyncRefillAvailability();
         }
 
         public void OnUpdate()
@@ -127,6 +149,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetAbilityActivity(_character.SuperAttackSnapshot);
             ResetJumpSequenceIfModeChanged();
             SyncRunScore();
+            SyncRefillAvailability();
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
             return;
@@ -210,30 +233,41 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _character.UltaEvent?.Invoke();
         }
 
-        private void OnBuyEnergy()
+        private bool CanBuyRefill(bool ultra)
         {
-            const int price = 50;
-            if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
-            {
-                ResourceManager.SpendResource(ResourceType.Coins, price);
-                _character.AddEnergy(100);
-            }
+            if (_refillInProgress || _character == null || _gameManager.State != GameState.PLAYING ||
+                GameplayInputGate.IsBlocked || _uiManager.HasModalOrTransition ||
+                TutorialStorage.IsPlayerDataBackupActive) return false;
+            bool hasRoom = ultra ? _character.HasSuperAttack && _character.UltaChargeAmount.Value < 100
+                : _character.Energy.Value < 100;
+            return hasRoom && _runCoinBudget.CanSpend(ultra ? UltraRefillPrice : EnergyRefillPrice);
         }
 
-        private void OnBuyUltra()
-        {
-            // Разрешаем покупку заряда только настроенному суперудару.
-            if (_character?.HasSuperAttack != true)
-            {
-                return;
-            }
+        private void SyncRefillAvailability() =>
+            _gameScreenController?.SetRefillAvailability(CanBuyRefill(false), CanBuyRefill(true));
 
-            // Сохраняем прежнее поведение покупки полного заряда.
-            const int price = 100;
-            if (ResourceManager.CanSpendResource(ResourceType.Coins, price))
+        private void OnBuyEnergy() => BuyRefill(ultra: false);
+        private void OnBuyUltra() => BuyRefill(ultra: true);
+
+        /// <summary>Повторно проверяет шкалу и оплачивает пополнение до изменения ресурсов персонажа.</summary>
+        private void BuyRefill(bool ultra)
+        {
+            if (!CanBuyRefill(ultra)) return;
+            _refillInProgress = true;
+            try
             {
-                ResourceManager.SpendResource(ResourceType.Coins, price);
-                _character?.AddUltaCharge(100);
+                // После сохранения расхода уменьшаем HUD-остаток; квестовая добыча остаётся валовой.
+                if (!_runCoinBudget.TrySpend(ultra ? UltraRefillPrice : EnergyRefillPrice)) return;
+                if (ultra) _character.AddUltaCharge(100);
+                else _character.AddEnergy(100);
+                SyncRunResources();
+                ResourceManager.NotifyBalancesChangedAfterCommit();
+            }
+            catch (Exception exception) { Debug.LogException(exception); }
+            finally
+            {
+                _refillInProgress = false;
+                SyncRefillAvailability();
             }
         }
 

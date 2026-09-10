@@ -33,6 +33,7 @@ namespace GameManagement
         ReturnActivityRewardClaimed,
         ReturnActivityRewardPresented,
         ReturnActivityRecovered,
-        ReturnActivityTelemetrySent
+        ReturnActivityTelemetrySent,
+        RunRefillPurchased
     }
 }

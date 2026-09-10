@@ -1,5 +1,6 @@
 ﻿using System;
 using Assets.Scripts.Common;
+using System.Globalization;
 using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -28,10 +29,16 @@ namespace LostCyberHamster.UI
         private Button _jumpButton;
         private Button _buyEnergyButton;
         private Button _buyUltraButton;
+        private Label _energyRefillPrice;
+        private Label _ultraRefillPrice;
+        private string _energyRefillPriceText = string.Empty;
+        private string _ultraRefillPriceText = string.Empty;
         private Button _ultraButton;
         private Label _ultraChargeValue;
         private AbilityActivityIndicator _activity;
         private bool _abilityActive;
+        private bool _canBuyEnergy;
+        private bool _canBuyUltra;
         private int _lastUltraCharge;
 
         private Action _jumpAction;
@@ -110,7 +117,8 @@ namespace LostCyberHamster.UI
 
         private void OnClickBuyEnergy(PointerDownEvent evt)
         {
-            if (GameplayInputGate.IsBlocked)
+            evt.StopImmediatePropagation();
+            if (GameplayInputGate.IsBlocked || !_canBuyEnergy)
             {
                 return;
             }
@@ -120,7 +128,8 @@ namespace LostCyberHamster.UI
 
         private void OnClickBuyUltra(PointerDownEvent evt)
         {
-            if (GameplayInputGate.IsBlocked)
+            evt.StopImmediatePropagation();
+            if (GameplayInputGate.IsBlocked || !_canBuyUltra)
             {
                 return;
             }
@@ -154,6 +163,9 @@ namespace LostCyberHamster.UI
             _jumpButton = _contentRoot.Q<Button>("btn_jump");
             _buyEnergyButton = _contentRoot.Q<Button>("btn_buy_energy");
             _buyUltraButton = _contentRoot.Q<Button>("btn_buy_ulta");
+            _energyRefillPrice = _contentRoot.Q<Label>("energy-refill-price");
+            _ultraRefillPrice = _contentRoot.Q<Label>("ultra-refill-price");
+            RefreshRefillPrices();
             _ultraButton = _contentRoot.Q<Button>("btn_ultra");
             _ultraChargeValue = _contentRoot.Q<Label>("ulta-charge-value");
             _activity?.RemoveFromHierarchy();
@@ -170,6 +182,7 @@ namespace LostCyberHamster.UI
             // Восстанавливаем счётчики при создании нового дерева текущего HUD.
             SetRunScore(_runScoreValue);
             SetRunResources(_runCoinsValue, _runCrystalsValue);
+            SetRefillAvailability(_canBuyEnergy, _canBuyUltra);
             UpdateCounterLayout(_hudSafeArea?.resolvedStyle.width ?? 0);
         }
 
@@ -201,7 +214,7 @@ namespace LostCyberHamster.UI
             UpdateCounterLayout(_hudSafeArea?.resolvedStyle.width ?? 0);
         }
 
-        /// <summary>Сохраняет и показывает валюты, собранные за текущий уровень.</summary>
+        /// <summary>Показывает остаток монет забега после покупок и собранные за уровень кристаллы.</summary>
         public void SetRunResources(int coins, int crystals)
         {
             // Держим данные до появления дерева и между его пересозданиями.
@@ -290,7 +303,30 @@ namespace LostCyberHamster.UI
                 _ultraButton?.SetEnabled(false);
             }
 
-            _buyUltraButton?.SetEnabled(visible);
+            _buyUltraButton?.SetEnabled(visible && _canBuyUltra);
+        }
+
+        /// <summary>Принимает фактические цены механики и сохраняет их для пересоздания дерева HUD.</summary>
+        public void SetRefillPrices(int energy, int ultra)
+        {
+            _energyRefillPriceText = energy.ToString(CultureInfo.InvariantCulture);
+            _ultraRefillPriceText = ultra.ToString(CultureInfo.InvariantCulture);
+            RefreshRefillPrices();
+        }
+
+        private void RefreshRefillPrices()
+        {
+            if (_energyRefillPrice != null) _energyRefillPrice.text = _energyRefillPriceText;
+            if (_ultraRefillPrice != null) _ultraRefillPrice.text = _ultraRefillPriceText;
+        }
+
+        /// <summary>Отражает рассчитанную механикой доступность покупок в текущем дереве HUD.</summary>
+        public void SetRefillAvailability(bool energy, bool ultra)
+        {
+            _canBuyEnergy = energy;
+            _canBuyUltra = ultra;
+            if (_buyEnergyButton != null && _buyEnergyButton.enabledSelf != energy) _buyEnergyButton.SetEnabled(energy);
+            if (_buyUltraButton != null && _buyUltraButton.enabledSelf != ultra) _buyUltraButton.SetEnabled(ultra);
         }
 
         public void SetUltraValue(int value)
