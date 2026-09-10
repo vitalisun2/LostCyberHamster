@@ -19,7 +19,7 @@ namespace UiGallery
     public static class Fixtures
     {
         public static readonly Dictionary<string, Func<Context, Shot, Task>> Handlers = new Dictionary<string, Func<Context, Shot, Task>>();
-        [Serializable] public class Data { public string screen, mode, tab; public int xp = 20, score = 1200, stars = 3, ability = 1; }
+        [Serializable] public class Data { public string screen, mode, tab; public int xp = 20, score = 1200, stars = 3, ability = 1, coins; }
         static Data Read(Shot shot) => Newtonsoft.Json.JsonConvert.DeserializeObject<Data>(shot.dataJson);
         public static void Register()
         {
@@ -78,7 +78,7 @@ namespace UiGallery
             AbilityProfile(new Data { mode = first ? "locked" : "tiers" });
             var p = GameDataManager.PlayerData; p.PlayerLevel = first ? 2 : 7; p.LastAcknowledgedPlayerLevel = p.PlayerLevel; p.DevelopmentPoints = first ? 1 : 3;
             var modal = c.Controller<LevelUpModalController>();
-            modal.SetLevelUpData(first ? 1 : d.mode == "multi" ? 3 : 6, p.PlayerLevel, d.mode == "multi" ? 4 : 1);
+            modal.SetLevelUpData(first ? 1 : d.mode == "multi" ? 3 : 6, p.PlayerLevel, d.mode == "multi" ? 4 : 1, d.coins);
             modal.SetShieldAction(first ? (Action)(() => { }) : null); modal.SetDevelopmentAction(() => { }); modal.SetOkAction(() => { });
             await c.Ui.ShowModalAsync(ScreenEnum.LevelUpModal);
             s.method = "Штатное окно SetLevelUpData; без начисления XP";
@@ -100,7 +100,7 @@ namespace UiGallery
             {
                 var field = typeof(LevelManager).GetField(name, flags); var old = field.GetValue(null); c.Defer(() => field.SetValue(null, old));
             }
-            typeof(LevelManager).GetField("_lastCompletionExperience", flags).SetValue(null, new ExperienceGrantResult("gallery", d.xp, 7, 7));
+            typeof(LevelManager).GetField("_lastCompletionExperience", flags).SetValue(null, new ExperienceGrantResult("gallery", d.xp, 7, 7, 0, 0));
             typeof(LevelManager).GetField("_completionProfile", flags).SetValue(null, GameDataManager.ProfileId);
             typeof(LevelManager).GetField("_completionGeneration", flags).SetValue(null, GameDataManager.Generation);
             var modal = c.Controller<WinModalController>(); modal.SetParamsForInit("01_New_York", "Morning", d.stars);
