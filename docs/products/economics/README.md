@@ -20,6 +20,7 @@ Research:
 - [05 — полный брейншторм из общего чата: идеи и ход обсуждения](research/05_shared_chat_brainstorm.md).
 - [06 — численные цели удержания](research/06_retention_targets.md).
 - [07 — численные цели монетизации и общий расчёт прибыли](research/07_monetization_targets.md).
+- [19 — монетизация: история идей, сверка с кодом 10.09.2026 и минимальные следующие решения](research/19_monetization_current_state.md).
 - [08 — первая сессия: обучение, Morning, XP и рекомендации](research/08_first_session.md), [развёртка первых уровней](research/08_morning_level_facts.md).
 - [09 — утверждённый блок 2: XP, улучшения способностей, Level Up, Daily и HUD](research/09_progression_abilities.md). Спецификация следующих изменений; реализация и UX-исследования отдельными задачами.
 
