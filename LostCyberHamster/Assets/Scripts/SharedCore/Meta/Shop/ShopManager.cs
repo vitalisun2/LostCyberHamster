@@ -86,7 +86,7 @@ namespace Vues.GameCore
             if (balanceAfterPayment + item.amount > int.MaxValue)
                 return false;
             if (item.resource == ResourceType.Advertisement)
-                return RewardedAdService.Instance.CanRequest;
+                return RewardedAdService.Instance.CanRequestShop;
             return item.price > 0 && ResourceManager.CanSpendResource(item.resource, item.price);
         }
 

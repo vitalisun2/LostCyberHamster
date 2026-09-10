@@ -28,6 +28,7 @@ namespace GameAds
         private bool _lastLoaded;
         private bool _lastAccountTransition;
         private bool _lastProfileBlocked;
+        private int _lastShopCooldownSeconds = -1;
         private string _lastStatus = string.Empty;
         public event Action Changed;
 
@@ -63,6 +64,10 @@ namespace GameAds
         private bool CanLoadFromNetwork => !_network.IsForcedOffline &&
             Application.internetReachability != NetworkReachability.NotReachable;
         public RewardedAdRequest ActiveRequest => _active;
+        public TimeSpan ShopCooldownRemaining => GameDataManager.IsLoaded
+            ? RewardedAdPolicy.ShopCooldownRemaining(GameDataManager.PlayerData.Monetization, DateTime.UtcNow)
+            : TimeSpan.Zero;
+        public bool CanRequestShop => CanRequest && ShopCooldownRemaining == TimeSpan.Zero;
         private static string CurrentProfileKey => GameDataManager.ProfileId + ":" + GameDataManager.Generation;
         private static bool CanPersistRewards
         {
@@ -123,7 +128,8 @@ namespace GameAds
         public RewardedAdRequest RequestShop(ShopItem item)
         {
             if (item == null || item.resource != ResourceType.Advertisement || item.amount <= 0 ||
-                (item.type != ResourceType.Coins && item.type != ResourceType.Crystals))
+                (item.type != ResourceType.Coins && item.type != ResourceType.Crystals) ||
+                !CanRequestShop)
                 return null;
             return Begin(new RewardedAdIntent
             {
@@ -196,14 +202,17 @@ namespace GameAds
         internal void Tick(bool foreground, double delta)
         {
             Recover();
+            int shopCooldownSeconds = (int)Math.Min(int.MaxValue, Math.Ceiling(ShopCooldownRemaining.TotalSeconds));
             if (_lastReachability != Application.internetReachability || _lastLoaded != _provider.HasLoadedAd ||
                 _lastAccountTransition != AccountTransitionScope.IsActive ||
-                _lastProfileBlocked != GameDataManager.IsProfileReplacementBlocked)
+                _lastProfileBlocked != GameDataManager.IsProfileReplacementBlocked ||
+                _lastShopCooldownSeconds != shopCooldownSeconds)
             {
                 _lastReachability = Application.internetReachability;
                 _lastLoaded = _provider.HasLoadedAd;
                 _lastAccountTransition = AccountTransitionScope.IsActive;
                 _lastProfileBlocked = GameDataManager.IsProfileReplacementBlocked;
+                _lastShopCooldownSeconds = shopCooldownSeconds;
                 Notify();
             }
             var request = _active;
@@ -337,7 +346,12 @@ namespace GameAds
                     if (!player.AppliedRewardedRequestIds.Contains(request.RequestId))
                     {
                         if (!request.Intent.IsRevive)
+                        {
                             ApplyShopReward(request.Intent);
+                            // Награда, её ID и начало cooldown сохраняются одной транзакцией.
+                            player.Monetization ??= new MonetizationState();
+                            player.Monetization.LastShopRewardUtcTicks = DateTime.UtcNow.Ticks;
+                        }
                         player.AppliedRewardedRequestIds.Add(request.RequestId);
                         newlyGranted = true;
                     }

@@ -15,6 +15,7 @@ namespace GameManagement
         public int Money;
         public List<string> AppliedWeeklyRewardRunIds = new();
         public List<string> AppliedRewardedRequestIds = new();
+        public MonetizationState Monetization = new();
         public int Crystals;
         public int ExperiencePoints;
         public int PlayerLevel = 1;

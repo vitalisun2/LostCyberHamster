@@ -775,6 +775,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\Models\JumpResolveResult.cs" />
     <Compile Include="Assets\Scripts\SharedCore\UI\UIElements\LocalizedButton.cs" />
     <Compile Include="Assets\Scripts\Common\Models\Catalog.cs" />
+    <Compile Include="Assets\Scripts\Ads\RewardedAdPolicy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Daily\DailyQuestGenerator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\UiWinModalMechanics.cs" />
     <Compile Include="Assets\Scripts\Tutorial\SharedUI\TutorialFocusMaskBuilder.cs" />
@@ -798,6 +799,7 @@
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitSkinsLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotRuntimeEventDiagnostics.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\SuperAttackLevelProgress.cs" />
+    <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\MonetizationState.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ObstacleMoveMechanics.cs" />
     <Compile Include="Assets\Scripts\GameEngine\DebugManager.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ShopItem.cs" />

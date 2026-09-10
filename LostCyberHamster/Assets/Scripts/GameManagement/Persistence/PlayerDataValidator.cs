@@ -28,6 +28,11 @@ namespace GameManagement
                 return PlayerDataValidationResult.Rejected("negative_resource_balance");
             }
 
+            // У старого профиля отметки нет; сохранённое время должно помещаться в UTC DateTime.
+            if (data.Monetization != null && (data.Monetization.LastShopRewardUtcTicks < 0 ||
+                    data.Monetization.LastShopRewardUtcTicks > DateTime.MaxValue.Ticks))
+                return PlayerDataValidationResult.Rejected("invalid_shop_reward_time");
+
             // Квитанции описывают только уже выданные награды существующих уровней.
             if (data.PendingLevelUpRewards?.Any(reward => reward == null || reward.PlayerLevel < 2 ||
                     reward.PlayerLevel > data.PlayerLevel ||
