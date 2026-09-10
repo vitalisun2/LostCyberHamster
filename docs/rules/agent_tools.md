@@ -43,17 +43,19 @@ Test-level скрипты принимают `-Transport Auto|Cli|Bridge`. `Auto
 
 ## Галерея UI
 
-[Проектный скилл](../../.agents/skills/unity-ui-gallery/SKILL.md) исследует экраны фичи/flow и использует общий захват Unity и готовый HTML-шаблон. Он переносится через Git и не содержит API игры.
+[Проектный скилл](../../.agents/skills/unity-ui-capture/SKILL.md) исследует экраны фичи/flow и использует общий захват Unity. [image-gallery](../../.agents/skills/image-gallery/SKILL.md) отдельно собирает сайт из готовых изображений; capture вызывает его автоматически. Он переносится через Git и не содержит API игры.
 
 Адаптер этой игры: `tools/ui_gallery/ProjectAdapter.cs` и `Fixtures.cs`. Библиотека основных состояний: `tools/ui_gallery/plans/core.json`. Для запроса выбрать нужные кейсы/состояния и сохранить отдельный план в `.temp`; новые UI-кейсы дополнять после проверки текущих контроллеров. DEV и дизайн-разбор — только по запросу.
 
 ```powershell
-python .agents/skills/unity-ui-gallery/scripts/gallery.py capture --project LostCyberHamster --adapter tools/ui_gallery/ProjectAdapter.cs tools/ui_gallery/Fixtures.cs --plan .temp/ui-gallery/plan.json --out .temp/ui-gallery/capture --lock-file .worktrees/.integration-lock
+python .agents/skills/unity-ui-capture/scripts/capture.py capture --project LostCyberHamster --adapter tools/ui_gallery/ProjectAdapter.cs tools/ui_gallery/Fixtures.cs --plan .temp/ui-gallery/plan.json --out .temp/ui-gallery/capture --lock-file .worktrees/.integration-lock
 ```
 
 Исходное состояние: чистая Bootstrap или Menu сцена, Play Mode остановлен. Адаптер открывает изолированный профиль, вызывает реальные экраны, восстанавливает исходный профиль. Game UI снимается на статичном игровом фоне без запуска мира. Результат: `index.html`, PNG, `manifest.json`, статусы съёмки и восстановления. `capture` останавливается на первом неснятом состоянии и оставляет частичную галерею с отметкой.
 
 Зависимости: Python 3, настроенный Unity CLI/Pipeline, Newtonsoft.Json из Unity packages. C# инструмента лежит вне Assets и выполняется через run_script; продуктовая сборка его не включает.
+
+Галерея готовых изображений: `python .agents/skills/image-gallery/scripts/gallery.py build --manifest <images.json> --out <папка>`. Общая установка на этой машине: ссылки из `~/.agents/skills/` на обе Git-папки. Текущие задачи могут сразу читать SKILL.md по указанным путям. Для переноса полного цикла через Git сохранить обе папки рядом. Старая команда `unity-ui-gallery/scripts/gallery.py` перенаправляет вызов в новый capture.
 
 ## Automation Bridge fallback
 

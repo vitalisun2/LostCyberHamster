@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 import zlib
 
-import gallery
+import capture as gallery
 
 
 def plan():
@@ -58,8 +58,8 @@ class GalleryTests(unittest.TestCase):
             (out / "case--state.png").write_bytes(png())
             self.assertTrue(gallery.build(out)["complete"])
 
-    @patch("gallery.shutil.which", return_value="unity")
-    @patch("gallery.subprocess.run")
+    @patch("capture.shutil.which", return_value="unity")
+    @patch("capture.subprocess.run")
     def test_pipeline_nested_failure_and_missing_result(self, run, which):
         run.return_value.returncode = 0
         for value in ({"success": True, "data": {"result": {"success": False, "error": "Compile failed"}}}, {"success": False, "data": None}):

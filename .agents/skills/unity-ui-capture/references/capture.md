@@ -53,10 +53,10 @@ UI Toolkit: назначить `context.Document` реальным UIDocument; �
 ## Команды
 
 ```powershell
-python <skill>/scripts/gallery.py validate --plan <plan.json>
-python <skill>/scripts/gallery.py capture --project <Unity-project> --adapter <adapter.cs> --plan <plan.json> --out <new-output-folder>
-python <skill>/scripts/gallery.py build --out <output-folder>
-python <skill>/scripts/gallery.py serve --out <output-folder> --port 8767
+python <skill>/scripts/capture.py validate --plan <plan.json>
+python <skill>/scripts/capture.py capture --project <Unity-project> --adapter <adapter.cs> --plan <plan.json> --out <new-output-folder>
+python <skill>/scripts/capture.py build --out <output-folder>
+python <skill>/scripts/capture.py serve --out <output-folder> --port 8767
 ```
 
 При наличии общего project lock добавить `--lock-file <путь>`. `serve` работает до остановки процесса; на Windows запускать скрытым. Галерея открывается и как локальный HTML, без сервера.
