@@ -10,6 +10,8 @@ namespace Assets.Scripts.Diagnostics
         private const int _defaultMaxLogBytes = 1024 * 1024;
 
         public bool enabled;
+        public bool economyTelemetryEnabled;
+        public string balanceVersion;
         public bool allowInEditor;
         public bool allowOnAndroid;
         public bool allowOnOtherPlatforms;

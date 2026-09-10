@@ -80,6 +80,7 @@
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardCollisionResult.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyPersonalBest.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ActivityAttemptContext.cs" />
+    <Compile Include="Assets\Scripts\Diagnostics\EconomySnapshot.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelUpReward.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardInteractionPolicy.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenEnum.cs" />
@@ -264,6 +265,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSpecification.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\DecisionPoints\DecisionPoint.cs" />
     <Compile Include="Assets\Scripts\System\UserSettings.cs" />
+    <Compile Include="Assets\Scripts\Diagnostics\EconomyTelemetry.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOn\JumpOnActionChainResolver.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\InitLocationsListLoadingTask.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\HamsterAnimationEventsMechanics.cs" />
@@ -749,6 +751,7 @@
     <Compile Include="Assets\Scripts\Bot\Planning\ActionGenerator.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunCoinBudget.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\SuperJumpOnFromRoof\SuperJumpOnFromRoofStrategy.cs" />
+    <Compile Include="Assets\Scripts\Diagnostics\EconomyJournal.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Shop\ResourceType.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\IntroScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\UnsafeInterval.cs" />

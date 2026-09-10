@@ -279,6 +279,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 return;
 
             playerData.ExperiencePoints = PreparedExperiencePoints;
+            Assets.Scripts.Diagnostics.EconomyTelemetry.MarkDevelopment("prepare_level_up");
             GameDataManager.SaveData();
             UIManager.OnRepaintScreen?.Invoke();
 
@@ -333,6 +334,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             ActiveOperationKind operationKind,
             string busyActionTitle)
         {
+            Assets.Scripts.Diagnostics.EconomyTelemetry.MarkDevelopment("game_progress_testing");
             var operationVersion = ++_operationVersion;
             _operationCancellation?.Dispose();
             _operationCancellation = new CancellationTokenSource();

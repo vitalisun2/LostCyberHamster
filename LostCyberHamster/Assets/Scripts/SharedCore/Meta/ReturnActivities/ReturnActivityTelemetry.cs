@@ -33,6 +33,7 @@ namespace Vues.GameCore.ReturnActivities
 
         public static void RecordView(string action, string kind)
         {
+            Assets.Scripts.Diagnostics.EconomyTelemetry.Record("return_activity", action, kind);
             if (!AnalyticsManager.CanRecordReturnActivity) return;
             AnalyticsManager.RecordReturnActivity(new ReturnActivityEvent
             {

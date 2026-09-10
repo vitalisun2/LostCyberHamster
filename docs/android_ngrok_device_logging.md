@@ -282,6 +282,18 @@ Get-ChildItem -LiteralPath $root -Directory |
 
 ## Клиент в игре
 
+### Экономика плейтестов
+
+Development Android также пишет структурированный JSONL при `economyTelemetryEnabled: true`. `balanceVersion` отделяет настройки баланса. `EconomyTelemetry` наблюдает подтверждённые операции; `EconomyJournal` сохраняет очередь и использует `DeviceLogUploader`/`OnlineServicesCoordinator` для доставки на тот же `POST /upload`.
+
+Поля запроса: `economyJsonl`, `economyBatchId` (SHA-256 UTF-8 строки), `metadata`. Collector проверяет схему/hash и возвращает совпадающий `economyBatchId` после записи. Пакет удаляется с телефона только после такого ACK. Старая версия collector без ACK оставляет очередь для повтора.
+
+Архив: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_Playtests\android`. Docker mount задаётся `ECONOMY_OUTPUT_ROOT_HOST`; штатный ensure-скрипт создаёт папку и поле `.env.local`. Внутри контейнера: `/workspace/LostCyberHamster_Playtests/android`. Этот архив расположен вне 72-часовой diagnostic retention. Один hash — один JSONL и metadata с временем приёма.
+
+После обновления receiver выполнить штатный ensure с `-Rebuild`. Нужны включённый receiver, сеть и Dropbox; до их готовности ограниченная очередь остаётся на телефоне. [Команда анализа и ограничения полноты](../tools/economy/README.md).
+
+### Настройки диагностического клиента
+
 Unity config:
 
 ```text

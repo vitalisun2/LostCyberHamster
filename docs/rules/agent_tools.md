@@ -9,6 +9,7 @@
 - [Automation Bridge](#automation-bridge)
 - [Diagnostic Log](#diagnostic-log)
 - [Android Device Logs через ngrok + Dropbox](#android-device-logs-через-ngrok--dropbox)
+- [Статистика Android-плейтестов](#статистика-android-плейтестов)
 - [Test Levels](#test-levels)
 - [Unity Editor Tools](#unity-editor-tools)
 - [Skin Candidate Pipeline](#skin-candidate-pipeline)
@@ -116,6 +117,10 @@ Bridge-команды:
 ```
 
 Рекомендуемый порядок анализа: `STAB` → `BOT` → `ECO`.
+
+## Статистика Android-плейтестов
+
+Журнал экономики: `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_Playtests\android`, отдельный архив от диагностической очистки. Разбор: `python tools/economy/summarize.py C:/Dropbox/exchange/crystal_wave/LostCyberHamster_Playtests/android --output .temp/economy/summary.json`. По умолчанию cohort `playtest`; профиль/период/версия — аргументами. Проверять свежесть, `input_issues` и `quality` перед выводами. [Полная инструкция](../../tools/economy/README.md), [проверки](../products/economics/telemetry_implementation.md).
 
 ## Android Device Logs через ngrok + Dropbox
 

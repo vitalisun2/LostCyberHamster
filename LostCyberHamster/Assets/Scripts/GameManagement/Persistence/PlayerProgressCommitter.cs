@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.System;
 using UnityEngine;
+using Assets.Scripts.Diagnostics;
 
 namespace GameManagement
 {
@@ -23,6 +24,7 @@ namespace GameManagement
 
             // Сначала завершаем обязательное локальное сохранение.
             GameDataManager.SaveData();
+            EconomyTelemetry.Committed(reason);
             NotifyCommitCompleted(reason);
         }
 

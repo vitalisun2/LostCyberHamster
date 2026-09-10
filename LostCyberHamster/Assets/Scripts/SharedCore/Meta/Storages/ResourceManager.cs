@@ -161,12 +161,14 @@ namespace Vues.GameCore
 
         private static void AddCoins(int amount)
         {
-            AddResource(ResourceType.Coins, amount);
+            if (AddResource(ResourceType.Coins, amount))
+                Assets.Scripts.Diagnostics.EconomyTelemetry.Collection("coins", amount, GameEventsManager.CollectionSource);
         }
 
         private static void AddCrystals(int amount)
         {
-            AddResource(ResourceType.Crystals, amount);
+            if (AddResource(ResourceType.Crystals, amount))
+                Assets.Scripts.Diagnostics.EconomyTelemetry.Collection("crystals", amount, GameEventsManager.CollectionSource);
         }
 
         private static void NotifyBalanceChanged(ResourceType resourceType)

@@ -15,6 +15,9 @@ services:
       - type: bind
         source: ${DEVICE_LOG_OUTPUT_ROOT_HOST}
         target: /workspace/DeviceLogs/android
+      - type: bind
+        source: ${ECONOMY_OUTPUT_ROOT_HOST}
+        target: /workspace/LostCyberHamster_Playtests/android
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8765/health | grep '\"ok\":true'"]
       interval: 15s

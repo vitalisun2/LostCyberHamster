@@ -29,7 +29,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnJumpOverEvent()
         {
-            GameEventsManager.CoinCollected(_coinValue);
+            GameEventsManager.CoinCollected(_coinValue, "obstacle_jump");
             Object.Instantiate(LevelController.Instance.LevelData.CoinOneBonusPrefab);
         }
 

@@ -77,7 +77,7 @@ namespace Assets.Scripts.Diagnostics
             }
         }
 
-        private static DeviceLogUploadSettings LoadSettings()
+        internal static DeviceLogUploadSettings LoadSettings()
         {
             var asset = Resources.Load<TextAsset>(_settingsResourcePath);
             if (asset == null)
@@ -180,7 +180,7 @@ namespace Assets.Scripts.Diagnostics
         }
 
         /// <summary>Отправляет сохранённый снимок; очередь удаляет его только после подтверждённого ответа.</summary>
-        internal static async Task UploadPreparedAsync(string json, string endpoint)
+        internal static async Task UploadPreparedAsync(string json, string endpoint, string economyBatchId = null)
         {
             var settings = LoadSettings();
             if (!ShouldUpload(settings, false)) throw new InvalidOperationException("Log upload is disabled.");
@@ -207,6 +207,38 @@ namespace Assets.Scripts.Diagnostics
             }
             if (request.result != UnityWebRequest.Result.Success)
                 throw new IOException($"Log upload response: {request.responseCode}.");
+            if (economyBatchId != null)
+            {
+                var ack = JsonUtility.FromJson<EconomyAck>(request.downloadHandler.text);
+                if (ack == null || !ack.ok || ack.economyBatchId != economyBatchId)
+                    throw new IOException("Economy archive acknowledgement missing.");
+            }
+        }
+
+        /// <summary>Передаёт целый пакет JSONL через существующий endpoint и авторизацию.</summary>
+        internal static string BuildEconomyPayload(string data, string batchId)
+        {
+            return JsonUtility.ToJson(new EconomyPayload
+            {
+                economyBatchId = batchId, economyJsonl = data,
+                metadata = new DeviceLogUploadMetadata { sessionId = batchId, reason = "economy",
+                    createdAtUtc = DateTime.UtcNow.ToString("O"), appVersion = Application.version,
+                    deviceModel = SystemInfo.deviceModel }
+            });
+        }
+
+        [Serializable]
+        private sealed class EconomyPayload
+        {
+            public string economyBatchId, economyJsonl;
+            public DeviceLogUploadMetadata metadata;
+        }
+
+        [Serializable]
+        private sealed class EconomyAck
+        {
+            public bool ok = false;
+            public string economyBatchId = null;
         }
 
         private static IEnumerator SendHealthProbeCoroutine(DeviceLogUploadSettings settings, string reason)

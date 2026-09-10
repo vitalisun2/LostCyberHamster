@@ -227,13 +227,16 @@ function Ensure-LocalEnvFile {
     param([string]$OutputRootHost)
 
     $token = Get-NgrokAuthtoken
+    $economyOutputRoot = [IO.Path]::GetFullPath((Join-Path $OutputRootHost '..\..\LostCyberHamster_Playtests\android'))
+    New-Item -ItemType Directory -Force -Path $economyOutputRoot | Out-Null
     $envDirectory = Split-Path -Parent $EnvFile
     New-Item -ItemType Directory -Force -Path $envDirectory | Out-Null
 
     $content = @(
         "NGROK_AUTHTOKEN=$token",
         "NGROK_DOMAIN=$NgrokDomain",
-        "DEVICE_LOG_OUTPUT_ROOT_HOST=$(ConvertTo-ComposePath -Path $OutputRootHost)"
+        "DEVICE_LOG_OUTPUT_ROOT_HOST=$(ConvertTo-ComposePath -Path $OutputRootHost)",
+        "ECONOMY_OUTPUT_ROOT_HOST=$(ConvertTo-ComposePath -Path $economyOutputRoot)"
     )
 
     Set-Content -LiteralPath $EnvFile -Value $content -Encoding ASCII

@@ -61,6 +61,7 @@ namespace Assets.Scripts.DevTools.SkinTesting
 
             _isBusy = true;
             ResetOperationDetails();
+            Assets.Scripts.Diagnostics.EconomyTelemetry.MarkDevelopment("skin_testing");
 
             try
             {

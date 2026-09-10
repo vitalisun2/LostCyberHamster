@@ -238,7 +238,13 @@ public static class GameEventsManager
     /// Триггер события OnCoinCollected
     /// </summary>
     /// <param name="coinValue">Количество собранных монет</param>
-    public static void CoinCollected(int coinValue) => OnCoinCollected?.Invoke(coinValue);
+    public static string CollectionSource { get; private set; } = "pickup";
+    public static void CoinCollected(int coinValue, string source = "pickup")
+    {
+        var previous = CollectionSource;
+        try { CollectionSource = source; OnCoinCollected?.Invoke(coinValue); }
+        finally { CollectionSource = previous; }
+    }
 
     /// <summary>
     /// Событие получения монет
@@ -265,7 +271,12 @@ public static class GameEventsManager
     /// Триггер события OnCrystallCollected
     /// </summary>
     /// <param name="crystallValue">Количество собранных кристаллов</param>
-    public static void CrystallCollected(int crystallValue) => OnCrystalsCollected?.Invoke(crystallValue);
+    public static void CrystallCollected(int crystallValue, string source = "pickup")
+    {
+        var previous = CollectionSource;
+        try { CollectionSource = source; OnCrystalsCollected?.Invoke(crystallValue); }
+        finally { CollectionSource = previous; }
+    }
 
 
     /// <summary>

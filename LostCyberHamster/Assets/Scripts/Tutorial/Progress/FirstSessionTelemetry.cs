@@ -15,6 +15,7 @@ namespace Assets.Scripts.Tutorial
         public static void Record(string phase, string detail = null, int value = 0)
         {
             if (string.IsNullOrWhiteSpace(phase)) return;
+            Assets.Scripts.Diagnostics.EconomyTelemetry.Record("first_session", phase, detail, value);
             try
             {
                 // Один вызов соответствует одному факту, а session/sequence различают повторные попытки.

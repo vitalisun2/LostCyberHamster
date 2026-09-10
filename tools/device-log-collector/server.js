@@ -1,6 +1,7 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
+const crypto = require("crypto");
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 const configPath = path.join(__dirname, "device-log-collector.config.json");
@@ -48,6 +49,8 @@ function createCollectorContext(config, args) {
     host,
     port,
     outputRoot,
+    economyRoot: path.resolve(args.economyRoot || process.env.ECONOMY_OUTPUT_ROOT ||
+      path.join(outputRoot, "..", "..", "LostCyberHamster_Playtests", "android")),
     maxBodyBytes,
     accessLogPath: path.join(outputRoot, "_requests.log"),
     probeLogPath: path.join(outputRoot, "_probes.log"),
@@ -131,6 +134,7 @@ function readBody(request, maxBytes) {
 
 function savePayload(body, context) {
   const payload = JSON.parse(body);
+  if (payload.economyJsonl !== undefined) return saveEconomyPayload(payload, context);
   const metadata = payload.metadata || {};
   const createdAt = sanitizeTimestamp(metadata.createdAtUtc || new Date().toISOString());
   const device = sanitizeName(metadata.deviceModel || "unknown_device");
@@ -157,6 +161,37 @@ function savePayload(body, context) {
 
   console.log(`[collector] saved ${directory}`);
   return { ok: true, id: path.basename(directory), savedPath: directory };
+}
+
+// Подтверждаем пакет только после атомарной записи вне дерева диагностической retention.
+function saveEconomyPayload(payload, context) {
+  const data = payload.economyJsonl;
+  if (typeof data !== "string" || !data.endsWith("\n") || Buffer.byteLength(data) > 256 * 1024)
+    throw new Error("invalid_economy_packet");
+  const digest = crypto.createHash("sha256").update(data, "utf8").digest("hex");
+  if (payload.economyBatchId !== digest) throw new Error("economy_digest_mismatch");
+  const records = data.trimEnd().split("\n").map(line => JSON.parse(line));
+  if (!records.length || records.some(x => x.schema_version !== 1 || !x.event_id || !x.profile_id || !x.session_id))
+    throw new Error("invalid_economy_schema");
+  fs.mkdirSync(context.economyRoot, { recursive: true });
+  const root = fs.realpathSync.native(context.economyRoot);
+  if (isSamePath(root, context.outputRoot) || isPathInsideDirectory(root, context.outputRoot))
+    throw new Error("economy_archive_inside_retention_root");
+  const destination = path.join(root, digest + ".jsonl");
+  // Один digest сохраняет один пакет; повтор ответа не создаёт копию.
+  if (fs.existsSync(destination)) {
+    if (fs.readFileSync(destination, "utf8") !== data) throw new Error("economy_packet_conflict");
+  } else {
+    const temporary = destination + ".tmp";
+    fs.writeFileSync(temporary, data, "utf8");
+    fs.renameSync(temporary, destination);
+  }
+  const metadataPath = path.join(root, digest + ".metadata.json");
+  if (!fs.existsSync(metadataPath)) fs.writeFileSync(metadataPath, JSON.stringify({
+    receivedAtUtc: new Date().toISOString(), economyBatchId: digest, events: records.length,
+    metadata: payload.metadata || {}
+  }, null, 2), "utf8");
+  return { ok: true, id: digest, economyBatchId: digest, savedPath: destination };
 }
 
 function handleProbe(request, response, context) {
@@ -477,6 +512,9 @@ function sanitizeName(value) {
 }
 
 module.exports = {
+  createCollectorContext,
+  createHttpServer,
+  saveEconomyPayload,
   cleanupOldDeviceLogs,
   createRetentionController,
   isPathInsideDirectory,

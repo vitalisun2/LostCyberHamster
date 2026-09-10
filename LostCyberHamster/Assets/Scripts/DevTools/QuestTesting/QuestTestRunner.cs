@@ -926,6 +926,7 @@ namespace Assets.Scripts.DevTools.QuestTesting
 
             _isBusy = true;
             _beforeState = FormatState();
+            Assets.Scripts.Diagnostics.EconomyTelemetry.MarkDevelopment("quest_testing");
 
             try
             {

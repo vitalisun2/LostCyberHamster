@@ -70,7 +70,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void ApplyCrystalsBonus()
         {
-            GameEventsManager.CrystallCollected(_crystallBonusValue);
+            GameEventsManager.CrystallCollected(_crystallBonusValue, "obstacle_bonus");
             Object.Instantiate(LevelController.Instance.LevelData.CrystalBonusPrefab);
         }
 
@@ -115,7 +115,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private IEnumerator Apply3CoinsCoroutine()
         {
-            GameEventsManager.CoinCollected(_coinValue);
+            GameEventsManager.CoinCollected(_coinValue, "obstacle_bonus");
 
             var coinPrefab = LevelController.Instance.LevelData.CoinOneBonusPrefab;
 

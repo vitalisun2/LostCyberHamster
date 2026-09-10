@@ -6,6 +6,7 @@
 
 Research:
 
+- [Статистика Android-плейтестов: план](telemetry_plan.md), [реализация и проверки](telemetry_implementation.md) — JSONL, доставка, JSON для агентов; Android-приёмка ожидается.
 - [Блок 2: реализация, review и проверка](progression_implementation.md), [план](progression_plan.md).
 - [Блок 5: долгая мотивация](long_term_implementation.md), [план](long_term_plan.md), [brief 18](research/18_long_term_minimum.md).
 - [13 — возврат и вовлечение](research/13_return_engagement.md): следующий блок; собственный статус реализации указан там.

@@ -9,6 +9,7 @@ using GameManagement.Progress;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Vues.GameCore;
+using Assets.Scripts.Diagnostics;
 
 namespace GameManagement
 {
@@ -242,7 +243,9 @@ namespace GameManagement
         {
             if (mutation == null) throw new ArgumentNullException(nameof(mutation));
             if (IsAutomationRun()) return;
+            var telemetryBefore = EconomyTelemetry.BeforeTransaction();
             ExecuteMutation(mutation, gameplay: true);
+            EconomyTelemetry.Committed(reason, telemetryBefore);
             PlayerProgressCommitter.NotifyCommitCompleted(reason);
             Notify(afterCommit);
             Notify(JournalsChanged);

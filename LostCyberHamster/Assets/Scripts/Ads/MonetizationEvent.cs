@@ -25,6 +25,8 @@ namespace GameAds
         }
         public static void Record(string phase, string placement, string receipt = null, int amount = 0)
         {
+            Assets.Scripts.Diagnostics.EconomyTelemetry.Record("monetization", phase,
+                placement + ":" + Assets.Scripts.Diagnostics.EconomySnapshot.Digest(receipt), amount);
             if (!AnalyticsManager.CanRecordReturnActivity) return;
             try { AnalyticsService.Instance.RecordEvent(new MonetizationEvent(phase, placement, receipt, amount)); }
             catch (Exception exception) { Debug.LogWarning($"[Analytics] Monetization event: {exception.GetType().Name}."); }

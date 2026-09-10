@@ -1,5 +1,7 @@
 {
   "enabled": true,
+  "economyTelemetryEnabled": true,
+  "balanceVersion": "2026-09-10-economy-1",
   "allowInEditor": false,
   "allowOnAndroid": true,
   "allowOnOtherPlatforms": false,

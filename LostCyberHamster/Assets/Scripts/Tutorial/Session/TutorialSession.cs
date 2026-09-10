@@ -237,6 +237,9 @@ namespace Assets.Scripts.Tutorial
 
             TutorialStorage.ClearPlayerDataBackup();
             _snapshot = null;
+            Assets.Scripts.Diagnostics.EconomyTelemetry.Committed(markTutorialCompleted
+                ? CheckpointReason.TutorialCompleted : CheckpointReason.CurrentLevelChanged);
+            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun(markTutorialCompleted ? "tutorial_completed" : "exit");
             bool publishLevelChange = _pendingLevelChange;
             _pendingLevelChange = false;
             PlayerExperienceService.PublishCommittedLevelChange(publishLevelChange, "tutorial");

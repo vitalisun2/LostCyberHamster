@@ -240,6 +240,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             }
 
             // Фиксируем настройки завершения для текущего target.
+            Assets.Scripts.Diagnostics.EconomyTelemetry.MarkDevelopment("complete_next_level");
             _isBusy = true;
             var runScore = _preparedRunScore ??
                            UnityEngine.Random.Range(

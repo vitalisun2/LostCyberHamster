@@ -439,6 +439,7 @@ namespace Assets.Scripts.System
             }, () =>
             {
                 _lastCompletionExperience = experience;
+                Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("win", stars);
                 _completionProfile = GameDataManager.ProfileId;
                 _completionGeneration = GameDataManager.Generation;
                 if (activityAttempt != null) activityAttempt.Committed = true;
