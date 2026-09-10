@@ -1529,6 +1529,70 @@
         {
             "key": "long_term_development_remaining",
             "value": "CONTINUE UNLOCKING AND UPGRADING"
+        },
+        {
+            "key": "leaderboard_rules_open",
+            "value": "Rules"
+        },
+        {
+            "key": "leaderboard_play_record",
+            "value": "Beat your record"
+        },
+        {
+            "key": "leaderboard_play_first",
+            "value": "Set your record"
+        },
+        {
+            "key": "leaderboard_play_choose",
+            "value": "Choose a level"
+        },
+        {
+            "key": "leaderboard_rules_title",
+            "value": "How does the leaderboard work?"
+        },
+        {
+            "key": "leaderboard_rules_intro",
+            "value": "Pick an unlocked level, collect items and reach the finish! Your best run of the week goes on the leaderboard. Each city and time of day has its own board."
+        },
+        {
+            "key": "leaderboard_rules_scoring_title",
+            "value": "Collect items and score points:"
+        },
+        {
+            "key": "leaderboard_rules_coin",
+            "value": "Coin — +{0}"
+        },
+        {
+            "key": "leaderboard_rules_collectibles",
+            "value": "Crystal, energy drink, pizza or life — +{0}"
+        },
+        {
+            "key": "leaderboard_rules_obstacle",
+            "value": "Destroyed obstacle — +{0}, even when using an ability!"
+        },
+        {
+            "key": "leaderboard_rules_score_note",
+            "value": "Points show how well your run went. Coins, crystals and XP are counted separately."
+        },
+        {
+            "key": "leaderboard_rules_reward_title",
+            "value": "A new record earns +{0} XP too!"
+        },
+        {
+            "key": "leaderboard_rules_reward",
+            "value": "Your first confirmed record of the day earns the reward. Your very first score counts too!"
+        },
+        {
+            "key": "leaderboard_rules_limit",
+            "value": "One XP reward per day across all your account’s boards on this device. A new day starts at 00:00 UTC; the time your score is confirmed is what counts."
+        },
+        {
+            "key": "leaderboard_rules_profile",
+            "value": "Confirm your profile to take part. After a win, your score will be sent to the leaderboard."
+        },
+        {
+            "key": "leaderboard_rules_close",
+            "value": "Got it!"
         }
     ]
 }

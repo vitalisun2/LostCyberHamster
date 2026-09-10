@@ -1529,6 +1529,70 @@
         {
             "key": "long_term_development_remaining",
             "value": "ПРОДОЛЖАЙ ОТКРЫТИЯ И УЛУЧШЕНИЯ"
+        },
+        {
+            "key": "leaderboard_rules_open",
+            "value": "Правила"
+        },
+        {
+            "key": "leaderboard_play_record",
+            "value": "Побить рекорд"
+        },
+        {
+            "key": "leaderboard_play_first",
+            "value": "Установить рекорд"
+        },
+        {
+            "key": "leaderboard_play_choose",
+            "value": "Выбрать уровень"
+        },
+        {
+            "key": "leaderboard_rules_title",
+            "value": "Как работает рейтинг?"
+        },
+        {
+            "key": "leaderboard_rules_intro",
+            "value": "Выбирай открытый уровень, собирай предметы и добирайся до финиша! В рейтинг попадёт твой лучший забег за неделю. У каждого города и времени суток — своя таблица."
+        },
+        {
+            "key": "leaderboard_rules_scoring_title",
+            "value": "Собирай и набирай очки:"
+        },
+        {
+            "key": "leaderboard_rules_coin",
+            "value": "Монета — +{0}"
+        },
+        {
+            "key": "leaderboard_rules_collectibles",
+            "value": "Кристалл, энергетик, пицца или жизнь — +{0}"
+        },
+        {
+            "key": "leaderboard_rules_obstacle",
+            "value": "Разрушенное препятствие — +{0}, даже с помощью способности!"
+        },
+        {
+            "key": "leaderboard_rules_score_note",
+            "value": "Очки показывают, насколько удачным был забег. Монеты, кристаллы и XP считаются отдельно."
+        },
+        {
+            "key": "leaderboard_rules_reward_title",
+            "value": "Новый рекорд — ещё и +{0} XP!"
+        },
+        {
+            "key": "leaderboard_rules_reward",
+            "value": "Первый подтверждённый рекорд дня приносит награду. Твоя первая запись тоже считается!"
+        },
+        {
+            "key": "leaderboard_rules_limit",
+            "value": "Одна XP-награда в день на все рейтинги аккаунта на этом устройстве. День обновляется в 00:00 UTC; учитывается время подтверждения результата."
+        },
+        {
+            "key": "leaderboard_rules_profile",
+            "value": "Для участия подтверди профиль. После победы результат отправится в рейтинг."
+        },
+        {
+            "key": "leaderboard_rules_close",
+            "value": "Всё понятно!"
         }
     ]
 }

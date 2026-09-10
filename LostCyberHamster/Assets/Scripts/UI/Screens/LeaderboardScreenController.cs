@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.System;
 using GameManagement;
 using GameManagement.CloudSave;
 using GameManagement.Leaderboard;
+using GameManagement.Progress;
 using Unity.Services.Leaderboards.Models;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -90,7 +92,17 @@ namespace LostCyberHamster.UI
         private Label _participationText => _contentRoot.Q<Label>("leaderboard__participation-text");
         private Button _buttonParticipation => _contentRoot.Q<Button>("leaderboard__btn-participation");
         private Label _personalStatus => _contentRoot.Q<Label>("leaderboard__personal-status");
+        private Button _buttonPlay => _contentRoot.Q<Button>("leaderboard__btn-play");
+        private Button _buttonRules => _contentRoot.Q<Button>("leaderboard__btn-rules");
+        private Button _buttonRulesClose => _contentRoot.Q<Button>("leaderboard__rules-close");
+        private VisualElement _rulesOverlay => _contentRoot.Q("leaderboard__rules-overlay");
+        private VisualElement _rulesPanel => _contentRoot.Q("leaderboard__rules-panel");
+        private ScrollView _rulesScroll => _contentRoot.Q<ScrollView>("leaderboard__rules-scroll");
         private readonly CloudSyncService _cloudSyncService;
+        private readonly Action<string, string> _openLevels;
+        private readonly Func<bool> _canInteract;
+        private IVisualElementScheduledItem _rulesSchedule;
+        private bool _rulesOpen;
         private LeaderboardReadService _readService;
         private IDisposable _ownershipPrompt;
         private LeaderboardParticipationStatus _participationStatus;
@@ -111,10 +123,13 @@ namespace LostCyberHamster.UI
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.LeaderboardScreen;
 
-        public LeaderboardScreenController(UIDocument uiDocument, CloudSyncService cloudSyncService)
+        public LeaderboardScreenController(UIDocument uiDocument, CloudSyncService cloudSyncService,
+            Action<string, string> openLevels = null, Func<bool> canInteract = null)
             : base(uiDocument)
         {
             _cloudSyncService = cloudSyncService;
+            _openLevels = openLevels;
+            _canInteract = canInteract ?? (() => true);
         }
 
         /// <summary>
@@ -134,7 +149,9 @@ namespace LostCyberHamster.UI
                 content.Q<VisualElement>("leaderboard__viewport"),
                 content.Q<VisualElement>("leaderboard__scale-frame"),
                 content.Q<VisualElement>("leaderboard__design"),
-                new Vector2(DesignWidth, DesignHeight), stretchWidth: true);
+                new Vector2(DesignWidth, DesignHeight),
+                content.Q("leaderboard__rules-frame"), content.Q("leaderboard__rules-design"),
+                stretchWidth: true);
         }
 
         /// <summary>
@@ -142,6 +159,8 @@ namespace LostCyberHamster.UI
         /// </summary>
         protected override void BindView()
         {
+            CloseRules();
+            BindRules();
             // Получаем каталог с единым доменным состоянием доступности.
             _requestVersion++;
             if (_boundContentRoot != _contentRoot)
@@ -296,6 +315,7 @@ namespace LostCyberHamster.UI
             {
                 var mockResults = CreateMockResults(part);
                 RenderResults(mockResults.Top, mockResults.CurrentPlayer);
+                RenderPlayAction(null);
                 _status.style.display = DisplayStyle.None;
                 return;
             }
@@ -313,8 +333,13 @@ namespace LostCyberHamster.UI
         /// <summary>Перестраивает строки только при смене таблицы или видимых результатов.</summary>
         private void RenderSelectedSnapshot()
         {
-            if (_selectedLocation == null || _selectedPart == null) return;
+            if (_selectedLocation == null || _selectedPart == null)
+            {
+                RenderPlayAction(null);
+                return;
+            }
             var snapshot = _readService?.GetSnapshot(_selectedLocation.Id, _selectedPart.Id);
+            RenderPlayAction(snapshot);
             if (snapshot == null)
             {
                 _status.style.display = DisplayStyle.None;
@@ -451,6 +476,133 @@ namespace LostCyberHamster.UI
             return period;
         }
 
+        /// <summary>Обновляет действие отдельно от строк и текущей прокрутки таблицы.</summary>
+        private void RenderPlayAction(LeaderboardViewSnapshot snapshot)
+        {
+            var canChoose = _openLevels != null && IsLocationOpen(_selectedLocation) &&
+                IsPartOpen(_selectedPart) && _selectedPart.Levels.Any(level => level.IsUnlocked);
+            var currentWeek = snapshot?.HasTable == true &&
+                DateTime.TryParse(snapshot.NextResetUtc, CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind, out var reset) && reset.ToUniversalTime() > DateTime.UtcNow;
+            var key = currentWeek && snapshot.CurrentPlayer != null ? "leaderboard_play_record" :
+                currentWeek && !snapshot.IsStale && snapshot.PersonalStatus == LeaderboardPersonalStatus.NoEntry
+                    ? "leaderboard_play_first" : "leaderboard_play_choose";
+            _buttonPlay.text = Text(key);
+            _buttonPlay.SetEnabled(canChoose);
+        }
+
+        /// <summary>Передаёт доступную часть суток существующему экрану выбора уровней.</summary>
+        private void OnClickPlay(ClickEvent evt)
+        {
+            evt.StopPropagation();
+            if (_openLevels == null || !_canInteract() || _selectedLocation == null || _selectedPart == null) return;
+
+            // Каталог и доступность могли измениться после показа таблицы.
+            var location = LevelSelectionModel.Create().Locations.FirstOrDefault(item =>
+                IsLocationOpen(item) && MatchesLocation(item, _selectedLocation.Id));
+            var part = location?.Parts.FirstOrDefault(item =>
+                IsPartOpen(item) && MatchesPart(item, _selectedPart.Id) && item.Levels.Any(level => level.IsUnlocked));
+            if (part == null)
+            {
+                _buttonPlay.SetEnabled(false);
+                return;
+            }
+            CloseRules();
+            _openLevels(location.Id, part.Id);
+        }
+
+        /// <summary>Подставляет числа из действующих владельцев score и XP.</summary>
+        private void BindRules()
+        {
+            _contentRoot.Q<Label>("leaderboard__rules-coin").text =
+                string.Format(Text("leaderboard_rules_coin"), RunScoreMechanics.CoinScore);
+            _contentRoot.Q<Label>("leaderboard__rules-collectibles").text =
+                string.Format(Text("leaderboard_rules_collectibles"), RunScoreMechanics.BonusScore);
+            _contentRoot.Q<Label>("leaderboard__rules-obstacle").text =
+                string.Format(Text("leaderboard_rules_obstacle"), RunScoreMechanics.DestroyedObstacleScore);
+            _contentRoot.Q<Label>("leaderboard__rules-reward-title").text =
+                string.Format(Text("leaderboard_rules_reward_title"), PlayerExperienceService.WeeklyLeaderboardRecordExperienceReward);
+        }
+
+        /// <summary>Открывает локальную подсказку, сохраняя таблицу и её прокрутку.</summary>
+        private void OnClickRules(ClickEvent evt)
+        {
+            evt.StopPropagation();
+            if (_rulesOpen)
+            {
+                CloseRules(restoreFocus: true);
+                return;
+            }
+            if (!_canInteract()) return;
+            BindRules();
+            _rulesOpen = true;
+            _contentRoot.Q("leaderboard-screen").AddToClassList("leaderboard-screen--rules-open");
+            _contentRoot.Q("leaderboard__viewport").SetEnabled(false);
+            _contentRoot.Q("toolbar").SetEnabled(false);
+            _rulesOverlay.style.display = DisplayStyle.Flex;
+            UpdateRulesBackdrop();
+            _rulesScroll.scrollOffset = Vector2.zero;
+            _buttonRulesClose.Focus();
+
+            // Важное окно или смена экрана закрывает подсказку вместе с её расписанием.
+            _rulesSchedule = _rulesOverlay.schedule.Execute(() =>
+            {
+                if (!_viewActive || !_canInteract()) CloseRules();
+                else UpdateRulesBackdrop();
+            }).Every(100);
+        }
+
+        /// <summary>Затемняет весь экран, оставляя содержимое подсказки внутри safe area.</summary>
+        private void UpdateRulesBackdrop()
+        {
+            var panelRoot = _rulesOverlay.panel?.visualTree;
+            if (panelRoot == null) return;
+            var bounds = _rulesOverlay.WorldToLocal(panelRoot.worldBound);
+            var backdrop = _contentRoot.Q("leaderboard__rules-backdrop");
+            backdrop.style.left = bounds.x;
+            backdrop.style.top = bounds.y;
+            backdrop.style.width = bounds.width;
+            backdrop.style.height = bounds.height;
+        }
+
+        /// <summary>Закрывает подсказку по явной кнопке.</summary>
+        private void OnClickRulesClose(ClickEvent evt)
+        {
+            evt.StopPropagation();
+            CloseRules(restoreFocus: true);
+        }
+
+        /// <summary>Закрывает подсказку по фону, сохраняя клики внутри панели.</summary>
+        private void OnClickRulesBackdrop(ClickEvent evt)
+        {
+            var target = evt.target as VisualElement;
+            if (target != null && target != _rulesPanel && !_rulesPanel.Contains(target))
+                CloseRules(restoreFocus: true);
+            evt.StopPropagation();
+        }
+
+        /// <summary>Поддерживает клавишу закрытия при фокусе внутри подсказки.</summary>
+        private void OnRulesKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode != KeyCode.Escape) return;
+            evt.StopPropagation();
+            CloseRules(restoreFocus: true);
+        }
+
+        /// <summary>Снимает временное расписание при закрытии или уходе с экрана.</summary>
+        private void CloseRules(bool restoreFocus = false)
+        {
+            _rulesSchedule?.Pause();
+            _rulesSchedule = null;
+            _rulesOpen = false;
+            _contentRoot.Q("leaderboard-screen")?.RemoveFromClassList("leaderboard-screen--rules-open");
+            if (_rulesOverlay != null) _rulesOverlay.style.display = DisplayStyle.None;
+            _contentRoot.Q("leaderboard__viewport")?.SetEnabled(true);
+            _contentRoot.Q("toolbar")?.SetEnabled(true);
+            if (restoreFocus && _viewActive) _buttonRules?.Focus();
+        }
+
+
         private static string Text(string key) => LocalizationManager.GetLocalizedString(key) ?? key;
 
         private void OnResultsChanged(string boardId)
@@ -463,6 +615,7 @@ namespace LostCyberHamster.UI
 
         private void OnClickParticipation(ClickEvent evt)
         {
+            CloseRules();
             if (_participationStatus == LeaderboardParticipationStatus.Conflict)
             {
                 _cloudSyncService?.ShowConflict();
@@ -672,6 +825,7 @@ namespace LostCyberHamster.UI
 
         private void ShowUnavailable()
         {
+            RenderPlayAction(null);
             _status.style.display = DisplayStyle.None;
             _loading.style.display = DisplayStyle.None;
             _error.style.display = DisplayStyle.None;
@@ -796,6 +950,11 @@ namespace LostCyberHamster.UI
         protected override void OnSubscribeToEvents()
         {
             _viewActive = true;
+            _buttonPlay?.RegisterCallback<ClickEvent>(OnClickPlay);
+            _buttonRules?.RegisterCallback<ClickEvent>(OnClickRules);
+            _buttonRulesClose?.RegisterCallback<ClickEvent>(OnClickRulesClose);
+            _rulesOverlay?.RegisterCallback<ClickEvent>(OnClickRulesBackdrop);
+            _rulesOverlay?.RegisterCallback<KeyDownEvent>(OnRulesKeyDown);
             GameDataManager.ProfileChanged += OnProfileChanged;
             if (_readService != null) _readService.ResultsChanged += OnResultsChanged;
             _buttonRefresh?.RegisterCallback<ClickEvent>(OnClickRetry);
@@ -815,6 +974,12 @@ namespace LostCyberHamster.UI
         {
             _requestVersion++;
             _viewActive = false;
+            CloseRules();
+            _buttonPlay?.UnregisterCallback<ClickEvent>(OnClickPlay);
+            _buttonRules?.UnregisterCallback<ClickEvent>(OnClickRules);
+            _buttonRulesClose?.UnregisterCallback<ClickEvent>(OnClickRulesClose);
+            _rulesOverlay?.UnregisterCallback<ClickEvent>(OnClickRulesBackdrop);
+            _rulesOverlay?.UnregisterCallback<KeyDownEvent>(OnRulesKeyDown);
             GameDataManager.ProfileChanged -= OnProfileChanged;
             if (_readService != null) _readService.ResultsChanged -= OnResultsChanged;
             _buttonRefresh?.UnregisterCallback<ClickEvent>(OnClickRetry);

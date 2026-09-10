@@ -5,6 +5,10 @@
     overflow: hidden;
 }
 
+.leaderboard-screen.leaderboard-screen--rules-open {
+    overflow: visible;
+}
+
 .main-screen-title--league {
     width: 348.255px;
     background-image: url("/Assets/Content/ui/sprites/league/title_league.png");
@@ -409,4 +413,153 @@
 
 #leaderboard-screen .leaderboard-location-arrow--disabled {
     opacity: 0.55;
+}
+
+.leaderboard-actions {
+    position: absolute;
+    left: 16.666667%;
+    right: 16.666667%;
+    top: 60px;
+    height: 64px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.leaderboard-action-button,
+.leaderboard-rules-close {
+    flex-shrink: 0;
+    padding: 4px 20px;
+    background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    color: rgb(15, 22, 27);
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+    white-space: nowrap;
+}
+
+.leaderboard-action-button--rules {
+    width: 220px;
+    height: 52px;
+}
+
+.leaderboard-action-button--play {
+    width: 320px;
+    height: 64px;
+    color: rgb(255, 255, 255);
+    background-image: url("/Assets/Content/ui/sprites/shared/button_reward_primary_base.png");
+    -unity-slice-left: 38;
+    -unity-slice-right: 38;
+    -unity-slice-top: 24;
+    -unity-slice-bottom: 24;
+}
+
+.leaderboard-action-button:disabled {
+    opacity: 0.55;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.leaderboard-rules-overlay {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.leaderboard-rules-backdrop {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.leaderboard-rules-frame {
+    position: relative;
+    flex-shrink: 0;
+    width: 1672px;
+    height: 821px;
+}
+
+.leaderboard-rules-design {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1672px;
+    height: 821px;
+    transform-origin: 0 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.leaderboard-rules-panel {
+    width: 960px;
+    height: 680px;
+    padding: 28px 40px 32px;
+    background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 80;
+    -unity-slice-right: 80;
+    -unity-slice-top: 80;
+    -unity-slice-bottom: 80;
+    -unity-slice-scale: 0.5;
+}
+
+.leaderboard-rules-text {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    color: rgb(16, 32, 53);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 0;
+    -unity-text-align: upper-left;
+    white-space: normal;
+}
+
+.leaderboard-rules-title {
+    font-size: 32px;
+    margin-bottom: 16px;
+    -unity-text-align: middle-center;
+}
+
+.leaderboard-rules-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+    margin: 0;
+}
+
+.leaderboard-rules-scroll .unity-scroll-view__content-container {
+    padding-right: 14px;
+}
+
+.leaderboard-rules-section-title {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-size: 24px;
+}
+
+.leaderboard-rules-paragraph {
+    margin-bottom: 10px;
+}
+
+.leaderboard-rules-note {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 19px;
+}
+
+.leaderboard-rules-close {
+    width: 270px;
+    height: 58px;
+    margin-top: 16px;
+    align-self: center;
 }

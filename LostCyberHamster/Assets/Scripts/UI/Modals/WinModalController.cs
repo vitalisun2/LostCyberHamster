@@ -269,13 +269,14 @@ namespace LostCyberHamster.UI
                 _runResult.RunScore.ToString("0")) + " · " + FormatLocalized("progression_win_xp",
                     LevelManager.LastCompletionExperience.Amount.ToString());
 
-            // Вторая строка показывает один статус без наложения соседних текстов.
+            // Подтверждённый рекорд сохраняет свою строку рядом с отдельным переходом.
             var isResolved =
                 _runResult.SubmissionState == RunResultSubmissionState.Submitted ||
                 _runResult.SubmissionState == RunResultSubmissionState.NotRequired;
             var showLeaderboard =
                 isResolved && _runResult.IsLastLevelOfPart;
-            _recordLabel.style.display = isResolved && !showLeaderboard
+            _recordLabel.EnableInClassList("game-result-modal__record--with-leaderboard", showLeaderboard);
+            _recordLabel.style.display = isResolved
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
             if (isResolved)
@@ -292,9 +293,10 @@ namespace LostCyberHamster.UI
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
             _leaderboardButton.SetEnabled(showLeaderboard);
-            _leaderboardButton.text = FormatLocalized(
+            _leaderboardButton.enableRichText = true;
+            _leaderboardButton.text = "<u>" + FormatLocalized(
                 "win_open_leaderboard",
-                GetLocalizedPartName(_runResult.LevelKey.PartOfDayId));
+                GetLocalizedPartName(_runResult.LevelKey.PartOfDayId)) + "</u>";
 
             _submissionStatusLabel.style.display = isResolved
                 ? DisplayStyle.None

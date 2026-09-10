@@ -67,7 +67,15 @@ namespace Assets.Scripts.Entry_Points
                 !string.IsNullOrWhiteSpace(leaderboardLocationId) &&
                 !string.IsNullOrWhiteSpace(leaderboardPartId);
             NextGoalNavigation.DiscardOtherDestination(hasNavigationRequest ? requestedScreen : ScreenEnum.HomeScreen);
-            var leaderboardScreenController = new LeaderboardScreenController(_uiDocument, _cloudSyncService);
+            var selectLevelScreenController = new SelectLevelScreenController(_uiDocument);
+            var leaderboardScreenController = new LeaderboardScreenController(_uiDocument, _cloudSyncService,
+                (locationId, partId) =>
+                {
+                    selectLevelScreenController.SetInitialSelection(locationId, partId);
+                    UIManager.OnScreenShow?.Invoke(ScreenEnum.SelectLevelScreen);
+                },
+                () => _uiManager != null && _uiManager.CurrentScreen == ScreenEnum.LeaderboardScreen &&
+                    !_uiManager.HasModalOrTransition && !_uiManager.HasPriorityPresentation);
             if (openLeaderboard)
             {
                 leaderboardScreenController.SetInitialSelection(
@@ -91,7 +99,7 @@ namespace Assets.Scripts.Entry_Points
                 new CloudSaveConflictModalController(_uiDocument),
                 new CharacterScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager)),
                 new QuestsScreenController(_uiDocument),
-                new SelectLevelScreenController(_uiDocument),
+                selectLevelScreenController,
                 leaderboardScreenController,
                 new ShopScreenController(_uiDocument),
                 new LevelUpModalController(_uiDocument, () => _uiManager.CloseModal(ScreenEnum.LevelUpModal)),

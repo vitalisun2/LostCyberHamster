@@ -6,6 +6,10 @@
         <engine:VisualElement name="leaderboard__viewport" class="leaderboard-viewport main-screen-body main-screen-body--below-hud">
             <engine:VisualElement name="leaderboard__scale-frame" class="leaderboard-scale-frame">
                 <engine:VisualElement name="leaderboard__design" class="leaderboard-design">
+                    <engine:VisualElement class="leaderboard-actions">
+                        <Vues.GameCore.LocalizedButton key="leaderboard_rules_open" name="leaderboard__btn-rules" class="leaderboard-image-button leaderboard-action-button leaderboard-action-button--rules" />
+                        <engine:Button name="leaderboard__btn-play" class="leaderboard-image-button leaderboard-action-button leaderboard-action-button--play" />
+                    </engine:VisualElement>
                     <engine:VisualElement class="leaderboard-center">
                         <engine:VisualElement class="leaderboard-center__art" picking-mode="Ignore" />
 
@@ -77,5 +81,29 @@
         </engine:VisualElement>
         <engine:VisualElement class="main-screen-title main-screen-title--league" picking-mode="Ignore" />
         <engine:Instance template="Toolbar" name="toolbar" class="main-screen-hud" />
+        <engine:VisualElement name="leaderboard__rules-overlay" class="leaderboard-rules-overlay">
+            <engine:VisualElement name="leaderboard__rules-backdrop" class="leaderboard-rules-backdrop" />
+            <engine:VisualElement name="leaderboard__rules-frame" class="leaderboard-rules-frame">
+                <engine:VisualElement name="leaderboard__rules-design" class="leaderboard-rules-design">
+                    <engine:VisualElement name="leaderboard__rules-panel" class="leaderboard-rules-panel">
+                        <Vues.GameCore.LocalizedLabel key="leaderboard_rules_title" class="leaderboard-rules-text leaderboard-rules-title" />
+                        <engine:ScrollView name="leaderboard__rules-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="leaderboard-rules-scroll">
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_intro" class="leaderboard-rules-text leaderboard-rules-paragraph" />
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_scoring_title" class="leaderboard-rules-text leaderboard-rules-section-title" />
+                            <engine:Label name="leaderboard__rules-coin" class="leaderboard-rules-text" />
+                            <engine:Label name="leaderboard__rules-collectibles" class="leaderboard-rules-text" />
+                            <engine:Label name="leaderboard__rules-obstacle" class="leaderboard-rules-text" />
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_score_note" class="leaderboard-rules-text leaderboard-rules-paragraph" />
+                            <engine:Label name="leaderboard__rules-reward-title" class="leaderboard-rules-text leaderboard-rules-section-title" />
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_reward" class="leaderboard-rules-text" />
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_limit" class="leaderboard-rules-text leaderboard-rules-note" />
+                            <Vues.GameCore.LocalizedLabel key="leaderboard_rules_profile" class="leaderboard-rules-text leaderboard-rules-paragraph" />
+                        </engine:ScrollView>
+                        <Vues.GameCore.LocalizedButton key="leaderboard_rules_close" name="leaderboard__rules-close" class="leaderboard-image-button leaderboard-rules-close" />
+                    </engine:VisualElement>
+                </engine:VisualElement>
+            </engine:VisualElement>
+        </engine:VisualElement>
+
     </engine:VisualElement>
 </engine:UXML>

@@ -182,12 +182,17 @@
     font-size: 18px;
 }
 
-.game-result-modal__leaderboard {
+.game-result-modal--win .game-result-modal__record--with-leaderboard {
+    top: 306px;
+    height: 30px;
+}
+
+.game-result-modal--win .game-result-modal__leaderboard {
     position: absolute;
     left: 70px;
-    top: 315px;
+    top: 342px;
     width: 642px;
-    height: 32px;
+    height: 36px;
     display: none;
     margin: 0;
     padding: 0;
@@ -202,6 +207,15 @@
     -unity-text-align: middle-center;
     white-space: nowrap;
     overflow: hidden;
+}
+
+.game-result-modal--win .game-result-modal__leaderboard:hover,
+.game-result-modal--win .game-result-modal__leaderboard:focus {
+    color: rgb(0, 102, 161);
+}
+
+.game-result-modal--win .game-result-modal__leaderboard:active {
+    opacity: 0.75;
 }
 
 .game-result-modal__message--no-lives {

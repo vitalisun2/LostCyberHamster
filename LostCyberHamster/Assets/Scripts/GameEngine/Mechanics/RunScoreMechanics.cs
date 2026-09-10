@@ -12,9 +12,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
     /// </summary>
     public sealed class RunScoreMechanics
     {
-        private const int _coinScore = 1;
-        private const int _bonusScore = 2;
-        private const int _destroyedObstacleScore = 3;
+        public const int CoinScore = 1;
+        public const int BonusScore = 2;
+        public const int DestroyedObstacleScore = 3;
 
         private readonly AtomicEvent<ObstacleTypeEnum> _collectableCollectedEvent;
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
@@ -62,13 +62,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
             switch (collectableType)
             {
                 case ObstacleTypeEnum.collectableCoin:
-                    AddScore(_coinScore, collectableType.ToString());
+                    AddScore(CoinScore, collectableType.ToString());
                     break;
                 case ObstacleTypeEnum.collectableCrystal:
                 case ObstacleTypeEnum.collectableEnergetic:
                 case ObstacleTypeEnum.collectablePizza:
                 case ObstacleTypeEnum.collectableLife:
-                    AddScore(_bonusScore, collectableType.ToString());
+                    AddScore(BonusScore, collectableType.ToString());
                     break;
             }
         }
@@ -76,7 +76,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void OnObstacleDestroyed(Obstacle obstacle)
         {
             var obstacleName = obstacle == null ? "unknown" : obstacle.name;
-            AddScore(_destroyedObstacleScore, $"destroyedObstacle:{obstacleName}");
+            AddScore(DestroyedObstacleScore, $"destroyedObstacle:{obstacleName}");
         }
 
         private void OnFinish()

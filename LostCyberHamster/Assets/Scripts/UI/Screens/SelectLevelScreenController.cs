@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Assets.Scripts.System;
+using GameManagement;
 using GameManagement.Progress;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -60,6 +62,10 @@ namespace LostCyberHamster.UI
         private LocationView _selectedLocationView;
         private PartView _selectedPartView;
         private SelectionState _state = SelectionState.DayPart;
+        private string _initialLocationId;
+        private string _initialPartId;
+        private string _initialProfileId;
+        private long _initialGeneration;
         private VisualElement _locationSwipeSurface;
         private int _swipePointerId = -1;
         private int _suppressedClickPointerId = -1;
@@ -89,16 +95,70 @@ namespace LostCyberHamster.UI
         {
             // Восстанавливаем состояние выбора из текущего прогресса.
             InitializeSelectionModel();
-            ApplyNextGoalTarget();
+            if (!ApplyInitialSelection()) ApplyNextGoalTarget();
             RenderCurrentState();
         }
 
         /// <summary>Применяет цель и при переходе внутри уже открытого Select Level.</summary>
         internal void ShowNextGoalTarget()
         {
+            ClearInitialSelection();
             InitializeSelectionModel();
             ApplyNextGoalTarget();
             RenderCurrentState();
+        }
+
+        /// <summary>Сохраняет одноразовый вход из рейтинга без выбора игрового уровня.</summary>
+        public void SetInitialSelection(string locationId, string partId)
+        {
+            _initialLocationId = locationId?.Trim();
+            _initialPartId = partId?.Trim();
+            _initialProfileId = GameDataManager.ProfileId;
+            _initialGeneration = GameDataManager.Generation;
+            // Последний явный переход заменяет ранее подготовленную цель карточки.
+            NextGoalNavigation.Prepare(null);
+        }
+
+        /// <summary>Потребляет цель рейтинга и проверяет её по свежему профилю и каталогу.</summary>
+        private bool ApplyInitialSelection()
+        {
+            if (_initialLocationId == null && _initialPartId == null) return false;
+            string locationId = _initialLocationId;
+            string partId = _initialPartId;
+            bool currentProfile = _initialProfileId == GameDataManager.ProfileId &&
+                _initialGeneration == GameDataManager.Generation;
+            ClearInitialSelection();
+            if (!currentProfile) return true;
+
+            for (int index = 0; index < _selectionModel.Locations.Count; index++)
+            {
+                var location = _selectionModel.Locations[index];
+                if (!location.IsUnlocked || !string.Equals(location.Id, locationId, StringComparison.OrdinalIgnoreCase)) continue;
+                var part = location.Parts.FirstOrDefault(item => item.IsUnlocked &&
+                    string.Equals(item.Id, partId, StringComparison.OrdinalIgnoreCase) &&
+                    item.Levels.Any(level => level.IsUnlocked));
+                if (part != null) SelectPart(index, location, part);
+                break;
+            }
+            return true;
+        }
+
+        /// <summary>Сбрасывает одноразовый вход, сохраняя обычную навигацию экрана.</summary>
+        private void ClearInitialSelection()
+        {
+            _initialLocationId = null;
+            _initialPartId = null;
+            _initialProfileId = null;
+            _initialGeneration = 0;
+        }
+
+        /// <summary>Открывает сетку уже проверенной части суток.</summary>
+        private void SelectPart(int locationIndex, LocationView location, PartView part)
+        {
+            _currentLocationIndex = locationIndex;
+            _selectedLocationView = location;
+            _selectedPartView = part;
+            _state = SelectionState.Levels;
         }
 
         /// <summary>Открывает существующую сетку нужной части суток по адресу цели.</summary>
@@ -119,10 +179,7 @@ namespace LostCyberHamster.UI
                     foreach (var level in part.Levels)
                     {
                         if (!level.IsUnlocked || !string.Equals(level.Address, address, StringComparison.Ordinal)) continue;
-                        _currentLocationIndex = locationIndex;
-                        _selectedLocationView = location;
-                        _selectedPartView = part;
-                        _state = SelectionState.Levels;
+                        SelectPart(locationIndex, location, part);
                         return;
                     }
                 }
