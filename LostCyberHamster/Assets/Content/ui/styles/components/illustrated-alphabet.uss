@@ -1,14 +1,28 @@
 .illustrated-alphabet {
     overflow: visible;
+    justify-content: center;
+    align-items: center;
+}
+
+.illustrated-alphabet__word {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    height: 100px;
+    transform-origin: 50% 50%;
 }
 
 .illustrated-alphabet__glyph,
 .illustrated-alphabet__space {
     flex-grow: 0;
     flex-shrink: 0;
+    height: 100px;
 }
 
 .illustrated-alphabet__glyph {
+    margin-left: 0;
+    margin-right: 0;
     -unity-background-scale-mode: scale-to-fit;
 }
 
