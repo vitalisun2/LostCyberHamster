@@ -304,6 +304,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\AddCoinsOrBonusMechanics.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Gameplay\TutorialInputCapture.cs" />
     <Compile Include="Assets\Scripts\UI\NextGoals\NextGoalCoordinator.cs" />
+    <Compile Include="Assets\Scripts\UI\Components\IllustratedAlphabetKerning.cs" />
     <Compile Include="Assets\Scripts\Common\Models\LocationTheme.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\ShopScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\RoofJumpOver\RoofJumpOverStrategy.cs" />
@@ -582,6 +583,7 @@
     <Compile Include="Assets\Scripts\Gameplay\LifeBonus.cs" />
     <Compile Include="Assets\Scripts\DevTools\GameProgressTesting\GameProgressTestRunner.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateEntityIds.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\ObstacleDamageGate.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphNode.cs" />
     <Compile Include="Assets\Scripts\DevTools\Account\AccountDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\DevTools\ExperienceProgressTesting\ExperienceProgressTestingScreen.cs" />
