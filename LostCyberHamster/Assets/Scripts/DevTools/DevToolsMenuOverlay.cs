@@ -25,7 +25,11 @@ namespace Assets.Scripts.DevTools
             _shell?.Tick();
         }
 
-        private void OnDestroy() => ExperienceProgressTestRunner.Shared.HandlePlayModeStopped();
+        private void OnDestroy()
+        {
+            _shell?.Dispose();
+            ExperienceProgressTestRunner.Shared.HandlePlayModeStopped();
+        }
     }
 }
 #endif

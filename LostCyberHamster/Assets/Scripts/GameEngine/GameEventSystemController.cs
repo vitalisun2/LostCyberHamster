@@ -12,8 +12,6 @@ using UnityEngine.InputSystem.UI;
 
 public class GameEventSystemController : MonoBehaviour
 {
-    private static GameObject _globalEventSystem;
-
     void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
@@ -77,8 +75,6 @@ public class GameEventSystemController : MonoBehaviour
 #else
         go.AddComponent<StandaloneInputModule>();
 #endif
-            _globalEventSystem = go;
-            Object.DontDestroyOnLoad(go);
             return;
         }
 
@@ -89,29 +85,13 @@ public class GameEventSystemController : MonoBehaviour
     EventSystem keep = all.FirstOrDefault(e => e.GetComponent<StandaloneInputModule>() != null) ?? all[0];
 #endif
 
-        // если уже есть глобальный — предпочесть его
-        if (_globalEventSystem != null)
-        {
-            var globalEs = _globalEventSystem.GetComponent<EventSystem>();
-            if (globalEs != null) keep = globalEs;
-            else _globalEventSystem = keep.gameObject;
-        }
-        else
-        {
-            _globalEventSystem = keep.gameObject;
-        }
-
         // удалить лишние
-        int removed = 0;
         foreach (var es in all)
         {
             if (es != keep)
             {
                 Object.Destroy(es.gameObject);
-                removed++;
             }
         }
-
-        Object.DontDestroyOnLoad(keep.gameObject);
     }
 }

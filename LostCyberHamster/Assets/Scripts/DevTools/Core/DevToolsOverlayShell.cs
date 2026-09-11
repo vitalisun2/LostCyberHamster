@@ -10,6 +10,7 @@ using Assets.Scripts.System;
 using Assets.Scripts.Online;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using ResourcesDevToolsScreen =
     Assets.Scripts.DevTools.Resources.ResourcesDevToolsScreen;
@@ -77,6 +78,7 @@ namespace Assets.Scripts.DevTools.Core
         public DevToolsOverlayShell(GameObject host, AccountService accountService)
         {
             _host = host;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
             EnsureEventSystem();
 
             Font font = LoadDefaultFont();
@@ -233,12 +235,33 @@ namespace Assets.Scripts.DevTools.Core
             }
 
             _ownedEventSystemObject = new GameObject("[DevToolsEventSystem]", typeof(EventSystem));
-            _ownedEventSystemObject.transform.SetParent(_host.transform, false);
+            _ownedEventSystemObject.transform.SetParent(null, false);
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid())
+            {
+                SceneManager.MoveGameObjectToScene(_ownedEventSystemObject, activeScene);
+            }
 #if ENABLE_INPUT_SYSTEM
             _ownedEventSystemObject.AddComponent<InputSystemUIInputModule>();
 #else
             _ownedEventSystemObject.AddComponent<StandaloneInputModule>();
 #endif
+        }
+
+        public void Dispose()
+        {
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+        }
+
+        private void HandleSceneUnloaded(Scene _)
+        {
+            if (_ownedEventSystemObject == null)
+            {
+                return;
+            }
+
+            Object.Destroy(_ownedEventSystemObject);
+            _ownedEventSystemObject = null;
         }
 
         private void OpenPanel()
