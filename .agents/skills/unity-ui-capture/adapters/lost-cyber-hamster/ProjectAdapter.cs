@@ -36,14 +36,24 @@ namespace UiGallery
         public async Task Begin(Context context)
         {
             MenuEntryPoint menu = null;
-            for (int i = 0; i < 300; i++)
+            object conflictCoordinator = null;
+            for (int i = 0; i < 900; i++)
             {
                 if (!Application.isPlaying) throw new OperationCanceledException();
                 menu = UnityEngine.Object.FindFirstObjectByType<MenuEntryPoint>();
-                if (menu != null && Context.Field(menu, "_cloudSaveConflictCoordinator") != null && GameDataManager.IsLoaded) break;
+                if (menu != null)
+                {
+                    conflictCoordinator = Context.Field(menu, "_cloudSaveConflictCoordinator");
+                    if (conflictCoordinator != null && GameDataManager.IsLoaded) break;
+                }
                 await Task.Delay(100);
             }
-            if (menu == null || Context.Field(menu, "_cloudSaveConflictCoordinator") == null) throw new InvalidOperationException("Menu initialization timed out; open Bootstrap before capture");
+            if (menu == null || conflictCoordinator == null || !GameDataManager.IsLoaded)
+                throw new InvalidOperationException(
+                    "Menu initialization timed out after 90s; scene=" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().path +
+                    "; menu=" + (menu != null) +
+                    "; cloudCoordinator=" + (conflictCoordinator != null) +
+                    "; gameDataLoaded=" + GameDataManager.IsLoaded);
             if (GameDataManager.HasProgressionTestingBackup) throw new InvalidOperationException("Existing testing backup belongs to another session");
             context.Ui = (UIManager)Context.Field(menu, "_uiManager");
             context.Document = (UIDocument)Context.Field(menu, "_uiDocument");
