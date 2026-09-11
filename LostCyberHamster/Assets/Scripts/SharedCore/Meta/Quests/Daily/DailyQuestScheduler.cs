@@ -18,10 +18,22 @@ namespace Vues.GameCore.Quests
             DailyQuestSetState state,
             DateTime localNow)
         {
-            string date = GetGenerationDate(localNow);
-            return state == null ||
-                   !string.Equals(state.GenerationDate, date, StringComparison.Ordinal) &&
-                   !(state.UsedGenerationDates?.Contains(date) ?? false);
+            if (state == null)
+            {
+                return true;
+            }
+
+            if (!DateTime.TryParseExact(
+                    state.GenerationDate,
+                    GenerationDateFormat,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime generatedDay))
+            {
+                return true;
+            }
+
+            return generatedDay.Date < localNow.Date;
         }
 
         /// <summary>
