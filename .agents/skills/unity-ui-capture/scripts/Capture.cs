@@ -16,8 +16,13 @@ namespace UiGallery
         public string id, fixture, dataJson, file, method;
         public string[] expected, expectedText;
         public int settleMs = 600;
+        public int attempts = 1;
     }
-    [Serializable] public class Plan { public Shot[] shots; }
+    [Serializable] public class Plan
+    {
+        public Shot[] shots;
+        public bool continueOnError;
+    }
     [Serializable] public class Evidence
     {
         public string name;
@@ -155,32 +160,46 @@ namespace UiGallery
                 foreach (var shot in plan.shots)
                 {
                     result.current = shot.id; Save();
-                    var frame = new Frame { id = shot.id, file = shot.file };
-                    try
+                    Frame frame = null;
+                    for (int attempt = 1; attempt <= Math.Max(1, shot.attempts); attempt++)
                     {
-                        CheckCancellation();
-                        context.ResetViews();
-                        await adapter.Reset(context);
-                        CheckCancellation();
-                        await adapter.Prepare(context, shot);
-                        CheckCancellation();
-                        frame.elements = await context.Settle(shot);
-                        CheckCancellation();
-                        frame.visibleText = context.ReadVisibleText();
-                        foreach (var text in shot.expectedText ?? Array.Empty<string>())
-                            if (!frame.visibleText.Contains(text)) throw new InvalidOperationException("Expected visible text missing: " + text);
-                        frame.width = Screen.width; frame.height = Screen.height; frame.method = shot.method;
-                        string path = Path.Combine(OutputPath, shot.file);
-                        ScreenCapture.CaptureScreenshot(path);
-                        for (int i = 0; i < 100 && !File.Exists(path); i++) { CheckCancellation(); await Task.Delay(100); }
-                        if (!File.Exists(path)) throw new IOException("Screenshot not written");
-                        await Task.Delay(150);
-                        frame.success = true;
+                        frame = new Frame { id = shot.id, file = shot.file };
+                        try
+                        {
+                            CheckCancellation();
+                            context.ResetViews();
+                            await adapter.Reset(context);
+                            CheckCancellation();
+                            await adapter.Prepare(context, shot);
+                            CheckCancellation();
+                            frame.elements = await context.Settle(shot);
+                            CheckCancellation();
+                            frame.visibleText = context.ReadVisibleText();
+                            foreach (var text in shot.expectedText ?? Array.Empty<string>())
+                                if (!frame.visibleText.Contains(text)) throw new InvalidOperationException("Expected visible text missing: " + text);
+                            frame.width = Screen.width; frame.height = Screen.height; frame.method = shot.method;
+                            string path = Path.Combine(OutputPath, shot.file);
+                            Directory.CreateDirectory(Path.GetDirectoryName(path));
+                            ScreenCapture.CaptureScreenshot(path);
+                            for (int i = 0; i < 100 && !File.Exists(path); i++) { CheckCancellation(); await Task.Delay(100); }
+                            if (!File.Exists(path)) throw new IOException("Screenshot not written");
+                            await Task.Delay(150);
+                            frame.success = true;
+                        }
+                        catch (Exception e) { frame.error = e.ToString(); }
+                        if (frame.success) break;
+                        if (attempt < shot.attempts)
+                        {
+                            result.current = shot.id + $" (retry {attempt + 1}/{shot.attempts})";
+                            Save();
+                        }
                     }
-                    catch (Exception e) { frame.error = e.ToString(); }
                     result.frames.Add(frame); Save();
-                    if (!frame.success) throw new InvalidOperationException("Capture failed: " + shot.id);
+                    if (!frame.success && !plan.continueOnError) throw new InvalidOperationException("Capture failed: " + shot.id);
                 }
+                var failed = result.frames.Where(frame => !frame.success).Select(frame => frame.id).ToArray();
+                if (failed.Length > 0)
+                    throw new InvalidOperationException("Capture failed for: " + string.Join(", ", failed));
             }
             catch (Exception e) { result.error = e.ToString(); }
             finally { Cleanup(); }

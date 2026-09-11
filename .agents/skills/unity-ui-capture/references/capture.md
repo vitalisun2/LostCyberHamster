@@ -7,10 +7,13 @@
 ```json
 {
   "title": "Запрошенный flow",
+  "continueOnError": true,
+  "defaultAttempts": 2,
   "cases": [{
     "id": "feature",
     "title": "Название кейса",
     "source": "Путь к controller/presenter текущего проекта",
+    "folder": "01_Название_экрана",
     "states": [{
       "id": "ready",
       "title": "Готово к действию",
@@ -18,17 +21,18 @@
       "data": {"progress": 5},
       "expected": ["actual-visible-element-name"],
       "expectedText": [],
-      "note": "Описание подготовленных данных"
+      "note": "Описание подготовленных данных",
+      "attempts": 2
     }]
   }]
 }
 ```
 
-Сохранить реальные имена из исходников. `cases` / `states` задают порядок flow. `data` — произвольный JSON-объект адаптера. `expected` содержит имена контрольных элементов; `expectedText` — подстроки видимого текста с учётом регистра. `settleMs`: 600 по умолчанию, допустимо 100–10000. Идентификаторы — `[a-z0-9-]+`, имена PNG — `case--state.png`.
+Сохранить реальные имена из исходников. `cases` / `states` задают порядок flow. `folder` создаёт смысловую подпапку; путь должен быть относительным и без `..`. `data` — произвольный JSON-объект адаптера. `expected` содержит имена контрольных элементов; `expectedText` — подстроки видимого текста с учётом регистра. `settleMs`: 600 по умолчанию, допустимо 100–10000. `attempts`: 1–3; `defaultAttempts` задаёт значение плана. `continueOnError` позволяет доснять независимые состояния, но итог остаётся неуспешным при любом пропущенном кадре. Идентификаторы — `[a-z0-9-]+`.
 
 ## Адаптер проекта
 
-Все объявления C# заключить в namespace `UiGallery`, включая using. Файл передаётся через `--adapter`, несколько файлов — через пробел. Runner компилирует их совместно вне Assets через Unity CLI `run_script`, без project recompile. Полный рабочий пример чтения текущего UI — [current-screen-adapter.cs.txt](../assets/current-screen-adapter.cs.txt).
+Все объявления C# заключить в namespace `UiGallery`, включая using. Готовый модуль хранить в `adapters/<module>/`: `adapter.json`, план и C# файлы. Descriptor содержит `id`, `projectMarkers`, `adapter`, `plan`, `outputName` и optional `lockFile`. Runner определяет модуль по всем маркерам и компилирует его совместно вне Assets через Unity CLI `run_script`, без project recompile. Полный простой пример чтения текущего UI — [current-screen-adapter.cs.txt](../assets/current-screen-adapter.cs.txt).
 
 Класс `GalleryProjectAdapter : IProjectAdapter` реализует:
 
@@ -54,19 +58,21 @@ UI Toolkit: назначить `context.Document` реальным UIDocument; �
 
 ```powershell
 python <skill>/scripts/capture.py validate --plan <plan.json>
-python <skill>/scripts/capture.py capture --project <Unity-project> --adapter <adapter.cs> --plan <plan.json> --out <new-output-folder>
+python <skill>/scripts/capture.py inspect --project <Unity-project>
+python <skill>/scripts/capture.py capture --project <Unity-project>
+python <skill>/scripts/capture.py audit --out <output-folder>
 python <skill>/scripts/capture.py build --out <output-folder>
 python <skill>/scripts/capture.py serve --out <output-folder> --port 8767
 ```
 
-При наличии общего project lock добавить `--lock-file <путь>`. `serve` работает до остановки процесса; на Windows запускать скрытым. Галерея открывается и как локальный HTML, без сервера.
+Без `--out` создаётся новая папка в Windows Downloads known folder; учитывается перенаправленный профиль. `capture` создаёт только PNG и служебные JSON. `--gallery`, `build` и `serve` используют соседний image-gallery только по явному запросу. Ручные `--adapter ... --plan ...` сохраняются для проекта без модуля.
 
 ## Результат и восстановление после ошибки
 
 PNG снимается `ScreenCapture.CaptureScreenshot` после стабилизации bounds; снимок камеры может пропустить overlay UI. Размер берётся из Game View. Другие разрешения/языки — отдельные наборы.
 
-Файлы: `index.html`, PNG, `manifest.json`, `run.json`, `capture-result.json`. Manifest содержит подписи, SHA256, размер, bounds и видимый текст. Неполный набор помечается на странице. Проверить кадры визуально перед выдачей.
+Файлы: PNG по подпапкам, `capture-manifest.json`, `run.json`, `capture-result.json`, `plan.json`, `capture-plan.json`. Manifest содержит подписи, SHA256, размер, bounds и видимый текст. HTML и `gallery-input.json` появляются только при `--gallery` или `build`. Проверить кадры визуально перед выдачей.
 
 Долгий batch работает как Task в AppDomain, ход сохраняется в capture-result.json. При отмене runner запрашивает остановку Task, дожидается завершения и останавливает только свою Play-сессию. При неясном восстановлении lock остаётся: прочитать результат, проверить Editor и адаптер; повторный capture до проверки не запускать. Истёкший timeout CLI не доказывает отмену команды, поэтому после editor_play проверяется реальное состояние Editor.
 
-Скрипты и шаблон универсальны. Адаптеры конкретного приложения и его планы хранить в самом проекте отдельно от скилла; перенос скилла в другую игру не требует переносить их.
+Ядро универсально. Детали конкретного приложения хранить отдельным подключаемым модулем рядом со скиллом. Новый проект получает новый каталог модуля; общую логику менять только для переносимого поведения.

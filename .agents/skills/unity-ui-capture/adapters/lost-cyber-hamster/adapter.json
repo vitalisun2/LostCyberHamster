@@ -1,0 +1,16 @@
+{
+  "id": "lost-cyber-hamster",
+  "title": "LostCyberHamster",
+  "projectMarkers": [
+    "Assets/Scripts/UI/Common/ScreenEnum.cs",
+    "Assets/Content/ui/uxml/HomeScreen.uxml"
+  ],
+  "adapter": [
+    "ProjectAdapter.cs",
+    "Fixtures.cs",
+    "ExtraFixtures.cs"
+  ],
+  "plan": "plan.json",
+  "outputName": "LostCyberHamster_UI",
+  "lockFile": "../.worktrees/.integration-lock"
+}

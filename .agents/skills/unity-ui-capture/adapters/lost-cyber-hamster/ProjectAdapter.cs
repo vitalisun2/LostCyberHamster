@@ -67,6 +67,7 @@ namespace UiGallery
             context.Register(new LoseModalController(context.Document));
             context.Register(new PauseModalController(context.Document));
             Fixtures.Register();
+            ExtraFixtures.Register();
         }
         public async Task Reset(Context context)
         {

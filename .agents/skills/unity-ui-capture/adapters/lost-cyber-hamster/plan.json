@@ -1,0 +1,1872 @@
+{
+  "title": "LostCyberHamster UI",
+  "continueOnError": true,
+  "defaultAttempts": 2,
+  "cases": [
+    {
+      "id": "daily",
+      "title": "Ежедневные задания",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs",
+      "folder": "08_Ежедневные_задания",
+      "states": [
+        {
+          "id": "empty",
+          "title": "Без прогресса",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "empty"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "partial",
+          "title": "Частичный прогресс",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "partial"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "ready",
+          "title": "Награда доступна",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "ready"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "claimed",
+          "title": "Награда получена",
+          "fixture": "quests",
+          "data": {
+            "tab": "daily",
+            "mode": "claimed"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "story",
+      "title": "Сюжетные задания",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/QuestsScreenController.cs",
+      "folder": "09_Сюжетные_задания",
+      "states": [
+        {
+          "id": "empty",
+          "title": "Без прогресса",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "empty"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "partial",
+          "title": "Частичный прогресс",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "partial"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "ready",
+          "title": "Награда доступна",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "ready"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "claimed",
+          "title": "Награда получена",
+          "fixture": "quests",
+          "data": {
+            "tab": "story",
+            "mode": "claimed"
+          },
+          "expected": [
+            "questsscreen",
+            "quests_container"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "skills",
+      "title": "Развитие способностей",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/CharacterDevelopmentScreenController.cs",
+      "folder": "06_Развитие",
+      "states": [
+        {
+          "id": "locked",
+          "title": "Закрыто",
+          "fixture": "skills",
+          "data": {
+            "mode": "locked",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tiers",
+          "title": "Ступени I / II / III",
+          "fixture": "skills",
+          "data": {
+            "mode": "tiers",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "no-points",
+          "title": "Нет очков",
+          "fixture": "skills",
+          "data": {
+            "mode": "no-points",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "level-gate",
+          "title": "Ограничение по уровню",
+          "fixture": "skills",
+          "data": {
+            "mode": "level-gate",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "max",
+          "title": "Максимум",
+          "fixture": "skills",
+          "data": {
+            "mode": "max",
+            "ability": 1
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "title": "Экипировка способности",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Screens/CharacterScreenController.cs",
+      "folder": "05_Герой_способности",
+      "states": [
+        {
+          "id": "locked",
+          "title": "Закрыто",
+          "fixture": "hero",
+          "data": {
+            "mode": "locked",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tiers",
+          "title": "Ступени I / II / III",
+          "fixture": "hero",
+          "data": {
+            "mode": "tiers",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "max",
+          "title": "Максимум",
+          "fixture": "hero",
+          "data": {
+            "mode": "max",
+            "ability": 1
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "levelup",
+      "title": "Повышение уровня",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/LevelUpModalController.cs",
+      "folder": "28_Модалка_повышения_уровня",
+      "states": [
+        {
+          "id": "first",
+          "title": "Первое повышение",
+          "fixture": "levelup",
+          "data": {
+            "mode": "first"
+          },
+          "expected": [
+            "level-up-title",
+            "level-up-transition"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "normal",
+          "title": "Обычное повышение",
+          "fixture": "levelup",
+          "data": {
+            "mode": "normal"
+          },
+          "expected": [
+            "level-up-title",
+            "level-up-transition"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "win",
+      "title": "Победа",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/WinModalController.cs",
+      "folder": "25_Модалка_победы",
+      "states": [
+        {
+          "id": "no-xp",
+          "title": "Без XP",
+          "fixture": "win",
+          "data": {
+            "xp": 0,
+            "score": 1200,
+            "stars": 1
+          },
+          "expected": [
+            "win-modal",
+            "win_run_score"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "xp",
+          "title": "С XP",
+          "fixture": "win",
+          "data": {
+            "xp": 20,
+            "score": 2400,
+            "stars": 3
+          },
+          "expected": [
+            "win-modal",
+            "win_run_score"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "pause",
+      "title": "Пауза",
+      "source": "LostCyberHamster/Assets/Scripts/UI/Modals/PauseModalController.cs",
+      "folder": "24_Модалка_паузы",
+      "states": [
+        {
+          "id": "normal",
+          "title": "Обычная",
+          "fixture": "pause",
+          "data": {
+            "mode": "normal"
+          },
+          "expected": [
+            "pause-modal",
+            "btn__play"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        },
+        {
+          "id": "tutorial",
+          "title": "Обучение",
+          "fixture": "pause",
+          "data": {
+            "mode": "tutorial"
+          },
+          "expected": [
+            "pause-modal",
+            "btn__play"
+          ],
+          "note": "Тестовые данные; штатное представление"
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "title": "home",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "01_Главный_экран",
+      "states": [
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "home",
+            "mode": "empty"
+          },
+          "expected": [
+            "homescreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "home",
+            "mode": "normal"
+          },
+          "expected": [
+            "homescreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "full",
+          "title": "full",
+          "fixture": "extra",
+          "data": {
+            "kind": "home",
+            "mode": "full"
+          },
+          "expected": [
+            "homescreen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "intro",
+      "title": "intro",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "03_Интро",
+      "states": [
+        {
+          "id": "normal",
+          "title": "Интро",
+          "fixture": "extra",
+          "data": {
+            "kind": "intro",
+            "mode": "normal"
+          },
+          "expected": [
+            "capture-intro"
+          ],
+          "settleMs": 1000
+        }
+      ]
+    },
+    {
+      "id": "skins",
+      "title": "skins",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "04_Герой_скины",
+      "states": [
+        {
+          "id": "locked",
+          "title": "locked",
+          "fixture": "extra",
+          "data": {
+            "kind": "skin",
+            "mode": "locked"
+          },
+          "expected": [
+            "hero-skin-slots"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "skin",
+            "mode": "normal"
+          },
+          "expected": [
+            "hero-skin-slots"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "poor",
+          "title": "poor",
+          "fixture": "extra",
+          "data": {
+            "kind": "skin",
+            "mode": "poor"
+          },
+          "expected": [
+            "hero-skin-slots"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "owned",
+          "title": "owned",
+          "fixture": "extra",
+          "data": {
+            "kind": "skin",
+            "mode": "owned"
+          },
+          "expected": [
+            "hero-skin-slots"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "bottom",
+          "title": "bottom",
+          "fixture": "extra",
+          "data": {
+            "kind": "skin",
+            "mode": "bottom"
+          },
+          "expected": [
+            "hero-skin-slots"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "hero-selection",
+      "title": "hero-selection",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "05_Герой_способности",
+      "states": [
+        {
+          "id": "unequipped",
+          "title": "unequipped",
+          "fixture": "extra",
+          "data": {
+            "kind": "ability",
+            "mode": "unequipped"
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "other",
+          "title": "other",
+          "fixture": "extra",
+          "data": {
+            "kind": "ability",
+            "mode": "other"
+          },
+          "expected": [
+            "hero-ability-preview-description"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "ability-upgrade",
+      "title": "ability-upgrade",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "07_Модалка_улучшения",
+      "states": [
+        {
+          "id": "tiers",
+          "title": "tiers",
+          "fixture": "extra",
+          "data": {
+            "kind": "upgrade",
+            "mode": "tiers"
+          },
+          "expected": [
+            "ability-upgrade"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "no-points",
+          "title": "no-points",
+          "fixture": "extra",
+          "data": {
+            "kind": "upgrade",
+            "mode": "no-points"
+          },
+          "expected": [
+            "ability-upgrade"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "max",
+          "title": "max",
+          "fixture": "extra",
+          "data": {
+            "kind": "upgrade",
+            "mode": "max"
+          },
+          "expected": [
+            "ability-upgrade"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "title": "settings",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "16_Настройки",
+      "states": [
+        {
+          "id": "guest",
+          "title": "guest",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "guest"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "linked",
+          "title": "linked",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "linked"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "signing",
+          "title": "signing",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "signing"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "sync",
+          "title": "sync",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "sync"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "off",
+          "title": "off",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "off"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "language",
+          "title": "language",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "language"
+          },
+          "expected": [
+            "settingsscreen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "bottom",
+          "title": "Нижняя часть",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "bottom"
+          },
+          "expected": [
+            "settings__lbl-version"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "player-name",
+      "title": "player-name",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "17_Модалка_изменения_имени",
+      "states": [
+        {
+          "id": "edit",
+          "title": "edit",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "edit"
+          },
+          "expected": [
+            "settings__player-name-edit"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "error",
+          "title": "error",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "error"
+          },
+          "expected": [
+            "settings__player-name-edit"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "busy",
+          "title": "busy",
+          "fixture": "extra",
+          "data": {
+            "kind": "settings",
+            "mode": "busy"
+          },
+          "expected": [
+            "settings__player-name-edit"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "shop",
+      "title": "shop",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "15_Магазин",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "normal"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "ready",
+          "title": "ready",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "ready"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "poor",
+          "title": "poor",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "poor"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "owned",
+          "title": "owned",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "owned"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "cooldown",
+          "title": "cooldown",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "cooldown"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "message",
+          "title": "message",
+          "fixture": "extra",
+          "data": {
+            "kind": "shop",
+            "mode": "message"
+          },
+          "expected": [
+            "shop-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "select-level",
+      "title": "select-level",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "14_Выбор_локации_и_уровней",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "levels",
+            "mode": "normal"
+          },
+          "expected": [
+            "select-level-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "levels",
+          "title": "levels",
+          "fixture": "extra",
+          "data": {
+            "kind": "levels",
+            "mode": "levels"
+          },
+          "expected": [
+            "select-level-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "leaderboard",
+      "title": "leaderboard",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "21_Рейтинг",
+      "states": [
+        {
+          "id": "error",
+          "title": "error",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "error"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "empty"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "unavailable",
+          "title": "unavailable",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "unavailable"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "normal"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "outside",
+          "title": "outside",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "outside"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "bottom",
+          "title": "bottom",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "bottom"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "leaderboard-rules",
+      "title": "leaderboard-rules",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "22_Модалка_правил_рейтинга",
+      "states": [
+        {
+          "id": "rules",
+          "title": "rules",
+          "fixture": "extra",
+          "data": {
+            "kind": "board",
+            "mode": "rules"
+          },
+          "expected": [
+            "leaderboard__rules-overlay"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "cloud-conflict",
+      "title": "cloud-conflict",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "20_Модалка_выбора_сохранения",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "cloud",
+            "mode": "normal"
+          },
+          "expected": [
+            "cloud-save-conflict-viewport"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "no-cloud",
+          "title": "no-cloud",
+          "fixture": "extra",
+          "data": {
+            "kind": "cloud",
+            "mode": "no-cloud"
+          },
+          "expected": [
+            "cloud-save-conflict-viewport"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "busy",
+          "title": "busy",
+          "fixture": "extra",
+          "data": {
+            "kind": "cloud",
+            "mode": "busy"
+          },
+          "expected": [
+            "cloud-save-conflict-viewport"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "error",
+          "title": "error",
+          "fixture": "extra",
+          "data": {
+            "kind": "cloud",
+            "mode": "error"
+          },
+          "expected": [
+            "cloud-save-conflict-viewport"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "account",
+      "title": "account",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "18_Модалка_привязки_аккаунта",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "account",
+            "mode": "normal"
+          },
+          "expected": [
+            "account-prompt-modal__btn-link-account"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "profile-ownership",
+      "title": "profile-ownership",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "19_Модалки_выбора_профиля_и_входа",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "ownership",
+            "mode": "normal"
+          },
+          "expected": [
+            "profile-ownership-prompt"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "conflict",
+          "title": "conflict",
+          "fixture": "extra",
+          "data": {
+            "kind": "ownership",
+            "mode": "conflict"
+          },
+          "expected": [
+            "profile-ownership-prompt"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "signin",
+          "title": "signin",
+          "fixture": "extra",
+          "data": {
+            "kind": "ownership",
+            "mode": "signin"
+          },
+          "expected": [
+            "profile-ownership-prompt"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "pause-error",
+      "title": "pause-error",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "24_Модалка_паузы",
+      "states": [
+        {
+          "id": "resume",
+          "title": "resume",
+          "fixture": "extra",
+          "data": {
+            "kind": "pause-error",
+            "mode": "resume"
+          },
+          "expected": [
+            "pause-exit-error"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "blocked",
+          "title": "blocked",
+          "fixture": "extra",
+          "data": {
+            "kind": "pause-error",
+            "mode": "blocked"
+          },
+          "expected": [
+            "pause-exit-error"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "revive",
+      "title": "revive",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "26_Модалка_поражения",
+      "states": [
+        {
+          "id": "ready",
+          "title": "ready",
+          "fixture": "extra",
+          "data": {
+            "kind": "lose",
+            "mode": "ready"
+          },
+          "expected": [
+            "lose-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "poor",
+          "title": "poor",
+          "fixture": "extra",
+          "data": {
+            "kind": "lose",
+            "mode": "poor"
+          },
+          "expected": [
+            "lose-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "exhausted",
+          "title": "exhausted",
+          "fixture": "extra",
+          "data": {
+            "kind": "lose",
+            "mode": "exhausted"
+          },
+          "expected": [
+            "lose-modal"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "journey-complete",
+      "title": "journey-complete",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "27_Модалка_завершения_путешествия",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "journey",
+            "mode": "normal"
+          },
+          "expected": [
+            "journey-complete-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "complete",
+          "title": "complete",
+          "fixture": "extra",
+          "data": {
+            "kind": "journey",
+            "mode": "complete"
+          },
+          "expected": [
+            "journey-complete-modal"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "levelup-complete",
+      "title": "levelup-complete",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "28_Модалка_повышения_уровня",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "levelup-complete",
+            "mode": "normal"
+          },
+          "expected": [
+            "level-up-title"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "daily-reward",
+      "title": "daily-reward",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "10_Модалка_награды_заданий",
+      "states": [
+        {
+          "id": "ready",
+          "title": "ready",
+          "fixture": "extra",
+          "data": {
+            "kind": "daily-reward",
+            "mode": "ready"
+          },
+          "expected": [
+            "daily-quest-reward-title"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "busy",
+          "title": "busy",
+          "fixture": "extra",
+          "data": {
+            "kind": "daily-reward",
+            "mode": "busy"
+          },
+          "expected": [
+            "daily-quest-reward-title"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "activity-reward",
+      "title": "activity-reward",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "13_Модалка_награды_активности",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "activity-reward",
+            "mode": "normal"
+          },
+          "expected": [
+            "return-reward-title"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "busy",
+          "title": "busy",
+          "fixture": "extra",
+          "data": {
+            "kind": "activity-reward",
+            "mode": "busy"
+          },
+          "expected": [
+            "return-reward-title"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "seven-days",
+      "title": "seven-days",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "11_Семь_победных_дней",
+      "states": [
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "empty",
+            "tab": "cycle"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "ready",
+          "title": "ready",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "ready",
+            "tab": "cycle"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "complete",
+          "title": "complete",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "complete",
+            "tab": "cycle"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "recovery",
+          "title": "recovery",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "recovery",
+            "tab": "cycle"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "weekly",
+      "title": "weekly",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "12_Цель_недели",
+      "states": [
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "empty",
+            "tab": "week"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "partial",
+          "title": "partial",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "partial",
+            "tab": "week"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "complete",
+          "title": "complete",
+          "fixture": "extra",
+          "data": {
+            "kind": "return",
+            "mode": "complete",
+            "tab": "week"
+          },
+          "expected": [
+            "return-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "game-hud",
+      "title": "game-hud",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "23_Игровой_HUD",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "normal"
+          },
+          "expected": [
+            "btn_pause"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "empty"
+          },
+          "expected": [
+            "btn_pause"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "full",
+          "title": "full",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "full"
+          },
+          "expected": [
+            "btn_pause"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "hidden",
+          "title": "hidden",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "hidden"
+          },
+          "expected": [
+            "btn_pause"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "active",
+          "title": "active",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "active"
+          },
+          "expected": [
+            "btn_pause"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "tutorial",
+      "title": "tutorial",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "29_Обучение",
+      "states": [
+        {
+          "id": "header",
+          "title": "header",
+          "fixture": "extra",
+          "data": {
+            "kind": "tutorial",
+            "mode": "header"
+          },
+          "expected": [
+            "tutorial-root"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "tap",
+          "title": "tap",
+          "fixture": "extra",
+          "data": {
+            "kind": "tutorial",
+            "mode": "tap"
+          },
+          "expected": [
+            "tutorial-root"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "jump",
+          "title": "jump",
+          "fixture": "extra",
+          "data": {
+            "kind": "tutorial",
+            "mode": "jump"
+          },
+          "expected": [
+            "tutorial-root"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "complete",
+          "title": "complete",
+          "fixture": "extra",
+          "data": {
+            "kind": "tutorial",
+            "mode": "complete"
+          },
+          "expected": [
+            "tutorial-complete-root"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "error",
+          "title": "error",
+          "fixture": "extra",
+          "data": {
+            "kind": "tutorial",
+            "mode": "error"
+          },
+          "expected": [
+            "tutorial-complete-root"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "first-session",
+      "title": "first-session",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "30_Подсказки_первой_сессии",
+      "states": [
+        {
+          "id": "goal",
+          "title": "goal",
+          "fixture": "extra",
+          "data": {
+            "kind": "coach",
+            "mode": "goal"
+          },
+          "expected": [
+            "first-session-coach"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "two",
+          "title": "two",
+          "fixture": "extra",
+          "data": {
+            "kind": "coach",
+            "mode": "two"
+          },
+          "expected": [
+            "first-session-coach"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "title": "notifications",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "31_Уведомления",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "notification",
+            "mode": "normal"
+          },
+          "expected": [
+            "notification-toast"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "compact",
+          "title": "compact",
+          "fixture": "extra",
+          "data": {
+            "kind": "notification",
+            "mode": "compact"
+          },
+          "expected": [
+            "notification-toast"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "loading",
+      "title": "loading",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "02_Загрузка",
+      "states": [
+        {
+          "id": "empty",
+          "title": "empty",
+          "fixture": "extra",
+          "data": {
+            "kind": "loading",
+            "mode": "empty"
+          },
+          "expected": [
+            "capture-loading"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "partial",
+          "title": "partial",
+          "fixture": "extra",
+          "data": {
+            "kind": "loading",
+            "mode": "partial"
+          },
+          "expected": [
+            "capture-loading"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "full",
+          "title": "full",
+          "fixture": "extra",
+          "data": {
+            "kind": "loading",
+            "mode": "full"
+          },
+          "expected": [
+            "capture-loading"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "development-complete",
+      "title": "development-complete",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "06_Развитие",
+      "states": [
+        {
+          "id": "normal",
+          "title": "normal",
+          "fixture": "extra",
+          "data": {
+            "kind": "development-all",
+            "mode": "normal"
+          },
+          "expected": [
+            "character-development-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "win-details",
+      "title": "win-details",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "25_Модалка_победы",
+      "states": [
+        {
+          "id": "no-result",
+          "title": "no-result",
+          "fixture": "extra",
+          "data": {
+            "kind": "win-extra",
+            "mode": "no-result"
+          },
+          "expected": [
+            "win-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "rankings",
+          "title": "rankings",
+          "fixture": "extra",
+          "data": {
+            "kind": "win-extra",
+            "mode": "rankings"
+          },
+          "expected": [
+            "win-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "bonus",
+          "title": "bonus",
+          "fixture": "extra",
+          "data": {
+            "kind": "win-extra",
+            "mode": "bonus"
+          },
+          "expected": [
+            "win-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "claimed",
+          "title": "claimed",
+          "fixture": "extra",
+          "data": {
+            "kind": "win-extra",
+            "mode": "claimed"
+          },
+          "expected": [
+            "win-modal"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "pause",
+          "title": "pause",
+          "fixture": "extra",
+          "data": {
+            "kind": "win-extra",
+            "mode": "pause"
+          },
+          "expected": [
+            "win-modal"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "leaderboard-status",
+      "title": "leaderboard-status",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "21_Рейтинг",
+      "states": [
+        {
+          "id": "offline",
+          "title": "offline",
+          "fixture": "extra",
+          "data": {
+            "kind": "board-status",
+            "mode": "offline"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "refreshing",
+          "title": "refreshing",
+          "fixture": "extra",
+          "data": {
+            "kind": "board-status",
+            "mode": "refreshing"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "profile",
+          "title": "profile",
+          "fixture": "extra",
+          "data": {
+            "kind": "board-status",
+            "mode": "profile"
+          },
+          "expected": [
+            "leaderboard-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "level-card-states",
+      "title": "level-card-states",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "14_Выбор_локации_и_уровней",
+      "states": [
+        {
+          "id": "parts-open",
+          "title": "parts-open",
+          "fixture": "extra",
+          "data": {
+            "kind": "level-cards",
+            "mode": "parts-open"
+          },
+          "expected": [
+            "select-level-screen"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "stars",
+          "title": "stars",
+          "fixture": "extra",
+          "data": {
+            "kind": "level-cards",
+            "mode": "stars"
+          },
+          "expected": [
+            "select-level-screen"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
+      "id": "ability-hud",
+      "title": "ability-hud",
+      "source": "LostCyberHamster/Assets/Scripts/UI",
+      "folder": "23_Игровой_HUD",
+      "states": [
+        {
+          "id": "combos",
+          "title": "combos",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "combos"
+          },
+          "expected": [
+            "ability-activity"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "finishing",
+          "title": "finishing",
+          "fixture": "extra",
+          "data": {
+            "kind": "hud",
+            "mode": "finishing"
+          },
+          "expected": [
+            "ability-activity"
+          ],
+          "settleMs": 900
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,3 @@
 interface:
   display_name: "Снимки Unity UI"
-  short_description: "Вызов экранов Unity и съёмка основных UI-состояний"
+  short_description: "Полный захват визуальных UI-состояний Unity в Downloads"

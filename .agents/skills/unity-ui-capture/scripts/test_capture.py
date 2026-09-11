@@ -31,6 +31,10 @@ class GalleryTests(unittest.TestCase):
         value["cases"][0]["states"] *= 2
         with self.assertRaises(ValueError):
             gallery.validate(value)
+        value = plan()
+        value["cases"][0]["folder"] = "../escape"
+        with self.assertRaises(ValueError):
+            gallery.validate(value)
 
     def test_detects_truncated_png(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -57,6 +61,63 @@ class GalleryTests(unittest.TestCase):
             gallery.write(out / "run.json", {"success": True})
             (out / "case--state.png").write_bytes(png())
             self.assertTrue(gallery.build(out)["complete"])
+
+    def test_png_only_audit_supports_case_folders(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            value = plan()
+            value["cases"][0]["folder"] = "01_Screen"
+            gallery.write(out / "plan.json", value)
+            gallery.write(out / "capture-result.json", {"frames": [{
+                "id": "case--state", "file": "01_Screen/case_state.png",
+                "success": True, "width": 1, "height": 1
+            }]})
+            gallery.write(out / "run.json", {"success": True})
+            (out / "01_Screen").mkdir()
+            (out / "01_Screen/case_state.png").write_bytes(png())
+            result = gallery.audit(out)
+            self.assertTrue(result["complete"])
+            self.assertTrue((out / "capture-manifest.json").is_file())
+            self.assertFalse((out / "index.html").exists())
+
+    def test_runtime_plan_adds_folder_retry_and_continue_policy(self):
+        value = plan()
+        value.update(defaultAttempts=2, continueOnError=True)
+        value["cases"][0]["folder"] = "01_Screen"
+        runtime = gallery.runtime_plan(value)
+        self.assertTrue(runtime["continueOnError"])
+        self.assertEqual(runtime["shots"][0]["attempts"], 2)
+        self.assertEqual(runtime["shots"][0]["file"], "01_Screen/case_state.png")
+
+    def test_module_detection_and_downloads_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            modules = root / "modules"
+            module_root = modules / "demo"
+            module_root.mkdir(parents=True)
+            project = root / "project"
+            (project / "Assets").mkdir(parents=True)
+            (project / "Assets/marker.txt").write_text("ok")
+            gallery.write(module_root / "adapter.json", {
+                "id": "demo", "projectMarkers": ["Assets/marker.txt"],
+                "adapter": ["Adapter.cs"], "plan": "plan.json", "outputName": "Demo_UI"
+            })
+            with patch.object(gallery, "ADAPTERS", modules):
+                module = gallery.resolve_module(project)
+            self.assertEqual(module["id"], "demo")
+            with patch.object(gallery, "downloads_directory", return_value=root / "Downloads"):
+                output = gallery.default_output(project, module)
+            self.assertEqual(output.parent, root / "Downloads")
+            self.assertTrue(output.name.startswith("Demo_UI_"))
+
+    def test_bundled_modules_have_valid_inputs(self):
+        modules = gallery.available_modules()
+        self.assertTrue(modules)
+        for module in modules:
+            root = module["_root"]
+            self.assertGreater(gallery.validate(gallery.read(root / module["plan"])), 0)
+            for adapter in module["adapter"]:
+                self.assertTrue((root / adapter).is_file())
 
     @patch("capture.shutil.which", return_value="unity")
     @patch("capture.subprocess.run")
