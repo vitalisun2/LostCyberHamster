@@ -114,7 +114,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (_tutorial != null)
                     _tutorial.ExitToMenu();
                 else
+                {
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("exit");
                     SceneManager.LoadScene("Menu");
+                }
             }
             catch (Exception exception)
             {
@@ -129,6 +132,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_leaving || _tutorial != null || UiInputBlock.IsBlocked)
                 return;
             _leaving = true;
+            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("restart");
             _uiManager.CloseModal(ScreenEnum.PauseModal);
             LevelController.Instance.Replay();
         }

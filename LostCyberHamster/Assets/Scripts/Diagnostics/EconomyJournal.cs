@@ -38,6 +38,7 @@ namespace Assets.Scripts.Diagnostics
             }
             if (string.IsNullOrEmpty(State.endpoint)) State.endpoint = endpoint;
             State.dev_profiles ??= new List<string>();
+            State.pending_flows ??= Array.Empty<EconomyFlow>();
             // Обрыв последней строки оставляет валидный префикс и явный маркер потери.
             if (File.Exists(_active))
             {
@@ -130,10 +131,13 @@ namespace Assets.Scripts.Diagnostics
         [Serializable]
         internal sealed class JournalState
         {
-            public string profile, run, level, endpoint, cohort;
+            public string profile, run, level, endpoint, cohort, run_close_hint;
             public double active;
             public long sequence, lost_packets;
+            public int remaining_lives = -1;
             public EconomySnapshot snapshot;
+            public EconomySnapshot run_snapshot;
+            public EconomyFlow[] pending_flows = Array.Empty<EconomyFlow>();
             public List<string> dev_profiles = new();
         }
     }

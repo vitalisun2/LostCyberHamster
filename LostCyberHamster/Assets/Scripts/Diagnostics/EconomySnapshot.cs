@@ -65,7 +65,7 @@ namespace Assets.Scripts.Diagnostics
         public long sequence, revision, lost_packets;
         public string type, source, detail, operation_id, run_id, level, cohort;
         public double active_seconds;
-        public int stars, value, previous_best_stars;
+        public int stars, value, previous_best_stars, remaining_lives = -1;
         public bool ads_test_mode, purchases_enabled, interstitial_enabled;
         public bool confirmed;
         public EconomySnapshot before, after;

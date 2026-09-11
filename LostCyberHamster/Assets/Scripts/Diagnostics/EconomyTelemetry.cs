@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Assets.Scripts.Gameplay;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Online;
 using Assets.Scripts.System;
@@ -18,11 +19,12 @@ namespace Assets.Scripts.Diagnostics
         private static EconomyTelemetry _instance;
         private EconomyJournal _journal;
         private EconomySnapshot _last;
-        private string _profile, _run, _level, _session, _collectionRun;
-        private string _cohort;
+        private string _profile, _run, _level, _session;
+        private string _cohort, _runCloseHint;
         private double _active, _nextProgress;
         private bool _paused, _focused = true;
         private GameManager _game;
+        private Hamster _hamster;
         private readonly List<EconomyFlow> _pending = new();
         private DeviceLogUploadSettings _settings;
 
@@ -48,6 +50,7 @@ namespace Assets.Scripts.Diagnostics
             GameDataManager.SaveFailed += SaveFailed;
             GameEventsManager.OnLevelStarted += StartRun;
             SceneManager.sceneUnloaded += SceneUnloaded;
+            Application.quitting += HandleApplicationQuitting;
             if (GameDataManager.IsLoaded) ProfileChanged();
         }
 
@@ -79,8 +82,11 @@ namespace Assets.Scripts.Diagnostics
                 JsonUtility.ToJson(previous.snapshot) != JsonUtility.ToJson(_last))
                 Emit(new EconomyEvent { type = "data_gap", source = "save_journal_mismatch", before = previous.snapshot, after = _last });
             if (previous.profile == _profile && !string.IsNullOrEmpty(previous.run))
-                Emit(new EconomyEvent { type = "run_finished", source = "interrupted", run_id = previous.run,
-                    level = previous.level, active_seconds = previous.active, confirmed = false, after = _last });
+                Emit(new EconomyEvent { type = "run_finished", source = RecoverUnfinishedOutcome(previous.run_close_hint),
+                    run_id = previous.run, level = previous.level, active_seconds = previous.active, confirmed = false,
+                    remaining_lives = previous.remaining_lives,
+                    after = previous.run_snapshot ?? previous.snapshot ?? _last,
+                    flows = CloneFlows(previous.pending_flows, allowEmpty: false) });
             Emit(new EconomyEvent { type = "session_started", after = _last, confirmed = true,
                 ads_test_mode = GameAds.MonetizationConfig.Current.AdsTestMode,
                 purchases_enabled = GameAds.MonetizationConfig.Current.EnablePurchases,
@@ -124,7 +130,6 @@ namespace Assets.Scripts.Diagnostics
                 xp_delta = after.TotalXp - before.TotalXp, coins_delta = (long)after.coins - before.coins,
                 crystals_delta = (long)after.crystals - before.crystals,
                 points_delta = (long)after.development_points - before.development_points };
-            if (flows?.Length > 0) item.run_id = _collectionRun;
             if (reason == nameof(CheckpointReason.DeveloperResourceGranted))
             {
                 _cohort = "dev";
@@ -137,7 +142,6 @@ namespace Assets.Scripts.Diagnostics
         public static void Collection(string resource, int amount, string source) => Safe(() =>
         {
             if (!Ready() || amount <= 0) return;
-            _instance._collectionRun = _instance._run;
             var flow = _instance._pending.FirstOrDefault(x => x.resource == resource && x.source == source);
             if (flow == null) _instance._pending.Add(flow = new EconomyFlow { resource = resource, source = source });
             flow.income += amount;
@@ -166,26 +170,35 @@ namespace Assets.Scripts.Diagnostics
             _run = Guid.NewGuid().ToString("N");
             _level = GameDataManager.PlayerData.CurrentLevel;
             _active = 0;
-            _collectionRun = _run;
+            _runCloseHint = "active";
             _game = FindAnyObjectByType<GameManager>();
+            _hamster = FindAnyObjectByType<Hamster>();
             int best = LevelManager.TryGetCurrentProgressKey(out var key) ? GameDataManager.PlayerData.Progress.GetStars(key) : 0;
             Emit(new EconomyEvent { type = "run_started", previous_best_stars = best,
                 source = best > 0 ? "repeat" : "uncompleted", before = EconomySnapshot.Capture(GameDataManager.PlayerData) });
             PersistState();
         });
 
-        public static void FinishRun(string outcome, int stars = 0) => Safe(() =>
+        public static void FinishRun(string outcome, int stars = 0, int remainingLives = -1) => Safe(() =>
         {
-            if (Ready(allowTutorial: true)) _instance.FinishInternal(outcome, stars, outcome == "win" || outcome == "tutorial_completed");
+            if (Ready(allowTutorial: true))
+                _instance.FinishInternal(outcome, stars, outcome == "win" || outcome == "tutorial_completed", remainingLives);
         });
 
-        private void FinishInternal(string outcome, int stars, bool confirmed)
+        private void FinishInternal(string outcome, int stars, bool confirmed, int remainingLives = -1)
         {
             if (string.IsNullOrEmpty(_run)) return;
+            var flows = CloneFlows(_pending, allowEmpty: false);
             Emit(new EconomyEvent { type = "run_finished", source = outcome, stars = stars, confirmed = confirmed,
-                after = EconomySnapshot.Capture(GameDataManager.PlayerData) });
+                remaining_lives = remainingLives >= 0 ? remainingLives : CurrentRemainingLives(),
+                after = EconomySnapshot.Capture(GameDataManager.PlayerData), flows = flows });
+            _pending.Clear();
             _run = null;
+            _level = null;
+            _active = 0;
+            _runCloseHint = null;
             _game = null;
+            _hamster = null;
             PersistState();
             _journal.RequestUpload();
         }
@@ -193,7 +206,7 @@ namespace Assets.Scripts.Diagnostics
         private void SceneUnloaded(Scene scene)
         {
             if (scene.name == "Game" || scene.name.IndexOf("tutorial", StringComparison.OrdinalIgnoreCase) >= 0)
-                FinishRun("exit");
+                FinishRun(SceneUnloadOutcome());
         }
 
         private void Update()
@@ -215,13 +228,25 @@ namespace Assets.Scripts.Diagnostics
         private void OnApplicationPause(bool paused)
         {
             _paused = paused;
+            if (!string.IsNullOrEmpty(_run)) _runCloseHint = paused ? "backgrounded" : "active";
             Record("session_activity", paused ? "background" : "resumed");
             Safe(() => { PersistState(); _journal?.RequestUpload(); });
         }
 
         private void OnApplicationFocus(bool focused) => _focused = focused;
-        private void OnApplicationQuit() => Safe(() => { PersistState(); _journal?.RequestUpload(); });
+        private void OnApplicationQuit() => HandleApplicationQuitting();
         private void SaveFailed(Exception _) => Record("data_gap", "save_failed");
+
+        private void HandleApplicationQuitting() => Safe(() =>
+        {
+            if (!string.IsNullOrEmpty(_run))
+            {
+                _runCloseHint = "quitting";
+                FinishInternal("app_closed", 0, false);
+            }
+            PersistState();
+            _journal?.RequestUpload();
+        });
 
         private void PersistState()
         {
@@ -232,7 +257,37 @@ namespace Assets.Scripts.Diagnostics
             _journal.State.level = _level;
             _journal.State.active = _active;
             _journal.State.cohort = _cohort;
+            _journal.State.run_close_hint = _runCloseHint;
+            _journal.State.remaining_lives = string.IsNullOrEmpty(_run) ? -1 : CurrentRemainingLives();
+            _journal.State.run_snapshot = string.IsNullOrEmpty(_run) ? null : EconomySnapshot.Capture(GameDataManager.PlayerData);
+            _journal.State.pending_flows = string.IsNullOrEmpty(_run) ? Array.Empty<EconomyFlow>() : CloneFlows(_pending);
             _journal.SaveState();
+        }
+
+        private int CurrentRemainingLives()
+        {
+            if (_hamster == null) _hamster = FindAnyObjectByType<Hamster>();
+            return _hamster != null ? _hamster.Lives.Value : -1;
+        }
+
+        private string SceneUnloadOutcome() => _runCloseHint == "backgrounded" || _runCloseHint == "quitting"
+            ? "app_closed"
+            : "exit";
+
+        private static string RecoverUnfinishedOutcome(string hint) => hint == "backgrounded" || hint == "quitting"
+            ? "app_closed"
+            : "interrupted";
+
+        private static EconomyFlow[] CloneFlows(IEnumerable<EconomyFlow> flows, bool allowEmpty = true)
+        {
+            var snapshot = flows?.Where(item => item != null).Select(item => new EconomyFlow
+            {
+                source = item.source,
+                resource = item.resource,
+                income = item.income,
+                expense = item.expense
+            }).ToArray() ?? Array.Empty<EconomyFlow>();
+            return allowEmpty || snapshot.Length > 0 ? snapshot : null;
         }
 
         private void Emit(EconomyEvent item)
@@ -267,6 +322,7 @@ namespace Assets.Scripts.Diagnostics
 
         private void OnDestroy()
         {
+            Application.quitting -= HandleApplicationQuitting;
             GameDataManager.ProfileChanged -= ProfileChanged;
             GameDataManager.SaveFailed -= SaveFailed;
             GameEventsManager.OnLevelStarted -= StartRun;

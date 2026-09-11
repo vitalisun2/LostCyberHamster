@@ -18,6 +18,68 @@ def evidence(event):
     return {"event_id": event["event_id"], "file": event["_file"], "line": event["_line"]}
 
 
+RUN_RESOURCES = ("coins", "crystals")
+
+
+def empty_flow_totals():
+    return {f"{resource}_income": 0 for resource in RUN_RESOURCES} | {
+        f"{resource}_expense": 0 for resource in RUN_RESOURCES
+    }
+
+
+def empty_resource_totals():
+    return {resource: 0 for resource in RUN_RESOURCES}
+
+
+def update_flow_totals(target, resource, income=0, expense=0):
+    target[f"{resource}_income"] += income
+    target[f"{resource}_expense"] += expense
+
+
+def ensure_run(runs, run_id, level=None):
+    run = runs.setdefault(run_id, {"run_id": run_id, "level": level, "active_seconds": 0,
+                                   "outcome": "unfinished", "result": "unfinished",
+                                   "termination_reason": "unfinished", "remaining_lives": None,
+                                   "has_start": False, "confirmed": False, "evidence": [],
+                                   "loot": empty_flow_totals(), "loot_sources": {},
+                                   "expenses": empty_resource_totals(), "expense_sources": {},
+                                   "net": {"xp": 0, "points": 0, "coins": 0, "crystals": 0}})
+    if level and not run.get("level"):
+        run["level"] = level
+    return run
+
+
+def add_run_flows(run, flows):
+    for flow in flows or []:
+        resource = flow.get("resource")
+        if resource not in RUN_RESOURCES:
+            continue
+        income = max(0, flow.get("income", 0))
+        expense = max(0, flow.get("expense", 0))
+        update_flow_totals(run["loot"], resource, income, expense)
+        source = flow.get("source") or "unknown"
+        bucket = run["loot_sources"].setdefault(source, empty_flow_totals())
+        update_flow_totals(bucket, resource, income, expense)
+
+
+def add_run_expense(run, source, resource, amount):
+    if amount <= 0 or resource not in RUN_RESOURCES:
+        return
+    run["expenses"][resource] += amount
+    bucket = run["expense_sources"].setdefault(source or "unknown", empty_resource_totals())
+    bucket[resource] += amount
+
+
+def classify_run_result(reason):
+    if reason in ("win", "tutorial_completed"):
+        return "win"
+    if reason == "loss":
+        return "loss"
+    if reason == "unfinished":
+        return "unfinished"
+    return "abandoned"
+
+
 def read_events(root):
     events, issues, uploads = {}, [], []
     duplicates = 0
@@ -93,8 +155,7 @@ def summarize_group(events):
                 last = snapshot
                 last_checkpoint = snapshot
         if run_id:
-            run = runs.setdefault(run_id, {"run_id": run_id, "level": event.get("level"), "active_seconds": 0,
-                                           "outcome": "unfinished", "has_start": False, "evidence": []})
+            run = ensure_run(runs, run_id, event.get("level"))
             seconds = max(0, event.get("active_seconds", 0))
             total_active += max(0, seconds - run["active_seconds"])
             run["active_seconds"] = max(run["active_seconds"], seconds)
@@ -106,8 +167,13 @@ def summarize_group(events):
                 run["attempt_kind"] = event.get("source")
                 run["evidence"].append(evidence(event))
             elif event["type"] == "run_finished":
-                run.update(outcome=event.get("source"), stars=event.get("stars"), after=event.get("after"),
+                reason = event.get("source") or "unfinished"
+                run.update(outcome=reason, result=classify_run_result(reason), termination_reason=reason,
+                           stars=event.get("stars"), after=event.get("after"),
                            confirmed=event.get("confirmed", False))
+                if event.get("remaining_lives", -1) >= 0:
+                    run["remaining_lives"] = event.get("remaining_lives")
+                add_run_flows(run, event.get("flows"))
                 run["evidence"].append(evidence(event))
         if event["type"] in ("monetization", "return_activity", "first_session"):
             # Placement is before the hashed correlation ID; no raw purchase receipts are present.
@@ -131,6 +197,13 @@ def summarize_group(events):
         xp = event.get("xp_delta", 0)
         bucket["xp"] += xp
         bucket["points_net"] += event.get("points_delta", 0)
+        if run_id:
+            run = ensure_run(runs, run_id, event.get("level"))
+            add_run_flows(run, event.get("flows"))
+            run["net"]["xp"] += xp
+            run["net"]["points"] += event.get("points_delta", 0)
+            run["net"]["coins"] += event.get("coins_delta", 0)
+            run["net"]["crystals"] += event.get("crystals_delta", 0)
         for resource in ("coins", "crystals"):
             delta = event.get(resource + "_delta", 0)
             flows = [f for f in event.get("flows") or [] if f["resource"] == resource]
@@ -141,6 +214,8 @@ def summarize_group(events):
                 flow_net += flow["income"] - flow["expense"]
             remaining = delta - flow_net
             bucket[resource + ("_income" if remaining >= 0 else "_expense")] += abs(remaining)
+            if run_id and remaining < 0:
+                add_run_expense(run, source, resource, abs(remaining))
         operations.append({"utc": event["utc"], "source": source, "detail": event.get("detail"),
                            "operation_id": operation_id, "run_id": run_id, "xp": xp,
                            "coins_net": event.get("coins_delta", 0), "crystals_net": event.get("crystals_delta", 0),
@@ -211,7 +286,7 @@ def build_summary(root, profile=None, since=None, until=None, balance=None, coho
             "available": [{"profile": p, "balance": b, "cohort": c} for p, b, c in inventory],
             "duplicate_events_removed": duplicates, "input_issues": issues,
             "groups": summaries,
-            "notes": ["Active time of interrupted runs is a lower bound; progress is sampled every 15 seconds.",
+            "notes": ["Active time of interrupted and app-closed runs is a lower bound; progress is sampled every 15 seconds.",
                       "Selected time boundaries may cut sessions/runs; milestones are relative to the selected period.",
                       "Confirmed transactions alone contribute rewards; snapshots and funnel events are controls.",
                       "Input issues invalidate completeness. Zero events do not prove zero activity.",
