@@ -1,0 +1,3 @@
+interface:
+  display_name: "Illustrated Alphabet Generator"
+  short_description: "Build localized hand-drawn glyph sprites and kerning"
