@@ -923,6 +923,10 @@
             "value": "Night"
         },
         {
+            "key": "select_level_part_unlock_progress",
+            "value": "{0}/{1} stars"
+        },
+        {
             "key": "energy shield",
             "value": "Energy Shield"
         },

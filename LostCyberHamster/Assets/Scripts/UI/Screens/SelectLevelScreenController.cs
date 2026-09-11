@@ -281,7 +281,8 @@ namespace LostCyberHamster.UI
                     ResolveDayPartTitle(
                         partView.Key,
                         partView.DisplayName),
-                    isUnlocked);
+                    isUnlocked,
+                    GetLockedPartProgress(parts, partView, isUnlocked));
                 DayPartsContainer.Add(levelItem);
 
                 if (!levelItem.IsLocked)
@@ -638,6 +639,40 @@ namespace LostCyberHamster.UI
             }
 
             return localized.ToUpperInvariant();
+        }
+
+        private static string GetLockedPartProgress(
+            IReadOnlyList<PartView> parts,
+            PartView partView,
+            bool isUnlocked)
+        {
+            if (isUnlocked || partView == null || partView.Index <= 0 || parts == null)
+            {
+                return string.Empty;
+            }
+
+            var previousPart = parts.FirstOrDefault(item => item.Index == partView.Index - 1);
+            if (previousPart == null)
+            {
+                return string.Empty;
+            }
+
+            int collectedStars = Math.Max(
+                0,
+                Math.Min(
+                    previousPart.TotalStars,
+                    DefaultUnlockPolicy.NextPartStarRequirement));
+            string template = LocalizationManager.GetLocalizedString("select_level_part_unlock_progress");
+            if (string.IsNullOrWhiteSpace(template) ||
+                string.Equals(template, "select_level_part_unlock_progress", StringComparison.Ordinal))
+            {
+                template = "{0}/{1}";
+            }
+
+            return string.Format(
+                template,
+                collectedStars,
+                DefaultUnlockPolicy.NextPartStarRequirement);
         }
 
         /// <summary>

@@ -413,6 +413,18 @@
     -unity-text-outline-width: 0;
 }
 
+.level-card__progress {
+    display: none;
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    color: rgb(90, 84, 71);
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
 .level-card__image,
 .level-card__lock,
 .level-card__star {
@@ -454,6 +466,14 @@
     width: 159px;
     height: 38px;
     font-size: 25px;
+}
+
+.level-card--day-part .level-card__progress {
+    left: 8px;
+    top: 249px;
+    width: 159px;
+    height: 24px;
+    font-size: 18px;
 }
 
 .level-card--day-part .level-card__lock {

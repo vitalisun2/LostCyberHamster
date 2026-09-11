@@ -25,6 +25,8 @@ namespace LostCyberHamster.UI
             this.Q<VisualElement>("level-item");
         private Label NameLabel =>
             this.Q<Label>("level-item__name");
+        private Label ProgressLabel =>
+            this.Q<Label>("level-item__progress");
         private VisualElement StarsContainer =>
             this.Q<VisualElement>("level-item__stars-container");
 
@@ -46,7 +48,8 @@ namespace LostCyberHamster.UI
         public void ConfigureForPart(
             string partKey,
             string displayName,
-            bool isUnlocked)
+            bool isUnlocked,
+            string progressText = null)
         {
             EnsureTemplateLoaded();
             ResetVisualState();
@@ -65,6 +68,14 @@ namespace LostCyberHamster.UI
             }
 
             NameLabel.text = displayName ?? string.Empty;
+            if (ProgressLabel != null)
+            {
+                ProgressLabel.text = progressText ?? string.Empty;
+                ProgressLabel.style.display = string.IsNullOrWhiteSpace(progressText)
+                    ? DisplayStyle.None
+                    : DisplayStyle.Flex;
+            }
+
             LevelName = partKey ?? string.Empty;
             IsLocked = !isUnlocked;
         }
@@ -160,6 +171,12 @@ namespace LostCyberHamster.UI
             }
 
             NameLabel.text = string.Empty;
+            if (ProgressLabel != null)
+            {
+                ProgressLabel.text = string.Empty;
+                ProgressLabel.style.display = DisplayStyle.None;
+            }
+
             foreach (VisualElement star in _starElements)
             {
                 star.RemoveFromClassList("level-card__star--earned");

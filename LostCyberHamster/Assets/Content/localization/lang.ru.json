@@ -923,6 +923,10 @@
             "value": "Ночь"
         },
         {
+            "key": "select_level_part_unlock_progress",
+            "value": "{0}/{1} звёзд"
+        },
+        {
             "key": "energy shield",
             "value": "Энергетический щит"
         },

@@ -6,6 +6,8 @@ namespace GameManagement.Progress
 {
     public sealed class DefaultUnlockPolicy : IUnlockPolicy
     {
+        public const int NextPartStarRequirement = 10;
+
         private readonly HierarchicalLevelCatalog _catalog;
         private readonly int _starUnlockOffset;
 
@@ -17,7 +19,33 @@ namespace GameManagement.Progress
 
         public bool CanUnlockNextLevel(LevelProgressSnapshot snapshot, LevelProgressKey currentLevel, LevelProgressKey nextLevel)
         {
-            return true;
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            if (!TryResolvePart(currentLevel, out var currentLocationIndex, out var currentPartIndex, out var currentPart) ||
+                !TryResolvePart(nextLevel, out var nextLocationIndex, out var nextPartIndex, out _))
+            {
+                return false;
+            }
+
+            if (currentLocationIndex != nextLocationIndex)
+            {
+                return false;
+            }
+
+            if (currentPartIndex == nextPartIndex)
+            {
+                return true;
+            }
+
+            if (nextPartIndex != currentPartIndex + 1)
+            {
+                return false;
+            }
+
+            return MeetsNextPartUnlockRequirement(snapshot, currentLevel, currentPart);
         }
 
         public bool CanUnlockNextLocation(LevelProgressSnapshot snapshot, string currentLocationId, string nextLocationId)
@@ -53,6 +81,36 @@ namespace GameManagement.Progress
             var parts = location.PartsOfDay ?? Array.Empty<HierarchicalLevelCatalog.PartOfDayEntry>();
             var levelCount = parts.Sum(part => part.Levels?.Count ?? 0);
             return levelCount * LevelProgressEntry.MaxStars;
+        }
+
+        private bool TryResolvePart(
+            LevelProgressKey key,
+            out int locationIndex,
+            out int partIndex,
+            out HierarchicalLevelCatalog.PartOfDayEntry part)
+        {
+            locationIndex = -1;
+            partIndex = -1;
+            part = default;
+
+            return _catalog.TryResolveLocationId(key.LocationId, out locationIndex) &&
+                   _catalog.TryGetPart(locationIndex, key.PartOfDayId, out partIndex, out part);
+        }
+
+        private static bool MeetsNextPartUnlockRequirement(
+            LevelProgressSnapshot snapshot,
+            LevelProgressKey currentLevel,
+            HierarchicalLevelCatalog.PartOfDayEntry currentPart)
+        {
+            var entries = snapshot
+                .EnumeratePart(currentLevel.LocationId, currentLevel.PartOfDayId)
+                .ToList();
+            var requiredLevelCount = currentPart.Levels?.Count ?? 0;
+
+            return requiredLevelCount > 0 &&
+                   entries.Count >= requiredLevelCount &&
+                   entries.All(entry => entry.Stars > 0) &&
+                   entries.Sum(entry => entry.Stars) >= NextPartStarRequirement;
         }
     }
 }
