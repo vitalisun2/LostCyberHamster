@@ -5,6 +5,7 @@ using Assets.Scripts.Tutorial;
 using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Vues.GameCore;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
@@ -107,6 +108,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_leaving || UiInputBlock.IsBlocked)
                 return;
             _leaving = true;
+            if (_tutorial == null)
+                RunLootBuffer.Discard();
 
             // Выход из обучения сохраняет rollback до загрузки меню.
             try
@@ -133,6 +136,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             _leaving = true;
             Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("restart");
+            RunLootBuffer.Discard();
             _uiManager.CloseModal(ScreenEnum.PauseModal);
             LevelController.Instance.Replay();
         }

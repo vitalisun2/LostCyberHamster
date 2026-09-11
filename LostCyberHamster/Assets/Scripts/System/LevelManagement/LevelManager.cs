@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.Common.Models;
 using GameManagement;
 using GameManagement.Progress;
+using Vues.GameCore;
 using Vues.GameCore.ReturnActivities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -426,6 +427,7 @@ namespace Assets.Scripts.System
             bool activityRecorded = false;
             GameDataManager.ExecuteTransaction(CheckpointReason.LevelCompleted, () =>
             {
+                RunLootBuffer.CommitToPersistentWallet();
                 experience = _playerExperienceService.GrantExperienceForLevelCompletion(
                     playerData, progressKey, updatedSnapshot, notify: false);
                 playerData.Progress = updatedSnapshot;
@@ -442,6 +444,7 @@ namespace Assets.Scripts.System
                 Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("win", stars, stars);
                 _completionProfile = GameDataManager.ProfileId;
                 _completionGeneration = GameDataManager.Generation;
+                RunLootBuffer.MarkCommitted();
                 if (activityAttempt != null) activityAttempt.Committed = true;
                 PlayerExperienceService.PublishCommittedLevelChange(experience.LevelChanged, "level_win");
                 if (activityRecorded) ReturnActivityService.PublishChanged();

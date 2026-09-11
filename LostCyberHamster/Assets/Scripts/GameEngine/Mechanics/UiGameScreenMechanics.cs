@@ -3,6 +3,7 @@ using Assets.Scripts.Gameplay;
 using System;
 using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
+using GameManagement;
 using LostCyberHamster.UI;
 using UnityEngine;
 using Vues.GameCore;
@@ -23,7 +24,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private GameScreenController _gameScreenController;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
         private int _lastRunScore = -1;
-        private int _runCrystals;
 
         public UiGameScreenMechanics(
             UIManager uiManager,
@@ -44,6 +44,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController.SetUltraAction(OnUlta);
             _gameScreenController.SetBuyUltraAction(OnBuyUltra);
             _gameScreenController.SetRefillPrices(EnergyRefillPrice, UltraRefillPrice);
+            RunLootBuffer.BeginAttempt(GameDataManager.PlayerData?.CurrentLevel);
         }
 
         public void Subscribe()
@@ -54,9 +55,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _character?.UltaChargeAmount.Subscribe(
                 OnUltaChargeAmountChanged);
 
-            // Слушаем добычу уровня в течение жизни игровой сцены, включая паузу HUD.
-            GameEventsManager.OnCoinCollected += OnCoinCollected;
-            GameEventsManager.OnCrystalsCollected += OnCrystalsCollected;
+            RunLootBuffer.Changed += OnRunLootChanged;
             ResourceManager.BalanceChanged += OnBalanceChanged;
         }
 
@@ -84,39 +83,24 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _character?.Energy.Unsubscribe(OnEnergyChanged);
             _character?.UltaChargeAmount.Unsubscribe(
                 OnUltaChargeAmountChanged);
-            // Завершаем отслеживание добычи уходящего уровня.
-            GameEventsManager.OnCoinCollected -= OnCoinCollected;
-            GameEventsManager.OnCrystalsCollected -= OnCrystalsCollected;
+            RunLootBuffer.Changed -= OnRunLootChanged;
             ResourceManager.BalanceChanged -= OnBalanceChanged;
         }
 
-        private void OnCoinCollected(int amount)
+        private void OnRunLootChanged()
         {
-            _runCoinBudget.RecordCollection(amount);
             SyncRunResources();
             SyncRefillAvailability();
         }
 
-        private void OnCrystalsCollected(int amount)
-        {
-            _runCrystals = AddCollectedAmount(_runCrystals, amount);
-            SyncRunResources();
-        }
-
         private void SyncRunResources() =>
-            _gameScreenController?.SetRunResources(_runCoinBudget.AvailableCoins, _runCrystals);
+            _gameScreenController?.SetRunResources(_runCoinBudget.AvailableCoins, RunLootBuffer.AvailableCrystals);
 
         private void OnBalanceChanged(ResourceType resource, int balance)
         {
             if (resource != ResourceType.Coins) return;
             SyncRunResources();
             SyncRefillAvailability();
-        }
-
-        /// <summary>Суммирует положительную добычу без переполнения счётчика.</summary>
-        private static int AddCollectedAmount(int current, int amount)
-        {
-            return current + Mathf.Clamp(amount, 0, int.MaxValue - current);
         }
 
         private void OnLifesChanged(int lives)

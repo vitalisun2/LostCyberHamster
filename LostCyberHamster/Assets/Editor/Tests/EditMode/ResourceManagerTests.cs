@@ -12,14 +12,17 @@ namespace Assets.Tests.EditMode
         public void SetUp()
         {
             ResourceManager.OnDisable();
+            RunLootBuffer.Discard();
             _previousPlayerData = GameDataManager.PlayerData;
-            GameDataManager.PlayerData = new PlayerData();
+            GameDataManager.PlayerData = new PlayerData { CurrentLevel = "test-level" };
+            RunLootBuffer.BeginAttempt(GameDataManager.PlayerData.CurrentLevel);
         }
 
         [TearDown]
         public void TearDown()
         {
             ResourceManager.OnDisable();
+            RunLootBuffer.Discard();
             GameDataManager.PlayerData = _previousPlayerData;
         }
 
@@ -103,15 +106,71 @@ namespace Assets.Tests.EditMode
             GameEventsManager.CoinCollected(3);
             GameEventsManager.CrystallCollected(2);
 
-            Assert.AreEqual(3, GameDataManager.PlayerData.Money);
-            Assert.AreEqual(2, GameDataManager.PlayerData.Crystals);
+            Assert.AreEqual(0, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(0, GameDataManager.PlayerData.Crystals);
+            Assert.AreEqual(3, RunLootBuffer.AvailableCoins);
+            Assert.AreEqual(2, RunLootBuffer.AvailableCrystals);
 
             ResourceManager.OnDisable();
             GameEventsManager.CoinCollected(3);
             GameEventsManager.CrystallCollected(2);
 
-            Assert.AreEqual(3, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(0, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(0, GameDataManager.PlayerData.Crystals);
+            Assert.AreEqual(3, RunLootBuffer.AvailableCoins);
+            Assert.AreEqual(2, RunLootBuffer.AvailableCrystals);
+        }
+
+        [Test]
+        public void RunLootBuffer_SpendsRunCoinsBeforePersistentWallet()
+        {
+            GameDataManager.PlayerData.Money = 40;
+            ResourceManager.OnEnable();
+            GameEventsManager.CoinCollected(70);
+
+            Assert.IsTrue(RunLootBuffer.TrySpendCoins(50));
+            Assert.AreEqual(40, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(20, RunLootBuffer.AvailableCoins);
+
+            Assert.IsTrue(RunLootBuffer.TrySpendCoins(30));
+            Assert.AreEqual(30, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(0, RunLootBuffer.AvailableCoins);
+        }
+
+        [Test]
+        public void RunLootBuffer_CommitsOnlyRemainingLootToPersistentWallet()
+        {
+            GameDataManager.PlayerData.Money = 10;
+            ResourceManager.OnEnable();
+            GameEventsManager.CoinCollected(70);
+            GameEventsManager.CrystallCollected(2);
+
+            Assert.IsTrue(RunLootBuffer.TrySpendCoins(50));
+
+            GameDataManager.ExecuteTransaction(CheckpointReason.LevelCompleted, RunLootBuffer.CommitToPersistentWallet,
+                RunLootBuffer.MarkCommitted);
+
+            Assert.AreEqual(30, GameDataManager.PlayerData.Money);
             Assert.AreEqual(2, GameDataManager.PlayerData.Crystals);
+            Assert.AreEqual(0, RunLootBuffer.AvailableCoins);
+            Assert.AreEqual(0, RunLootBuffer.AvailableCrystals);
+        }
+
+        [Test]
+        public void RunLootBuffer_DiscardDropsUnsavedLootWithoutTouchingPersistentWallet()
+        {
+            GameDataManager.PlayerData.Money = 12;
+            GameDataManager.PlayerData.Crystals = 3;
+            ResourceManager.OnEnable();
+            GameEventsManager.CoinCollected(5);
+            GameEventsManager.CrystallCollected(1);
+
+            RunLootBuffer.Discard();
+
+            Assert.AreEqual(12, GameDataManager.PlayerData.Money);
+            Assert.AreEqual(3, GameDataManager.PlayerData.Crystals);
+            Assert.AreEqual(0, RunLootBuffer.AvailableCoins);
+            Assert.AreEqual(0, RunLootBuffer.AvailableCrystals);
         }
 
         [TestCase(ResourceType.Coins)]

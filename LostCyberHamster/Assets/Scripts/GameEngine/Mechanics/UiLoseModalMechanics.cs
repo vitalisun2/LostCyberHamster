@@ -61,6 +61,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_runEnded) return;
             Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("loss", 0, 0);
             FirstSessionTelemetry.Record("attempt_failed", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
+            RunLootBuffer.Discard();
             _runEnded = true;
             RewardedAdService.Instance.CancelContext(_request);
             _request = null;
