@@ -29,8 +29,7 @@ namespace Assets.Scripts.Entry_Points
             });
 
             var gameController = _uiManager.GetController<GameScreenController>();
-            gameController.SetSuperJumpAction(() => { });
-            gameController.SetJumpAction(() => { });
+            gameController.SetJumpInputAction(() => { });
             gameController.SetUltraAction(() => { });
             gameController.SetTapAction(() => { });
 

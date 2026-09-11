@@ -1,10 +1,8 @@
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
 using System;
-using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
-using Atomic.Elements;
 using LostCyberHamster.UI;
 using UnityEngine;
 using Vues.GameCore;
@@ -21,33 +19,26 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
         private readonly Hamster _character;
+        private readonly PlayerJumpInputSequencer _jumpInputSequencer;
         private GameScreenController _gameScreenController;
-        private readonly AtomicVariable<HamsterStateEnum> _characterHamsterState;
-        private readonly AtomicEvent _roofJumpRequest;
-        private readonly AtomicEvent _superRoofJumpRequest;
-        private readonly AtomicEvent _jumpEvent;
-        private readonly AtomicEvent _superJumpEvent;
         private readonly GameScreenStatusFormatter _statusFormatter = new GameScreenStatusFormatter();
         private int _lastRunScore = -1;
         private int _runCrystals;
-        private bool _wasSkateboardActive;
 
-        public UiGameScreenMechanics(UIManager uiManager, GameManager gameManager, Hamster character)
+        public UiGameScreenMechanics(
+            UIManager uiManager,
+            GameManager gameManager,
+            Hamster character,
+            PlayerJumpInputSequencer jumpInputSequencer)
         {
             _uiManager = uiManager;
             _gameManager = gameManager;
             _character = character;
-            _characterHamsterState = character.HamsterState;
-            _roofJumpRequest = character.RoofJumpRequest;
-            _superRoofJumpRequest = character.SuperRoofJumpRequest;
-            _jumpEvent = character.JumpRequest;
-            _superJumpEvent = character.SuperJumpRequest;
+            _jumpInputSequencer = jumpInputSequencer;
 
             _gameScreenController = _uiManager.GetController<GameScreenController>();
-            _wasSkateboardActive = character.ActorSwitcher.IsSkateboardActive;
 
-            _gameScreenController.SetSuperJumpAction(OnSuperJump);
-            _gameScreenController.SetJumpAction(OnJump);
+            _gameScreenController.SetJumpInputAction(OnJumpInput);
             _gameScreenController.SetTapAction(OnTap);
             _gameScreenController.SetBuyEnergyAction(OnBuyEnergy);
             _gameScreenController.SetUltraAction(OnUlta);
@@ -148,7 +139,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void OnUpdate()
         {
             _gameScreenController.SetAbilityActivity(_character.SuperAttackSnapshot);
-            ResetJumpSequenceIfModeChanged();
             SyncRunScore();
             SyncRefillAvailability();
 
@@ -179,49 +169,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _gameScreenController?.SetRunScore(runScore);
         }
 
-        private void OnJump()
+        private void OnJumpInput()
         {
-            if (_character.ActorSwitcher.IsSkateboardActive)
-            {
-                _jumpEvent?.Invoke();
-                return;
-            }
-
-            if (_characterHamsterState.Value == HamsterStateEnum.RoofRun)
-                _roofJumpRequest.Invoke();
-
-            if (_characterHamsterState.Value == HamsterStateEnum.Run ||
-                _character.IsDamaged.Value)
-                _jumpEvent?.Invoke();
-        }
-
-        private void OnSuperJump()
-        {
-            if (_character.ActorSwitcher.IsSkateboardActive)
-            {
-                _superJumpEvent?.Invoke();
-                return;
-            }
-
-            if (_characterHamsterState.Value == HamsterStateEnum.RoofJump ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpFromRoof ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpFromRoofDamage ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpOnObstacleFromRoof
-               )
-                _superRoofJumpRequest.Invoke();
-
-            if (_characterHamsterState.Value == HamsterStateEnum.Jump ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpOver ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpOnObstacle ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpOnRoof ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpDamageForSmallAlive ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpDamageForSmallNotAlive ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpDamageForBigAlive ||
-                _characterHamsterState.Value == HamsterStateEnum.JumpOnRoofDamage
-               )
-            {
-                _superJumpEvent?.Invoke();
-            }
+            _jumpInputSequencer.HandleJumpInput();
         }
 
         private void OnTap()
@@ -287,16 +237,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 OnUltaChargeAmountChanged(
                     _character.UltaChargeAmount.Value);
             }
-        }
-
-        private void ResetJumpSequenceIfModeChanged()
-        {
-            bool isSkateboardActive = _character.ActorSwitcher.IsSkateboardActive;
-            if (isSkateboardActive == _wasSkateboardActive)
-                return;
-
-            _gameScreenController.ResetJumpSequence();
-            _wasSkateboardActive = isSkateboardActive;
         }
     }
 }

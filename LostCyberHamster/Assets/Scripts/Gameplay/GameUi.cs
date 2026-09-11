@@ -35,6 +35,7 @@ namespace Assets.Scripts.Gameplay
             _uiJourneyCompleteModalMechanics;
         private LevelResultNavigationCoordinator
             _levelResultNavigationCoordinator;
+        private PlayerJumpInputSequencer _playerJumpInputSequencer;
         private KeyboardMechanics _keyboardMechanics;
         private FirstSessionNotificationHost _notifications;
         private ShieldPracticeController _shieldPractice;
@@ -64,7 +65,8 @@ namespace Assets.Scripts.Gameplay
                     CloseLevelUpModal),
             });
 
-            _uiGameScreenMechanics = new UiGameScreenMechanics(_uiManager, _gameManager, _character);
+                    _playerJumpInputSequencer = new PlayerJumpInputSequencer(_character);
+                    _uiGameScreenMechanics = new UiGameScreenMechanics(_uiManager, _gameManager, _character, _playerJumpInputSequencer);
             _uiPauseScreenMechanics = new UiPauseScreenMechanics(_uiManager, _gameManager);
             _energyMechanics = new EnergyMechanics(
                 _character.Energy,
@@ -86,7 +88,7 @@ namespace Assets.Scripts.Gameplay
                 new UiJourneyCompleteModalMechanics(
                     _uiManager,
                     _levelResultNavigationCoordinator);
-            _keyboardMechanics = new KeyboardMechanics(_character, _uiManager);
+            _keyboardMechanics = new KeyboardMechanics(_character, _uiManager, _playerJumpInputSequencer);
 
             await _uiManager.LoadScreenAsync(ScreenEnum.GameScreen);
             if (_destroyed) return;

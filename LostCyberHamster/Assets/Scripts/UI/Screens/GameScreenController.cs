@@ -1,5 +1,4 @@
 ﻿using System;
-using Assets.Scripts.Common;
 using System.Globalization;
 using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
@@ -41,8 +40,7 @@ namespace LostCyberHamster.UI
         private bool _canBuyUltra;
         private int _lastUltraCharge;
 
-        private Action _jumpAction;
-        private Action _superJumpAction;
+        private Action _jumpInputAction;
         private Action _ultraAction;
         private Action _buyEnergyAction;
         private Action _buyUltraAction;
@@ -50,7 +48,6 @@ namespace LostCyberHamster.UI
         private VisualElement _tapArea;
         private Action _tapAction;
         private Action _pauseAction;
-        private DoubleJumpDetector _doubleJumpDetector = new();
         protected override ScreenEnum _screenAssetName => ScreenEnum.GameScreen;
 
         public GameScreenController(UIDocument uiDocument) : base(uiDocument)
@@ -103,16 +100,7 @@ namespace LostCyberHamster.UI
                 return;
             }
 
-            bool isDoubleJump = _doubleJumpDetector.RegisterJump();
-
-            if (isDoubleJump)
-            {
-                _superJumpAction?.Invoke();
-            }
-            else
-            {
-                _jumpAction?.Invoke();
-            }
+            _jumpInputAction?.Invoke();
         }
 
         private void OnClickBuyEnergy(PointerDownEvent evt)
@@ -177,7 +165,6 @@ namespace LostCyberHamster.UI
             // Готовим существующие элементы управления.
             ClearBackground();
             HideDebugStateInPlayerBuild();
-            _doubleJumpDetector.Reset();
 
             // Восстанавливаем счётчики при создании нового дерева текущего HUD.
             SetRunScore(_runScoreValue);
@@ -388,19 +375,9 @@ namespace LostCyberHamster.UI
             element.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        public void SetJumpAction(Action action)
+        public void SetJumpInputAction(Action action)
         {
-            _jumpAction = action;
-        }
-
-        public void SetSuperJumpAction(Action action)
-        {
-            _superJumpAction = action;
-        }
-
-        public void ResetJumpSequence()
-        {
-            _doubleJumpDetector.Reset();
+            _jumpInputAction = action;
         }
 
         public void SetUltraAction(Action action)
