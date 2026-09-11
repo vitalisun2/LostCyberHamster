@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Assets.Scripts.Account;
+using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
 using GameAds;
 using GameManagement;
@@ -87,7 +88,7 @@ namespace Assets.Scripts.Entry_Points
             _uiManager = new UIManager(new IScreenController[]
             {
                 new HomeScreenController(_uiDocument, OpenReturnActivities),
-                new ReturnActivitiesScreenController(_uiDocument, ShowReturnActivityReward, () => SceneManager.LoadScene("Game")),
+                new ReturnActivitiesScreenController(_uiDocument, ShowReturnActivityReward, PlayContinueLevel),
                 new ActivityRewardModalController(_uiDocument, () => _uiManager.CloseModal(ScreenEnum.ActivityRewardModal)),
                 new CharacterDevelopmentScreenController(_uiDocument, () => FirstSessionNavigation.Resume(_uiManager), ShowAbilityUpgrade),
                 new SettingsScreenController(
@@ -199,6 +200,14 @@ namespace Assets.Scripts.Entry_Points
             if (_uiManager.HasModalOrTransition || _uiManager.HasPriorityPresentation || PlayerLevelPresentation.HasPendingLevel) return;
             ReturnActivitiesScreenController.InitialKind = kind;
             UIManager.OnScreenShow?.Invoke(ScreenEnum.ReturnActivitiesScreen);
+        }
+
+        private static void PlayContinueLevel()
+        {
+            if (LevelManager.TryGetContinueLevelKey(out string levelKey))
+                LevelController.Instance.SetCurrentLevel(levelKey);
+
+            SceneManager.LoadScene("Game");
         }
 
         private async void ShowReturnActivityReward(ActivityRewardSnapshot reward)
