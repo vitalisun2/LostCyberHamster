@@ -14,6 +14,9 @@ public class ElectricStrikeUlta : MonoBehaviour
     [SerializeField] private float delayBetweenEffects = 0.1f; // Задержка между эффектами - по умолчанию 0.1 сек
     [SerializeField] private float effectSpeedMultiplier = 1.0f; // Общая скорость эффекта
 
+    private bool _lockWorldY;
+    private float _lockedWorldY;
+
     /// <summary>
     /// Возвращает признак полностью настроенного визуального эффекта.
     /// </summary>
@@ -30,6 +33,13 @@ public class ElectricStrikeUlta : MonoBehaviour
         effectRenderer2.bounds.max.x,
         effectRenderer3.bounds.max.x);
 
+    public void LockWorldY(float worldY)
+    {
+        _lockWorldY = true;
+        _lockedWorldY = worldY;
+        ApplyLockedWorldY();
+    }
+
     private void Start()
     {
         if (!IsConfigured)
@@ -39,6 +49,12 @@ public class ElectricStrikeUlta : MonoBehaviour
             return;
         }
         StartCoroutine(PlayElectricStrikeSequence());
+    }
+
+    private void LateUpdate()
+    {
+        if (_lockWorldY)
+            ApplyLockedWorldY();
     }
 
     /// <summary>Масштабирует видимую дальность относительно точки начала физического удара.</summary>
@@ -110,6 +126,13 @@ public class ElectricStrikeUlta : MonoBehaviour
         }
         color.a = endAlpha;
         spriteRenderer.color = color;
+    }
+
+    private void ApplyLockedWorldY()
+    {
+        Vector3 position = transform.position;
+        position.y = _lockedWorldY;
+        transform.position = position;
     }
 
     private static bool HasSprite(SpriteRenderer renderer)
