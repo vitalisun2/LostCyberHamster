@@ -99,8 +99,6 @@ namespace LostCyberHamster.UI
             Upgrade.SetEnabled(!_busy && CharacterDevelopmentService.CanUpgradeSuperAttack(_abilityId, _level));
             Label("ability-upgrade-owned").text = Text("retention_owned_points", GameDataManager.PlayerData.DevelopmentPoints);
             string reason = maximum ? Text("progression_maximum") :
-                GameDataManager.PlayerData.PlayerLevel < SuperAttackLevelResolver.UpgradePlayerLevel
-                    ? Text("progression_upgrade_level", SuperAttackLevelResolver.UpgradePlayerLevel) :
                 GameDataManager.PlayerData.DevelopmentPoints < 1 ? Text("progression_upgrade_points") : string.Empty;
             Label("ability-upgrade-status").text = reason;
         }

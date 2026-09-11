@@ -8,7 +8,6 @@ namespace Vues.GameCore
     public static class SuperAttackLevelResolver
     {
         public const int MaximumLevel = 3;
-        public const int UpgradePlayerLevel = 7;
 
         public static int GetLevel(PlayerData player, int abilityId) =>
             player?.SuperAttackLevels?.FirstOrDefault(item => item.SuperAttackId == abilityId)?.Level ?? 1;

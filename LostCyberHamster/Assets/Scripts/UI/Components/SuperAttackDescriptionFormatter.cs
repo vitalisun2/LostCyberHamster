@@ -51,8 +51,6 @@ namespace LostCyberHamster.UI
         {
             if (level >= SuperAttackLevelResolver.MaximumLevel) return Format("progression_maximum");
             string next = Roman(level + 1) + ": " + Describe(ability, level + 1);
-            if (GameDataManager.PlayerData.PlayerLevel < SuperAttackLevelResolver.UpgradePlayerLevel)
-                return next + "\n" + Format("progression_upgrade_level", SuperAttackLevelResolver.UpgradePlayerLevel);
             return next + "\n" + Format(GameDataManager.PlayerData.DevelopmentPoints > 0
                 ? "progression_upgrade_action" : "progression_upgrade_points");
         }
@@ -68,8 +66,6 @@ namespace LostCyberHamster.UI
         public static string UpgradeAction(int level)
         {
             if (level >= SuperAttackLevelResolver.MaximumLevel) return Format("progression_maximum");
-            if (GameDataManager.PlayerData.PlayerLevel < SuperAttackLevelResolver.UpgradePlayerLevel)
-                return Format("progression_upgrade_level", SuperAttackLevelResolver.UpgradePlayerLevel);
             return Format(GameDataManager.PlayerData.DevelopmentPoints > 0
                 ? "progression_upgrade_action" : "progression_upgrade_points");
         }

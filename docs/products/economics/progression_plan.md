@@ -131,19 +131,19 @@ Menu обслуживает blocking Cloud/Claim/DailyReward, затем pending
 
 ## P2-05 — каталог уровней и покупка улучшений
 
-**Игрок:** открывает способности/скины как прежде; с уровня игрока 7 улучшает открытую способность до II/III за 1 DP.
+**Игрок:** открывает способности/скины как прежде; улучшает открытую способность до II/III за 1 DP сразу после открытия, если есть свободный DP.
 
 **Владение:** progression writer: `Scripts/SharedCore/Meta/CharacterDevelopment/CharacterDevelopmentService.cs`, `Scripts/SharedCore/Meta/SuperAttacks/Catalog/SuperAttackData.cs`, `Scripts/SharedCore/Meta/SuperAttacks/Catalog/SuperAttackDataList.cs`; новые `Scripts/SharedCore/Meta/SuperAttacks/Catalog/SuperAttackLevelData.cs`, `Scripts/SharedCore/Meta/SuperAttacks/Catalog/SuperAttackLevelResolver.cs`; `Content/super_attacks/super_attacks.json`, `Scripts/SharedCore/Meta/SuperAttacks/SuperAttackService.cs`. Shared `Scripts/GameManagement/PlayerProgress/PlayerData.cs`, `Scripts/GameManagement/Persistence/PlayerDataValidator.cs`, `Scripts/GameManagement/Persistence/CheckpointReason.cs` — интегратор.
 
 **Порядок:** P2-04; до P2-06/13. UI — отдельная задача.
 
-**Изменения:** ID 1/2/3 получают точные I/II/III из 09. API: tier/cost/prerequisites/CanUpgrade/TryUpgrade(expectedCurrentLevel). I получается через unlock; II требует I, III требует II, playerLevel≥7, DP≥1. Покупка атомарно списывает 1 DP и меняет tier. Повтор с тем же expected tier возвращает актуальное состояние без второй траты. Открытая способность доступна для экипировки без кристаллов.
+**Изменения:** ID 1/2/3 получают точные I/II/III из 09. API: tier/cost/prerequisites/CanUpgrade/TryUpgrade(expectedCurrentLevel). I получается через unlock; II требует I, III требует II, DP≥1. Покупка атомарно списывает 1 DP и меняет tier. Повтор с тем же expected tier возвращает актуальное состояние без второй траты. Открытая способность доступна для экипировки без кристаллов.
 
 **Сохранение:** сериализуемый список `(abilityId,level)` в PlayerData; closed=0, открытая способность без нового поля=I. Нормализация согласует unlock/tier, не дарит II/III; неизвестные ID и недопустимые уровни диагностируются. Версии каталога/save раздельны. Cloud/tutorial snapshot/profile replacement переносят поля целиком. Ошибка save откатывает DP/tier. Заряд/эффект остаются состоянием попытки.
 
-**Трактовка порога:** уровень 7 открывает ветку улучшений. Владение всеми шестью открытиями отдельным условием 09 не задано. Сохранённые DP позволяют покупку на 7 при открытой способности. На рекомендуемом пути шесть DP уже потрачены, первое новое очко под апгрейд будет на 8. Выбор и трата ручные.
+**Трактовка порога:** отдельного порога по уровню для ветки улучшений нет. Владение всеми шестью открытиями отдельным условием 09 не задано. Улучшение доступно на любом уровне при открытой способности, корректном предыдущем tier и свободном DP. Выбор и трата ручные.
 
-**Приёмка/минимум:** девять конфигураций совпадают с 09; II/III стоят по 1; уровень 6 блокирует, 7 с DP разрешает; III до II блокирован. Double click/retry/restart дают одну трату. Forest: открыть за 1 DP, купить за 20 кристаллов отдельно; Cowboy 25, Summer 20. Каталог требует 12 DP; на уровне 13/2880 XP после целевых трат свободных DP 0. Review каталога/save+C# gate; обе поверхности P2-15.
+**Приёмка/минимум:** девять конфигураций совпадают с 09; II/III стоят по 1; DP 0 блокирует, DP 1 разрешает при открытой способности и корректном предыдущем tier; III до II блокирован. Double click/retry/restart дают одну трату. Forest: открыть за 1 DP, купить за 20 кристаллов отдельно; Cowboy 25, Summer 20. Каталог требует 12 DP; на уровне 13/2880 XP после целевых трат свободных DP 0. Review каталога/save+C# gate; обе поверхности P2-15.
 
 ## P2-06 — общий runtime времени, разрушения и дропа
 
@@ -241,9 +241,9 @@ Menu обслуживает blocking Cloud/Claim/DailyReward, затем pending
 
 **Порядок:** P2-05 и передача экранов блоком 1. Подготовка независима от runtime; соединение с CTA P2-10 перед приёмкой.
 
-**Изменения/состояние:** I/II/III, текущие/следующие параметры из resolver, цена 1 DP; причина lock: уровень 7/предыдущий tier/DP/открытие; max. Заряд и полный прыжковый цикл следуют 09. Кнопка блокируется до save; успех обновляет Skills/Hero/freeDP/LevelUp-возможности. Экипировка отдельна от покупки. Новые параметры берёт следующая активация; начатая использует свой snapshot.
+**Изменения/состояние:** I/II/III, текущие/следующие параметры из resolver, цена 1 DP; причина lock: предыдущий tier/DP/открытие; max. Заряд и полный прыжковый цикл следуют 09. Кнопка блокируется до save; успех обновляет Skills/Hero/freeDP/LevelUp-возможности. Экипировка отдельна от покупки. Новые параметры берёт следующая активация; начатая использует свой snapshot.
 
-**Приёмка/минимум:** level6/7, DP0/1, closed/I/II/III, double click/save failure/reload/cloud; параметры Skills/Hero совпадают. Skin unlock/buy/equip раздельны, цены 20/25/20 реальны. Урок щита находит anchors; Forest-first доступен. Review+C# gate; оба экрана/локализация/live visual QA отдельно.
+**Приёмка/минимум:** low/high player level, DP0/1, closed/I/II/III, double click/save failure/reload/cloud; параметры Skills/Hero совпадают. Skin unlock/buy/equip раздельны, цены 20/25/20 реальны. Урок щита находит anchors; Forest-first доступен. Review+C# gate; оба экрана/локализация/live visual QA отдельно.
 
 ## P2-14 — переход между блоками и первая сессия
 

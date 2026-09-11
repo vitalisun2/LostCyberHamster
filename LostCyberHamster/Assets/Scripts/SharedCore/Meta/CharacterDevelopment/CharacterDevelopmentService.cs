@@ -113,12 +113,11 @@ namespace Vues.GameCore
                 playerData.SuperAttackLevels.Add(new SuperAttackLevelProgress { SuperAttackId = superAttackId }));
         }
 
-        /// <summary>Проверяет последовательное улучшение открытой способности с уровня игрока 7.</summary>
+        /// <summary>Проверяет последовательное улучшение уже открытой способности.</summary>
         public static bool CanUpgradeSuperAttack(int abilityId, int expectedLevel)
         {
             var player = GameDataManager.PlayerData;
-            return player != null && player.PlayerLevel >= SuperAttackLevelResolver.UpgradePlayerLevel &&
-                player.DevelopmentPoints > 0 && IsSuperAttackUnlocked(abilityId) &&
+            return player != null && player.DevelopmentPoints > 0 && IsSuperAttackUnlocked(abilityId) &&
                 SuperAttackService.TryGet(abilityId, out _) && expectedLevel >= 1 &&
                 expectedLevel < SuperAttackLevelResolver.MaximumLevel &&
                 SuperAttackLevelResolver.GetLevel(player, abilityId) == expectedLevel;
