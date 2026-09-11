@@ -102,6 +102,25 @@ namespace Assets.Scripts.Common
 
         // ───────────────────────────────── Утилиты перекрытия ─────────────────────────────────
 
+        /// <summary>
+        /// Проверяет перекрытие после симметричного уменьшения первого интервала.
+        /// </summary>
+        public static bool IsOverlapWithInset(
+            float leftA, float rightA,
+            float leftB, float rightB,
+            float insetPerSide)
+        {
+            float clampedInset = Mathf.Min(
+                Mathf.Max(insetPerSide, 0f),
+                Mathf.Max(0f, rightA - leftA) * 0.5f);
+
+            return IsOverlap(
+                leftA + clampedInset,
+                rightA - clampedInset,
+                leftB,
+                rightB);
+        }
+
         public static bool IsOverlap(
             float leftA, float rightA,
             float leftB, float rightB,
@@ -152,6 +171,25 @@ namespace Assets.Scripts.Common
             GetHamsterXBounds(hamster, out var hL, out var hR);
 
             return IsOverlap(hL, hR, oL, oR);
+        }
+
+        /// <summary>
+        /// Проверяет overlap obstacle с хомяком после симметричного уменьшения hitbox хомяка.
+        /// </summary>
+        public static bool IsOverlapAtShift(
+            Transform hamster,
+            float hamsterWidth,
+            float worldShift,
+            Obstacle obstacle,
+            float hamsterSideInsetRatio)
+        {
+            GetObstacleXInterval(obstacle, obstacle.ColliderWidth, worldShift,
+                out var oL, out var oR);
+
+            GetHamsterXBounds(hamster, out var hL, out var hR);
+
+            float sideInset = Mathf.Max(0f, hamsterWidth) * Mathf.Max(0f, hamsterSideInsetRatio);
+            return IsOverlapWithInset(hL, hR, oL, oR, sideInset);
         }
 
         /// <summary>True, если хомяк перелетает obstacle полностью по X.</summary>

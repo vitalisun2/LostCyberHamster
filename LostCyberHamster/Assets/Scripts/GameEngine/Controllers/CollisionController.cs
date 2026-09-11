@@ -34,6 +34,11 @@ public class CollisionController : MonoBehaviour
     public const float BigAliveJumpDamageOverlapThreshold = 0.3f;
 
     /// <summary>
+    /// Смягчаем урон от едва заметных боковых касаний в trigger-based столкновениях.
+    /// </summary>
+    private const float HorizontalDamageForgivenessRatio = 0.05f;
+
+    /// <summary>
     /// Запускает обработку столкновения при первом входе в триггер препятствия.
     /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
@@ -330,22 +335,21 @@ public class CollisionController : MonoBehaviour
     /// </summary>
     private bool HasCollisionInRunState(Obstacle obstacle)
     {
-        bool result = false;
-
         // Разрешаем обычное столкновение во время бега по земле.
         if (_hamster.HamsterState.Value == HamsterStateEnum.Run)
         {
-            result = true;
+            return HasDamagingHorizontalOverlap(obstacle);
         }
 
         // Разрешаем коллизии с препятствиями, не являющимися крышами, во время бега с крыши или по крыше.
         if (_hamster.HamsterState.Value == HamsterStateEnum.RunFromRoof
         || _hamster.HamsterState.Value == HamsterStateEnum.RoofRun)
         {
-            result = !CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum);
+            return !CollisionUtils.IsRoofObstacle(obstacle.ObstacleType.ObstacleTypeEnum)
+                && HasDamagingHorizontalOverlap(obstacle);
         }
 
-        return result;
+        return false;
     }
 
     /// <summary>
@@ -378,6 +382,17 @@ public class CollisionController : MonoBehaviour
         return overlap > _hamster.ColliderWidth * BigAliveJumpDamageOverlapThreshold;
     }
 
+    private bool HasDamagingHorizontalOverlap(Obstacle obstacle)
+    {
+        return obstacle != null &&
+            CollisionUtils.IsOverlapAtShift(
+                _hamster.transform,
+                _hamster.ColliderWidth,
+                0f,
+                obstacle,
+                HorizontalDamageForgivenessRatio);
+    }
+
     private bool HasCollisionWithRoofHazardInJumpOnRoofState(Obstacle obstacle)
     {
         HamsterStateEnum state = _hamster.HamsterState.Value;
@@ -393,7 +408,8 @@ public class CollisionController : MonoBehaviour
 
         return CollisionUtils.IsRoofHazard(
             obstacle,
-            obstacles);
+            obstacles)
+            && HasDamagingHorizontalOverlap(obstacle);
     }
 
     /// <summary>
