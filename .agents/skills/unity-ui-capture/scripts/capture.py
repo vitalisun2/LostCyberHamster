@@ -1,6 +1,8 @@
 """Unity UI capture; gallery rendering belongs to image-gallery. Python 3 standard library only."""
 import argparse
+import copy
 from datetime import datetime
+import fnmatch
 import hashlib
 import importlib.util
 import json
@@ -168,6 +170,66 @@ def validate(plan):
     return len(shot_ids)
 
 
+def state_ref(value):
+    value = value.strip().replace("--", ":")
+    if value.count(":") != 1:
+        raise ValueError(f"State filter must use case:state or case--state: {value}")
+    case_id, state_id = value.split(":", 1)
+    if not IDENT.fullmatch(case_id) or not IDENT.fullmatch(state_id):
+        raise ValueError(f"Invalid state filter: {value}")
+    return case_id, state_id
+
+
+def matches_only(pattern, case_id, state_id):
+    value = pattern.strip().replace("--", ":")
+    if not value:
+        raise ValueError("Empty --only filter")
+    if ":" in value:
+        return fnmatch.fnmatchcase(f"{case_id}:{state_id}", value)
+    return fnmatch.fnmatchcase(case_id, value)
+
+
+def filter_plan(plan, cases=None, states=None, only=None):
+    cases = cases or []
+    states = states or []
+    only = only or []
+    if not (cases or states or only):
+        return copy.deepcopy(plan)
+    filtered = copy.deepcopy(plan)
+    available_cases = {case["id"] for case in filtered["cases"]}
+    requested_states = {state_ref(value): value for value in states}
+    available_states = {(case["id"], state["id"]) for case in filtered["cases"] for state in case["states"]}
+    unknown_cases = [value for value in cases if value not in available_cases]
+    unknown_states = [value for key, value in requested_states.items() if key not in available_states]
+    if unknown_cases:
+        raise ValueError("Unknown case filter: " + ", ".join(unknown_cases))
+    if unknown_states:
+        raise ValueError("Unknown state filter: " + ", ".join(unknown_states))
+    exact_cases = set(cases)
+    exact_states = set(requested_states)
+    selected_cases = []
+    for case in filtered["cases"]:
+        states_out = []
+        for state in case["states"]:
+            keep = (case["id"] in exact_cases or (case["id"], state["id"]) in exact_states or
+                    any(matches_only(pattern, case["id"], state["id"]) for pattern in only))
+            if keep:
+                states_out.append(state)
+        if states_out:
+            case["states"] = states_out
+            selected_cases.append(case)
+    if not selected_cases:
+        raise ValueError("Plan filter matched no states")
+    filtered["cases"] = selected_cases
+    return filtered
+
+
+def listed_plan(plan):
+    return [{"id": case["id"], "title": case["title"], "source": case["source"], "states": [
+        {"id": state["id"], "title": state["title"], "fixture": state["fixture"]} for state in case["states"]
+    ]} for case in plan["cases"]]
+
+
 def png_info(path):
     """Validate PNG container, chunk CRCs and compressed image data, without dependencies."""
     data = Path(path).read_bytes()
@@ -236,9 +298,9 @@ def audit(out):
 
 def build(out):
     out = Path(out).resolve()
-    manifest = audit(out)
-    write(out / "gallery-input.json", manifest)
-    return gallery_builder().build(out / "gallery-input.json", out)
+    audit(out)
+    gallery_out = gallery_builder().sidecar_output(out)
+    return gallery_builder().build(out, gallery_out, mode="linked")
 
 
 
@@ -320,9 +382,9 @@ def capture_inputs(args):
 
 def inspect_capture(args):
     project, module, plan_path, adapters, out, lock = capture_inputs(args)
-    plan = read(plan_path)
+    plan = filter_plan(read(plan_path), args.case_filter, args.state_filter, args.only_filter)
     count = validate(plan)
-    return {
+    result = {
         "project": str(project),
         "module": module["id"] if module else None,
         "plan": str(plan_path),
@@ -332,13 +394,16 @@ def inspect_capture(args):
         "output": str(out),
         "lockFile": str(lock),
     }
+    if args.list:
+        result["cases"] = listed_plan(plan)
+    return result
 
 
 def capture(args):
     if args.gallery:
         gallery_builder()  # Resolve optional sibling before any Editor mutation.
     project, module, plan_path, adapter_paths, out, lock = capture_inputs(args)
-    plan = read(plan_path)
+    plan = filter_plan(read(plan_path), args.case_filter, args.state_filter, args.only_filter)
     count = validate(plan)
     if out == project / "Assets" or project / "Assets" in out.parents:
         raise ValueError("Output must be outside Assets")
@@ -443,13 +508,15 @@ def capture(args):
         run["cleanup"]["lockReleased"] = safe_release
         run["durationSeconds"] = round(time.monotonic() - started_at, 2)
         write(out / "run.json", run)
-    manifest = build(out) if args.gallery else audit(out)
+    manifest = audit(out)
+    if args.gallery:
+        build(out)
     summary = {"success": manifest["complete"], "captured": manifest["captured"],
                "expected": manifest["expected"], "output": str(out),
                "error": run.get("error"), "cleanup": run["cleanup"],
                "durationSeconds": run["durationSeconds"]}
     if args.gallery:
-        summary["gallery"] = str(out / "index.html")
+        summary["gallery"] = str(gallery_builder().sidecar_output(out) / "index.html")
     print(json.dumps(summary, ensure_ascii=False), flush=True)
     return 0 if manifest["complete"] else 1
 
@@ -463,6 +530,9 @@ def main():
         command.add_argument("--module", help="Project module id; auto-detected when omitted")
         command.add_argument("--adapter", nargs="+", help="Manual adapter files; requires --plan")
         command.add_argument("--lock-file", help="Override the project integration lock")
+        command.add_argument("--case", dest="case_filter", action="append", default=[], help="Capture all states from one case id")
+        command.add_argument("--state", dest="state_filter", action="append", default=[], help="Capture one state by case:state or case--state")
+        command.add_argument("--only", dest="only_filter", action="append", default=[], help="Wildcard filter by case or case:state")
 
     p = sub.add_parser("capture")
     p.add_argument("--project", required=True)
@@ -473,6 +543,7 @@ def main():
     p = sub.add_parser("inspect")
     p.add_argument("--project", required=True)
     add_inputs(p)
+    p.add_argument("--list", action="store_true", help="Print filtered cases and states")
     p = sub.add_parser("validate")
     p.add_argument("--plan", required=True)
     p = sub.add_parser("audit")
@@ -495,9 +566,13 @@ def main():
         print(json.dumps({"captured": value["captured"], "expected": value["expected"], "complete": value["complete"]}))
     elif args.command == "build":
         value = build(args.out)
-        print(json.dumps({"captured": value["captured"], "expected": value["expected"], "complete": value["complete"]}))
+        print(json.dumps({"captured": value["captured"], "expected": value["expected"], "complete": value["complete"],
+                          "gallery": str(gallery_builder().sidecar_output(args.out) / "index.html")}))
     else:
-        gallery_builder().serve(args.out, args.port)
+        gallery_out = gallery_builder().sidecar_output(args.out)
+        if not (gallery_out / "index.html").exists() or not (gallery_out / "manifest.json").exists():
+            build(args.out)
+        gallery_builder().serve(gallery_out, args.port)
     return 0
 
 

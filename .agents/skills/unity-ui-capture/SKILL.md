@@ -24,9 +24,18 @@ python .agents/skills/unity-ui-capture/scripts/capture.py capture --project <Uni
 python .agents/skills/unity-ui-capture/scripts/capture.py capture --project LostCyberHamster
 ```
 
+Для части экранов использовать фильтры поверх того же плана:
+
+```powershell
+python .agents/skills/unity-ui-capture/scripts/capture.py inspect --project LostCyberHamster --list
+python .agents/skills/unity-ui-capture/scripts/capture.py capture --project LostCyberHamster --case profile
+python .agents/skills/unity-ui-capture/scripts/capture.py capture --project LostCyberHamster --state profile:empty
+python .agents/skills/unity-ui-capture/scripts/capture.py capture --project LostCyberHamster --only "shop:*"
+```
+
 Перед запуском Unity Editor должен быть остановлен, стабилен, иметь чистую сцену Bootstrap/Menu. Инструмент сам берёт project lock, запускает Play Mode, готовит изолированный профиль, снимает все кадры, восстанавливает профиль и останавливает Play Mode. Не запускать второй capture, пока первый работает.
 
-Печатать каждый переход только для диагностики: `--progress`. Создать HTML отдельно по явному запросу: `--gallery`; тогда нужен соседний [image-gallery](../image-gallery/SKILL.md).
+Печатать каждый переход только для диагностики: `--progress`. Создать HTML отдельно по явному запросу: `--gallery`; тогда нужен соседний [image-gallery](../image-gallery/SKILL.md). Viewer создаётся рядом с папкой результата capture в отдельной sidecar-папке `<output>_gallery`.
 
 ## Состав кадров
 

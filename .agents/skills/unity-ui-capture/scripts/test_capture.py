@@ -4,6 +4,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 from unittest.mock import patch
 import zlib
 
@@ -55,12 +56,14 @@ class GalleryTests(unittest.TestCase):
             self.assertFalse(result["complete"])
             self.assertEqual(result["captured"], 0)
             self.assertEqual(len(result["cases"][0]["states"]), 1)
-            html = (out / "index.html").read_text(encoding="utf-8")
+            gallery_out = Path(str(out) + "_gallery")
+            html = (gallery_out / "index.html").read_text(encoding="utf-8")
             self.assertNotIn(value["title"], html)
             gallery.write(out / "capture-result.json", {"frames": [{"id": "case--state", "success": True, "width": 1, "height": 1}]})
             gallery.write(out / "run.json", {"success": True})
             (out / "case--state.png").write_bytes(png())
             self.assertTrue(gallery.build(out)["complete"])
+            self.assertTrue((gallery_out / "manifest.json").is_file())
 
     def test_png_only_audit_supports_case_folders(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -109,6 +112,71 @@ class GalleryTests(unittest.TestCase):
                 output = gallery.default_output(project, module)
             self.assertEqual(output.parent, root / "Downloads")
             self.assertTrue(output.name.startswith("Demo_UI_"))
+
+    def test_filter_plan_supports_case_state_and_patterns(self):
+        value = {
+            "title": "UI",
+            "cases": [
+                {"id": "profile", "title": "Profile", "source": "profile.cs", "states": [
+                    {"id": "empty", "title": "Empty", "fixture": "profile-empty", "expected": ["root"]},
+                    {"id": "filled", "title": "Filled", "fixture": "profile-filled", "expected": ["root"]}
+                ]},
+                {"id": "shop", "title": "Shop", "source": "shop.cs", "states": [
+                    {"id": "locked", "title": "Locked", "fixture": "shop-locked", "expected": ["root"]}
+                ]}
+            ]
+        }
+        filtered = gallery.filter_plan(value, cases=["profile"], states=["shop:locked"])
+        self.assertEqual([case["id"] for case in filtered["cases"]], ["profile", "shop"])
+        self.assertEqual([state["id"] for state in filtered["cases"][0]["states"]], ["empty", "filled"])
+        self.assertEqual([state["id"] for state in filtered["cases"][1]["states"]], ["locked"])
+        wildcard = gallery.filter_plan(value, only=["shop*"])
+        self.assertEqual(len(wildcard["cases"]), 1)
+        self.assertEqual(wildcard["cases"][0]["id"], "shop")
+
+    def test_inspect_list_and_build_use_gallery_sidecar(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)
+            (project / "ProjectSettings").mkdir()
+            (project / "ProjectSettings/ProjectVersion.txt").write_text("m_EditorVersion: 6000.2.6f2\n", encoding="utf-8")
+            out = Path(directory) / "capture"
+            out.mkdir()
+            gallery.write(out / "plan.json", plan())
+            (out / "Adapter.cs").write_text("namespace UiGallery { }\n", encoding="utf-8")
+            info = gallery.inspect_capture(MagicMock(
+                project=directory,
+                adapter=[str(out / "Adapter.cs")],
+                plan=str(out / "plan.json"),
+                out=str(out),
+                module=None,
+                lock_file=None,
+                case_filter=[],
+                state_filter=[],
+                only_filter=[],
+                list=True,
+            ))
+            self.assertEqual(info["cases"][0]["states"][0]["fixture"], "custom")
+            gallery.write(out / "capture-result.json", {"frames": [{"id": "case--state", "success": True, "width": 1, "height": 1}]})
+            gallery.write(out / "run.json", {"success": True})
+            (out / "case--state.png").write_bytes(png())
+
+            class Builder:
+                def sidecar_output(self, source):
+                    return Path(str(Path(source).resolve()) + "_gallery")
+
+                def build(self, source, target, mode="linked"):
+                    target.mkdir(parents=True, exist_ok=True)
+                    (target / "index.html").write_text("ok", encoding="utf-8")
+                    (target / "manifest.json").write_text(json.dumps({"cases": []}), encoding="utf-8")
+                    self.called = (Path(source).resolve(), Path(target).resolve(), mode)
+                    return {"captured": 1, "expected": 1, "complete": True}
+
+            builder = Builder()
+            with patch.object(gallery, "gallery_builder", return_value=builder):
+                gallery.build(out)
+            self.assertEqual(builder.called[0], out.resolve())
+            self.assertEqual(builder.called[1], Path(str(out.resolve()) + "_gallery"))
+            self.assertEqual(builder.called[2], "linked")
 
     def test_bundled_modules_have_valid_inputs(self):
         modules = gallery.available_modules()
