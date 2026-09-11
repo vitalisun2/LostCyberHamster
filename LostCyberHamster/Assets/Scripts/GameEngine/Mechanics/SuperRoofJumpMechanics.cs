@@ -32,6 +32,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<bool> _isOnBottomLine;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingDamageObstacle;
         private readonly Transform _transform;
         private readonly AtomicVariable<int> _energy;
         private readonly HamsterActorSwitcher _actorSwitcher;
@@ -52,6 +53,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<bool> isOnBottomLine,
             AtomicVariable<Obstacle> lastObstacle,
             AtomicVariable<Obstacle> pendingJumpedOnObstacle,
+            AtomicVariable<Obstacle> pendingDamageObstacle,
             AtomicVariable<int> energy,
             float hamsterWidthInUnits)
         {
@@ -64,6 +66,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _isOnBottomLine = isOnBottomLine;
             _lastObstacle = lastObstacle;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
+            _pendingDamageObstacle = pendingDamageObstacle;
             _energy = energy;
 
             _hamsterWidth = hamsterWidthInUnits;
@@ -88,6 +91,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof
                 ? result.Target
                 : null;
+            _pendingDamageObstacle.Value = result.DamageSource;
 
             if (result.State == HamsterStateEnum.SuperJumpOnObstacleFromRoof)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
@@ -212,8 +216,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Obstacle target = result.TargetIndex >= 0 && result.TargetIndex < obstacles.Count
                 ? obstacles[result.TargetIndex]
                 : null;
+            Obstacle damageSource = result.DamageSourceIndex >= 0 && result.DamageSourceIndex < obstacles.Count
+                ? obstacles[result.DamageSourceIndex]
+                : null;
 
-            return new JumpResult(result.State, target);
+            return new JumpResult(result.State, target, damageSource);
         }
     }
 }

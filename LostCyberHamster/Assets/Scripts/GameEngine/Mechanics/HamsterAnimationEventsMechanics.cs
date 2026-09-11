@@ -16,7 +16,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicEvent _jumpOverEvent;
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
-        private readonly AtomicEvent _damageEvent;
+        private readonly AtomicVariable<Obstacle> _pendingDamageObstacle;
+        private readonly ObstacleDamageGate _obstacleDamageGate;
 
         public HamsterAnimationEventsMechanics(TransformAnimatorEventsDispatcher transformAnimatorEventsDispatcher,
             SpriteAnimatorController spriteAnimatorController,
@@ -25,7 +26,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicEvent jumpOverEvent,
             AtomicEvent<Obstacle> destroyObstacleEvent,
             AtomicVariable<Obstacle> pendingJumpedOnObstacle,
-            AtomicEvent damageEvent)
+            AtomicVariable<Obstacle> pendingDamageObstacle,
+            ObstacleDamageGate obstacleDamageGate)
         {
             _transformAnimatorEventsDispatcher = transformAnimatorEventsDispatcher;
             _hamsterState = hamsterState;
@@ -33,8 +35,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _jumpOverEvent = jumpOverEvent;
             _destroyObstacleEvent = destroyObstacleEvent;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
+            _pendingDamageObstacle = pendingDamageObstacle;
             _spriteAnimatorController = spriteAnimatorController;
-            _damageEvent = damageEvent;
+            _obstacleDamageGate = obstacleDamageGate;
         }
 
         public void OnEnable()
@@ -62,7 +65,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 if (_hamsterState.Value == HamsterStateEnum.JumpOnRoofDamage ||
                     _hamsterState.Value == HamsterStateEnum.SuperJumpOnRoofDamage)
-                    _damageEvent?.Invoke();
+                    ApplyPendingDamage();
+
+                ClearPendingDamage();
 
                 _hamsterState.Value = HamsterStateEnum.RoofRun;
                 _spriteAnimatorController.PlayForState(_hamsterState.Value);
@@ -74,7 +79,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 if(_hamsterState.Value == HamsterStateEnum.RoofJumpDamage ||
                    _hamsterState.Value == HamsterStateEnum.SuperRoofJumpDamage)
-                    _damageEvent?.Invoke();
+                    ApplyPendingDamage();
+
+                ClearPendingDamage();
 
                 _hamsterState.Value = HamsterStateEnum.RoofRun;
                 _spriteAnimatorController.PlayForState(_hamsterState.Value);
@@ -86,7 +93,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
                 if (_hamsterState.Value == HamsterStateEnum.JumpFromRoofDamage ||
                     _hamsterState.Value == HamsterStateEnum.SuperJumpFromRoofDamage)
-                    _damageEvent?.Invoke();
+                    ApplyPendingDamage();
+
+                ClearPendingDamage();
 
                 _hamsterState.Value = HamsterStateEnum.Run;
                 _spriteAnimatorController.PlayForState(_hamsterState.Value);
@@ -142,9 +151,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
                             $"[JUMP_DAMAGE_DIAG] event={animEvent} state={_hamsterState.Value}");
                     }
 
-                    _damageEvent?.Invoke();
+                    ApplyPendingDamage();
                 }
 
+                ClearPendingDamage();
                 _pendingJumpedOnObstacle.Value = null;
                 _hamsterState.Value = HamsterStateEnum.Run;
                 _spriteAnimatorController.PlayForState(_hamsterState.Value);
@@ -153,8 +163,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (animEvent == "transform_jump_mid")
             {
                 if (_hamsterState.Value == HamsterStateEnum.JumpDamageForBigAlive)
-                    _damageEvent?.Invoke();
+                    ApplyPendingDamage();
             }
+        }
+
+        private void ApplyPendingDamage()
+        {
+            _obstacleDamageGate.HandleContact(_pendingDamageObstacle.Value);
+            _pendingDamageObstacle.Value = null;
+        }
+
+        private void ClearPendingDamage()
+        {
+            _pendingDamageObstacle.Value = null;
         }
     }
 }

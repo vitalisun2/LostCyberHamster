@@ -1,6 +1,7 @@
 using Assets.Scripts.Common.Models;
 using Assets.Scripts.Bot.Diagnostics;
 using Assets.Scripts.Common;
+using Assets.Scripts.GameEngine.Mechanics;
 using Assets.Scripts.Gameplay.Enums;
 using Assets.Scripts.Gameplay;
 using Assets.Scripts.System;
@@ -27,6 +28,14 @@ public class CollisionController : MonoBehaviour
     /// Ссылка на хомяка, состояние которого используется при проверке столкновений.
     /// </summary>
     [SerializeField] private Hamster _hamster;
+    private ObstacleDamageGate _obstacleDamageGate;
+
+    private ObstacleDamageGate DamageGate => _obstacleDamageGate ??= new ObstacleDamageGate(
+        _hamster.IsProtected,
+        _hamster.IsSuperAttackDestructiveOnCollision,
+        _hamster.ProtectedContactEvent,
+        _hamster.DamageEvent,
+        _hamster.DestroyObstacleBySuperAttackEvent);
 
     /// <summary>
     /// Порог перекрытия с BigAlive в некоторых стейтах прыжка 
@@ -459,19 +468,7 @@ public class CollisionController : MonoBehaviour
                 $"pending={FormatObstacle(_hamster.PendingJumpedOnObstacle.Value)}");
         }
 
-        // Один spawned obstacle может списать жизнь только один раз.
-        if (_hamster.IsProtected.Value)
-            _hamster.ProtectedContactEvent.Invoke(obstacle);
-        if (!_hamster.IsProtected.Value && obstacle.TryMarkContactDamageDealt())
-        {
-            _hamster.DamageEvent.Invoke();
-        }
-
-        // Способность решает дроп по подтверждённому удалению; обычный заряд не вызывается.
-        if (_hamster.IsSuperAttackDestructiveOnCollision.Value)
-        {
-            _hamster.DestroyObstacleBySuperAttackEvent?.Invoke(obstacle);
-        }
+        DamageGate.HandleContact(obstacle);
     }
 
     /// <summary>

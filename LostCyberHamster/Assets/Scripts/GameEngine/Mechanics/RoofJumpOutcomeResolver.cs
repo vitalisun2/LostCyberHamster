@@ -100,13 +100,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (!IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
                 return noHit;
 
-            bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-            bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
-            HamsterStateEnum state = hitSmall || hitBigAlive
-                ? HamsterStateEnum.RoofJumpDamage
-                : HamsterStateEnum.RoofJump;
+            bool hitSmall = TryFindSmallNotAliveRoofDamageSource(obstacles, context, out int damageSourceIndex);
+            bool hitBigAlive = !hitSmall && TryFindBigAliveRoofDamageSource(obstacles, context, out damageSourceIndex);
 
-            return new JumpResolveResult(state, obstacleIndex);
+            return hitSmall || hitBigAlive
+                ? new JumpResolveResult(HamsterStateEnum.RoofJumpDamage, obstacleIndex, damageSourceIndex)
+                : new JumpResolveResult(HamsterStateEnum.RoofJump, obstacleIndex);
         }
 
         // bigAlive -> JumpOnObstacleFromRoof / JumpFromRoofDamage
@@ -129,7 +128,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             // 2. Иначе: есть ли вообще X-пересечение? -> урон
             if (IsOverlapAtShift(context, obstacle, context.JumpFromRoofShift))
-                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex, obstacleIndex);
 
             // 3. Вообще не задели
             return noHit;
@@ -155,7 +154,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             // 2. Иначе: есть ли вообще X-пересечение? -> урон
             if (IsOverlapAtShift(context, obstacle, context.JumpFromRoofShift))
-                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex, obstacleIndex);
 
             // 3. Вообще не задели
             return noHit;
@@ -169,7 +168,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit)
         {
             if (IsOverlapAtShift(context, obstacle, context.JumpFromRoofShift))
-                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, obstacleIndex, obstacleIndex);
 
             return noHit;
         }
@@ -190,17 +189,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             if (hasRoofUnderHazard)
             {
-                bool hitSmall = IsHitSmallNotAliveOnRoof(obstacles, context);
-                bool hitBigAlive = IsHitBigAliveDuringRoofJump(obstacles, context);
-                HamsterStateEnum state = hitSmall || hitBigAlive
-                    ? HamsterStateEnum.RoofJumpDamage
-                    : HamsterStateEnum.RoofJump;
-                return new JumpResolveResult(state, roofUnderHazardIndex);
+                bool hitSmall = TryFindSmallNotAliveRoofDamageSource(obstacles, context, out int damageSourceIndex);
+                bool hitBigAlive = !hitSmall && TryFindBigAliveRoofDamageSource(obstacles, context, out damageSourceIndex);
+                return hitSmall || hitBigAlive
+                    ? new JumpResolveResult(HamsterStateEnum.RoofJumpDamage, roofUnderHazardIndex, damageSourceIndex)
+                    : new JumpResolveResult(HamsterStateEnum.RoofJump, roofUnderHazardIndex);
             }
 
             // small стоит на дороге: прыгаем с крыши вниз.
             if (IsOverlapAtShift(context, small, context.JumpFromRoofShift))
-                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, smallIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpFromRoofDamage, smallIndex, smallIndex);
 
             return noHit;
         }
@@ -209,9 +207,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// Хит-тест smallNotAliveRoadAndRoof на крыше.
         /// Повторяет смысл runtime helper'а CollisionUtils.IsHitSmallNotAliveOnRoof.
         /// </summary>
-        private static bool IsHitSmallNotAliveOnRoof(
+        private static bool TryFindSmallNotAliveRoofDamageSource(
             IReadOnlyList<JumpObstacleData> obstacles,
-            RoofJumpResolveContext context)
+            RoofJumpResolveContext context,
+            out int damageSourceIndex)
         {
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
@@ -223,18 +222,23 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     continue;
 
                 if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
+                {
+                    damageSourceIndex = obstacleIndex;
                     return true;
+                }
             }
 
+            damageSourceIndex = NoTarget;
             return false;
         }
 
         /// <summary>
         /// Проверяет высокий bigAlive, который roof jump может зацепить перед входом в RoofRun.
         /// </summary>
-        private static bool IsHitBigAliveDuringRoofJump(
+        private static bool TryFindBigAliveRoofDamageSource(
             IReadOnlyList<JumpObstacleData> obstacles,
-            RoofJumpResolveContext context)
+            RoofJumpResolveContext context,
+            out int damageSourceIndex)
         {
             for (int obstacleIndex = 0; obstacleIndex < obstacles.Count; obstacleIndex++)
             {
@@ -246,9 +250,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     continue;
 
                 if (IsOverlapAtShift(context, obstacle, context.RoofJumpShift))
+                {
+                    damageSourceIndex = obstacleIndex;
                     return true;
+                }
             }
 
+            damageSourceIndex = NoTarget;
             return false;
         }
 

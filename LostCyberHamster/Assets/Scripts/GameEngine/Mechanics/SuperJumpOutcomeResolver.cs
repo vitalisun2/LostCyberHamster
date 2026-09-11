@@ -84,10 +84,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             bool hitSmall = JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(obstacles, obstacleIndex, out int roofHazardIndex)
                 && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
-            HamsterStateEnum state = hitSmall
-                ? HamsterStateEnum.SuperJumpOnRoofDamage
-                : HamsterStateEnum.SuperJumpOnRoof;
-            return new JumpResolveResult(state, obstacleIndex);
+            return hitSmall
+                ? new JumpResolveResult(HamsterStateEnum.SuperJumpOnRoofDamage, obstacleIndex, roofHazardIndex)
+                : new JumpResolveResult(HamsterStateEnum.SuperJumpOnRoof, obstacleIndex);
         }
 
         private static JumpResolveResult HandleBigAlive(
@@ -97,7 +96,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit)
         {
             if (IsOverlapAtShift(context, obstacle))
-                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex, obstacleIndex);
 
             return IsJumpOver(context, obstacle)
                 ? new JumpResolveResult(HamsterStateEnum.SuperJumpOver, obstacleIndex)
@@ -115,7 +114,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return new JumpResolveResult(HamsterStateEnum.SuperJumpOnObstacle, obstacleIndex);
 
             if (IsOverlapAtShift(context, obstacle))
-                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex, obstacleIndex);
 
             return IsJumpOver(context, obstacle)
                 ? new JumpResolveResult(HamsterStateEnum.SuperJumpOver, obstacleIndex)
@@ -129,7 +128,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit)
         {
             if (IsOverlapAtShift(context, obstacle))
-                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, obstacleIndex, obstacleIndex);
 
             return IsJumpOver(context, obstacle)
                 ? new JumpResolveResult(HamsterStateEnum.SuperJumpOver, obstacleIndex)
@@ -156,14 +155,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 bool hitSmallOnRoof = JumpOutcomeResolver.TryFindDamagingRoofOccupantOnRoof(obstacles, roofIndex, out int roofHazardIndex)
                     && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
-                HamsterStateEnum state = hitSmallOnRoof
-                    ? HamsterStateEnum.SuperJumpOnRoofDamage
-                    : HamsterStateEnum.SuperJumpOnRoof;
-                return new JumpResolveResult(state, roofIndex);
+                return hitSmallOnRoof
+                    ? new JumpResolveResult(HamsterStateEnum.SuperJumpOnRoofDamage, roofIndex, roofHazardIndex)
+                    : new JumpResolveResult(HamsterStateEnum.SuperJumpOnRoof, roofIndex);
             }
 
             return isOverlapSmall
-                ? new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, smallIndex)
+                ? new JumpResolveResult(HamsterStateEnum.SuperJumpDamage, smallIndex, smallIndex)
                 : new JumpResolveResult(HamsterStateEnum.SuperJumpOver, smallIndex);
         }
 

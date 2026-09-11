@@ -64,7 +64,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     return HandleSmallNotAliveRoadAndRoof(obstacle, obstacleIndex, obstacles, context, noHit);
                 case ObstacleTypeEnum.bigAlive:
                     return IsHitBigAlive(obstacle, context)
-                        ? new JumpResolveResult(HamsterStateEnum.JumpDamageForBigAlive, obstacleIndex)
+                        ? new JumpResolveResult(HamsterStateEnum.JumpDamageForBigAlive, obstacleIndex, obstacleIndex)
                         : noHit;
                 case ObstacleTypeEnum.bigNotAlive:
                 case ObstacleTypeEnum.mediumNotAlive:
@@ -85,7 +85,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return new JumpResolveResult(HamsterStateEnum.JumpOnObstacle, obstacleIndex);
 
             if (IsOverlapAtShift(context, obstacle))
-                return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallAlive, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallAlive, obstacleIndex, obstacleIndex);
 
             return IsJumpOver(context, obstacle)
                 ? new JumpResolveResult(HamsterStateEnum.JumpOver, obstacleIndex)
@@ -99,7 +99,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             JumpResolveResult noHit)
         {
             if (IsOverlapAtShift(context, obstacle))
-                return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallNotAlive, obstacleIndex);
+                return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallNotAlive, obstacleIndex, obstacleIndex);
 
             return IsJumpOver(context, obstacle)
                 ? new JumpResolveResult(HamsterStateEnum.JumpOver, obstacleIndex)
@@ -123,13 +123,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
             {
                 bool hitSmall = TryFindDamagingRoofOccupantOnRoof(obstacles, roofIndex, out int roofHazardIndex)
                     && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
-                HamsterStateEnum state = hitSmall
-                    ? HamsterStateEnum.JumpOnRoofDamage
-                    : HamsterStateEnum.JumpOnRoof;
-                return new JumpResolveResult(state, roofIndex);
+                return hitSmall
+                    ? new JumpResolveResult(HamsterStateEnum.JumpOnRoofDamage, roofIndex, roofHazardIndex)
+                    : new JumpResolveResult(HamsterStateEnum.JumpOnRoof, roofIndex);
             }
 
-            return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallNotAlive, smallIndex);
+            return new JumpResolveResult(HamsterStateEnum.JumpDamageForSmallNotAlive, smallIndex, smallIndex);
         }
 
         private static JumpResolveResult HandleRoofObstacle(
@@ -144,10 +143,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
             bool hitSmall = TryFindDamagingRoofOccupantOnRoof(obstacles, obstacleIndex, out int roofHazardIndex)
                 && IsOverlapAtShift(context, obstacles[roofHazardIndex]);
-            HamsterStateEnum state = hitSmall
-                ? HamsterStateEnum.JumpOnRoofDamage
-                : HamsterStateEnum.JumpOnRoof;
-            return new JumpResolveResult(state, obstacleIndex);
+            return hitSmall
+                ? new JumpResolveResult(HamsterStateEnum.JumpOnRoofDamage, obstacleIndex, roofHazardIndex)
+                : new JumpResolveResult(HamsterStateEnum.JumpOnRoof, obstacleIndex);
         }
 
         private static bool IsHitBigAlive(JumpObstacleData obstacle, JumpResolveContext context)

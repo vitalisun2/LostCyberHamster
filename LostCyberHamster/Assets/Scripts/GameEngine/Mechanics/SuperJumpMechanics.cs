@@ -37,6 +37,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly Transform _characterTransform;
         private readonly AtomicVariable<Obstacle> _lastObstacle;
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
+        private readonly AtomicVariable<Obstacle> _pendingDamageObstacle;
 
         // ──────────────────────── cached geometry ──────────────────
         private readonly float _hamsterWidth;
@@ -56,6 +57,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Transform characterTransform,
             AtomicVariable<Obstacle> lastObstacle,
             AtomicVariable<Obstacle> pendingJumpedOnObstacle,
+            AtomicVariable<Obstacle> pendingDamageObstacle,
             float hamsterWidthInUnits)
         {
             _superJumpRequest = superJumpRequest;
@@ -69,6 +71,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _actorSwitcher = actorSwitcher;
             _lastObstacle = lastObstacle;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
+            _pendingDamageObstacle = pendingDamageObstacle;
 
             _hamsterWidth = hamsterWidthInUnits;
             _superJumpShift = HelpMethods.GetWorldShiftForClip(_transformAnimatorController, CLIP_SUPER_JUMP);
@@ -94,6 +97,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _pendingJumpedOnObstacle.Value = result.State == HamsterStateEnum.SuperJumpOnObstacle
                 ? result.Target
                 : null;
+            _pendingDamageObstacle.Value = result.DamageSource;
 
             if (result.State == HamsterStateEnum.SuperJumpOnObstacle)
                 GameEventsManager.ObstacleJumpedOn(result.Target!.name);
@@ -155,6 +159,9 @@ namespace Assets.Scripts.GameEngine.Mechanics
             Obstacle target = result.TargetIndex >= 0 && result.TargetIndex < obstacles.Count
                 ? obstacles[result.TargetIndex]
                 : null;
+            Obstacle damageSource = result.DamageSourceIndex >= 0 && result.DamageSourceIndex < obstacles.Count
+                ? obstacles[result.DamageSourceIndex]
+                : null;
 
             if (BotDiagnostics.IsEnabled(BotDiagnosticCategory.RuntimeSafety, BotDiagnosticLevel.Verbose))
             {
@@ -167,7 +174,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     $"centerX={_characterTransform.position.x:F2} shift={_superJumpShift:F2} energy={_energy.Value}");
             }
 
-            return new JumpResult(result.State, target);
+            return new JumpResult(result.State, target, damageSource);
         }
 
         private static string FormatObstacle(Obstacle obstacle)
