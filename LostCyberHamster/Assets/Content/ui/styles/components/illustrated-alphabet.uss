@@ -1,0 +1,88 @@
+.illustrated-alphabet {
+    overflow: visible;
+}
+
+.illustrated-alphabet__glyph,
+.illustrated-alphabet__space {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.illustrated-alphabet__glyph {
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.illustrated-alphabet__fallback {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    color: white;
+    -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf");
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 2px;
+    -unity-text-outline-color: black;
+}
+
+.illustrated-alphabet__glyph--u0041 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0041.png"); }
+.illustrated-alphabet__glyph--u0042 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0042.png"); }
+.illustrated-alphabet__glyph--u0043 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0043.png"); }
+.illustrated-alphabet__glyph--u0044 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0044.png"); }
+.illustrated-alphabet__glyph--u0045 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0045.png"); }
+.illustrated-alphabet__glyph--u0046 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0046.png"); }
+.illustrated-alphabet__glyph--u0047 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0047.png"); }
+.illustrated-alphabet__glyph--u0048 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0048.png"); }
+.illustrated-alphabet__glyph--u0049 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0049.png"); }
+.illustrated-alphabet__glyph--u004a { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004a.png"); }
+.illustrated-alphabet__glyph--u004b { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004b.png"); }
+.illustrated-alphabet__glyph--u004c { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004c.png"); }
+.illustrated-alphabet__glyph--u004d { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004d.png"); }
+.illustrated-alphabet__glyph--u004e { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004e.png"); }
+.illustrated-alphabet__glyph--u004f { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u004f.png"); }
+.illustrated-alphabet__glyph--u0050 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0050.png"); }
+.illustrated-alphabet__glyph--u0051 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0051.png"); }
+.illustrated-alphabet__glyph--u0052 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0052.png"); }
+.illustrated-alphabet__glyph--u0053 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0053.png"); }
+.illustrated-alphabet__glyph--u0054 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0054.png"); }
+.illustrated-alphabet__glyph--u0055 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0055.png"); }
+.illustrated-alphabet__glyph--u0056 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0056.png"); }
+.illustrated-alphabet__glyph--u0057 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0057.png"); }
+.illustrated-alphabet__glyph--u0058 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0058.png"); }
+.illustrated-alphabet__glyph--u0059 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0059.png"); }
+.illustrated-alphabet__glyph--u005a { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u005a.png"); }
+
+.illustrated-alphabet__glyph--u0410 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0410.png"); }
+.illustrated-alphabet__glyph--u0411 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0411.png"); }
+.illustrated-alphabet__glyph--u0412 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0412.png"); }
+.illustrated-alphabet__glyph--u0413 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0413.png"); }
+.illustrated-alphabet__glyph--u0414 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0414.png"); }
+.illustrated-alphabet__glyph--u0415 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0415.png"); }
+.illustrated-alphabet__glyph--u0401 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0401.png"); }
+.illustrated-alphabet__glyph--u0416 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0416.png"); }
+.illustrated-alphabet__glyph--u0417 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0417.png"); }
+.illustrated-alphabet__glyph--u0418 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0418.png"); }
+.illustrated-alphabet__glyph--u0419 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0419.png"); }
+.illustrated-alphabet__glyph--u041a { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041a.png"); }
+.illustrated-alphabet__glyph--u041b { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041b.png"); }
+.illustrated-alphabet__glyph--u041c { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041c.png"); }
+.illustrated-alphabet__glyph--u041d { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041d.png"); }
+.illustrated-alphabet__glyph--u041e { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041e.png"); }
+.illustrated-alphabet__glyph--u041f { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u041f.png"); }
+.illustrated-alphabet__glyph--u0420 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0420.png"); }
+.illustrated-alphabet__glyph--u0421 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0421.png"); }
+.illustrated-alphabet__glyph--u0422 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0422.png"); }
+.illustrated-alphabet__glyph--u0423 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0423.png"); }
+.illustrated-alphabet__glyph--u0424 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0424.png"); }
+.illustrated-alphabet__glyph--u0425 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0425.png"); }
+.illustrated-alphabet__glyph--u0426 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0426.png"); }
+.illustrated-alphabet__glyph--u0427 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0427.png"); }
+.illustrated-alphabet__glyph--u0428 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0428.png"); }
+.illustrated-alphabet__glyph--u0429 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0429.png"); }
+.illustrated-alphabet__glyph--u042a { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042a.png"); }
+.illustrated-alphabet__glyph--u042b { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042b.png"); }
+.illustrated-alphabet__glyph--u042c { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042c.png"); }
+.illustrated-alphabet__glyph--u042d { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042d.png"); }
+.illustrated-alphabet__glyph--u042e { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042e.png"); }
+.illustrated-alphabet__glyph--u042f { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u042f.png"); }

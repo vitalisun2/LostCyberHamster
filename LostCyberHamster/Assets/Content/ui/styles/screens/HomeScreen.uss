@@ -163,8 +163,8 @@
 .home-hud__lane { padding-left: 96px; padding-right: 96px; }
 .home-goal-slot { position: absolute; left: 160px; top: 263px; width: 490px; height: 320px; }
 .home-logo { position: absolute; left: 735px; top: 91px; width: 380px; height: 251px; background-image: url("/Assets/Content/ui/sprites/home/logo_lost_cyber_hamster.png"); -unity-background-scale-mode: scale-to-fit; }
-#homescreen .home-play-button { position: absolute; left: 700px; top: 350px; width: 445px; height: 166px; background-image: url("/Assets/Content/ui/sprites/shared/next_goal/goal_header.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 220; -unity-slice-right: 220; -unity-slice-top: 220; -unity-slice-bottom: 220; -unity-slice-scale: 0.11; color: white; font-size: 86px; -unity-text-outline-width: 6px; -unity-text-outline-color: black; -unity-font-style: bold; }
-#homescreen .home-select-level-button { position: absolute; left: 751px; top: 531px; width: 343px; height: 73px; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; color: white; font-size: 30px; -unity-text-outline-width: 2px; -unity-text-outline-color: black; }
+#homescreen .home-play-button { position: absolute; left: 700px; top: 342px; width: 445px; height: 206px; background-image: url("/Assets/Content/ui/sprites/home/button_play_localized_base.png"); -unity-background-scale-mode: scale-to-fit; }
+#homescreen .home-select-level-button { position: absolute; left: 751px; top: 555px; width: 343px; height: 95px; background-image: url("/Assets/Content/ui/sprites/home/button_select_level_localized_base.png"); -unity-background-scale-mode: scale-to-fit; }
 .home-navigation { position: absolute; left: 510px; top: 680px; width: 830px; height: 140px; }
 .home-navigation__buttons { width: 100%; height: 100%; flex-direction: row; justify-content: space-between; align-items: flex-end; }
 .home-navigation__button { width: 145px; height: 140px; -unity-background-scale-mode: scale-to-fit; }
@@ -202,8 +202,16 @@
 .return-home__row:hover { scale: 1.015 1.015; }
 .return-home__row:active { scale: 0.985 0.985; }
 
-#homescreen .home-play-button, #homescreen .home-select-level-button, #homescreen .return-home__title, #homescreen .return-home__progress { -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; }
-#homescreen .home-play-button { -unity-text-outline-width: 2px; font-size: 82px; }
-#homescreen .home-select-level-button { -unity-text-outline-width: 1px; font-size: 27px; }
+#homescreen .home-play-button__label { position: absolute; left: 0; top: 0; width: 100%; height: 100%; flex-direction: row; justify-content: center; align-items: center; rotate: -2deg; }
+#homescreen .home-play-button__label .illustrated-alphabet__glyph { width: 78px; height: 104px; margin-right: -3px; margin-left: -3px; }
+#homescreen .home-play-button__label .illustrated-alphabet__space { width: 28px; height: 104px; }
+#homescreen .home-play-button__label--long .illustrated-alphabet__glyph { width: 56px; height: 75px; margin-right: -2px; margin-left: -2px; }
+#homescreen .home-play-button__label--long .illustrated-alphabet__space { width: 20px; height: 75px; }
+#homescreen .home-select-level-button__label { position: absolute; left: 0; top: 0; width: 100%; height: 100%; flex-direction: row; justify-content: center; align-items: center; rotate: -1deg; }
+#homescreen .home-select-level-button__label .illustrated-alphabet__glyph { width: 27px; height: 36px; margin-right: -1px; margin-left: -1px; }
+#homescreen .home-select-level-button__label .illustrated-alphabet__space { width: 13px; height: 36px; }
+#homescreen .home-select-level-button__label--long .illustrated-alphabet__glyph { width: 21px; height: 28px; margin-right: -0.5px; margin-left: -0.5px; }
+#homescreen .home-select-level-button__label--long .illustrated-alphabet__space { width: 10px; height: 28px; }
+#homescreen .return-home__title, #homescreen .return-home__progress { -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; }
 #homescreen .return-home__arrow { width: 59px; height: 73px; right: 22px; top: 29px; margin: 0; padding: 0 0 8px; color: white; font-size: 73px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: black; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; -unity-slice-scale: 0.75; }
 #homescreen .return-calendar-day { margin: 0; width: 122px; height: 122px; padding-top: 20px; color: rgb(13,32,48); font-size: 63px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; rotate: -8deg; }

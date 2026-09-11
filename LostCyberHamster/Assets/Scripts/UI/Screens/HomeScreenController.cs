@@ -13,7 +13,9 @@ namespace LostCyberHamster.UI
         private readonly Action<string> _openActivities;
         private HomeActivityPresenter _activities;
         private Button _buttonStart => _contentRoot.Q<Button>("btn_play");
+        private VisualElement _buttonStartLabel => _contentRoot.Q("btn_play-label");
         private Button _buttonSelectLevel => _contentRoot.Q<Button>("btn_select-level");
+        private VisualElement _buttonSelectLevelLabel => _contentRoot.Q("btn_select-level-label");
         private Button _buttonLeaderboard => _contentRoot.Q<Button>("btn_leaderboard");
 
         private Button _buttonCharacter => _contentRoot.Q<Button>("btn_character");
@@ -116,8 +118,13 @@ namespace LostCyberHamster.UI
 
         protected override void BindView()
         {
-            _buttonStart.text = LocalizationManager.GetLocalizedString("retention_play");
-            _buttonSelectLevel.text = LocalizationManager.GetLocalizedString("retention_select_level");
+            // Локализуем подписи и уменьшаем длинные варианты внутри художественных рамок.
+            string playText = LocalizationManager.GetLocalizedString("retention_play");
+            string selectLevelText = LocalizationManager.GetLocalizedString("retention_select_level");
+            _buttonStartLabel.EnableInClassList("home-play-button__label--long", playText.Length > 4);
+            _buttonSelectLevelLabel.EnableInClassList("home-select-level-button__label--long", selectLevelText.Length > 12);
+            IllustratedAlphabetText.Render(_buttonStartLabel, playText);
+            IllustratedAlphabetText.Render(_buttonSelectLevelLabel, selectLevelText);
             RefreshExperiencePanel();
         }
 

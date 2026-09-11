@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
@@ -79,8 +79,8 @@
     <Compile Include="Assets\Scripts\System\DecorationSpawner.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardCollisionResult.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyPersonalBest.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ActivityAttemptContext.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\EconomySnapshot.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\Meta\ReturnActivities\ActivityAttemptContext.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\LevelUpReward.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardInteractionPolicy.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenEnum.cs" />
@@ -120,10 +120,10 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyRecordPreview.cs" />
     <Compile Include="Assets\Scripts\UI\Notifications\FirstSessionNotificationHost.cs" />
-    <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
-    <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
+    <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\PlayerState\PlayerStateQuestEvent.cs" />
+    <Compile Include="Assets\Scripts\SharedCore\VibrationManager.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardResultsSnapshot.cs" />
     <Compile Include="Assets\Scripts\UI\NextGoals\NextGoalConfigurationLoader.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\LeaderboardReadStatus.cs" />
@@ -184,8 +184,8 @@
     <Compile Include="Assets\Scripts\CloudSave\Version\CloudSaveVersionStore.cs" />
     <Compile Include="Assets\Scripts\Account\IAccountProfileGateway.cs" />
     <Compile Include="Assets\Scripts\UI\ResourceUIHelper.cs" />
-    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerData.cs" />
+    <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitPlanner.cs" />
     <Compile Include="Assets\Scripts\Ads\InterstitialAdService.cs" />
     <Compile Include="Assets\Scripts\DevTools\Core\DevToolsOverlayShell.cs" />
     <Compile Include="Assets\Scripts\GameManagement\PlayerProgress\PlayerExperienceService.cs" />
@@ -463,6 +463,7 @@
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RoofJumpOutcomeResolver.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\LevelResult\LevelResultQuestEvent.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Daily\DailyQuestDifficulty.cs" />
+    <Compile Include="Assets\Scripts\UI\Components\IllustratedAlphabetText.cs" />
     <Compile Include="Assets\Scripts\UI\NextGoals\NextGoalCardPresenter.cs" />
     <Compile Include="Assets\Scripts\DevTools\Gameplay\GameplayDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Common\Models\SpriteOverride.cs" />
@@ -609,8 +610,8 @@
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadMainMenuLoadingTask.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Skateboard\SkateboardVisualSequence.cs" />
     <Compile Include="Assets\Scripts\UI\Common\UIManager.cs" />
-    <Compile Include="Assets\Scripts\Leaderboard\WeeklyRunStatus.cs" />
     <Compile Include="Assets\Scripts\Purchases\IPurchaseFulfillment.cs" />
+    <Compile Include="Assets\Scripts\Leaderboard\WeeklyRunStatus.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\ScrollLeftMechanics.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\BotActionKindRules.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpFromRoof\JumpFromRoofExecutor.cs" />
@@ -757,15 +758,15 @@
     <Compile Include="Assets\Scripts\UI\Screens\IntroScreenController.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\UnsafeInterval.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\Effects\ElectricStrikeUlta.cs" />
-    <Compile Include="Assets\Scripts\Diagnostics\DeviceLogStartupProbe.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Models\ActionFireResult.cs" />
+    <Compile Include="Assets\Scripts\Diagnostics\DeviceLogStartupProbe.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictModalDto.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningState.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\RunResultData.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\AccountPromptModalController.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LocationView.cs" />
-    <Compile Include="Assets\Scripts\Online\OnlineServicesCoordinator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Contracts\ISimulator.cs" />
+    <Compile Include="Assets\Scripts\Online\OnlineServicesCoordinator.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectSafety.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitStrategy.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Core\Quest.cs" />
@@ -853,6 +854,7 @@
     <None Include="Assets\Content\ui\styles\screens\Tutorial.uss" />
     <None Include="Assets\Content\ui\styles\base\typography.uss" />
     <None Include="Assets\Content\ui\fonts\OFL-Nunito.txt" />
+    <None Include="Assets\Content\ui\styles\components\illustrated-alphabet.uss" />
     <None Include="Assets\Content\ui\uxml\Modal.uxml" />
     <None Include="Assets\Content\ui\uxml\QuestsScreen.uxml" />
     <None Include="Assets\Content\ui\uxml\WinModal.uxml" />
@@ -2272,12 +2274,12 @@
       <HintPath>Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.Mathematics">
-      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Purchasing.SecurityCore">
       <HintPath>Library\ScriptAssemblies\Unity.Purchasing.SecurityCore.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.Multiplayer.Center.Common">
