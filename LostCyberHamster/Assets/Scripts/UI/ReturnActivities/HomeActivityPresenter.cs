@@ -46,13 +46,14 @@ namespace LostCyberHamster.UI
         {
             // Постоянное место и краткие отдельные счётчики сохраняют читаемость Home.
             var state = ReturnActivityService.GetSnapshot();
+            string dayPolicyVersion = ReturnActivityService.DayPolicyVersion;
             _cycle.SetEnabled(state != null); _week.SetEnabled(state != null);
             var cycle = _root.Q<Label>("home-cycle-progress");
             var week = _root.Q<Label>("home-week-progress");
             if (state == null) cycle.text = week.text = ActivityUiText.Get("loading");
             else
             {
-                int step = state.Step == 7 && state.LastCreditedDay != ActivityDayPolicy.Day(ReturnActivityService.UtcNow) ? 0 : state.Step;
+                int step = state.Step == 7 && state.LastCreditedDay != ActivityDayPolicy.Day(ReturnActivityService.UtcNow, dayPolicyVersion) ? 0 : state.Step;
                 cycle.text = Text("retention_cycle_short", step);
                 week.text = Text("retention_week_short", Math.Min(state.Week.TargetWins, state.Week.AttemptIds.Count),
                     state.Week.TargetWins, Math.Min(state.Week.TargetDays, state.Week.Days.Count), state.Week.TargetDays);

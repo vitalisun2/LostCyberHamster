@@ -20,7 +20,7 @@ namespace Vues.GameCore.ReturnActivities
             if (state.LastWin != null && (state.LastWin.AttemptId != state.LastAttemptId ||
                 state.LastWin.Stars < 1 || state.LastWin.Stars > 3 || string.IsNullOrEmpty(state.LastWin.Level) ||
                 !ActivityDayPolicy.IsDate(state.LastWin.Day) ||
-                ActivityDayPolicy.Week(ActivityDayPolicy.Parse(state.LastWin.Day)) != state.LastWin.Week)) return false;
+                ActivityDayPolicy.WeekOfDay(state.LastWin.Day) != state.LastWin.Week)) return false;
 
             // Валидируем закреплённые награды и уникальность квитанций.
             if (state.CycleRewards.Count != 0 && state.CycleRewards.Count != 7 ||
@@ -36,7 +36,7 @@ namespace Vues.GameCore.ReturnActivities
             {
                 string expectedId = reward.Kind == "cycle"
                     ? $"{state.Epoch}/cycle/{reward.Cycle}/day/{reward.Step}"
-                    : $"{state.Epoch}/week/{ActivityDayPolicy.Week(ActivityDayPolicy.Parse(reward.OriginDay))}";
+                    : $"{state.Epoch}/week/{ActivityDayPolicy.WeekOfDay(reward.OriginDay)}";
                 if (reward.Id != expectedId || reward.Kind == "cycle" &&
                     ((long)reward.Cycle - 1) * 7 + reward.Step > state.TotalDays) return false;
             }
@@ -44,10 +44,10 @@ namespace Vues.GameCore.ReturnActivities
             // Пустая неделя допустима до первого menu checkpoint.
             var week = state.Week;
             if (!string.IsNullOrEmpty(week.Id) && (!ActivityDayPolicy.IsDate(week.Id) ||
-                ActivityDayPolicy.Week(ActivityDayPolicy.Parse(week.Id)) != week.Id || week.ConfigVersion < 1 ||
+                ActivityDayPolicy.WeekOfDay(week.Id) != week.Id || week.ConfigVersion < 1 ||
                 week.TargetDays < 1 || week.TargetDays > 7 || week.TargetWins < week.TargetDays || week.Coins <= 0 ||
                 week.Days.Any(day => !ActivityDayPolicy.IsDate(day) ||
-                    ActivityDayPolicy.Week(ActivityDayPolicy.Parse(day)) != week.Id) ||
+                    ActivityDayPolicy.WeekOfDay(day) != week.Id) ||
                 week.AttemptIds.Any(string.IsNullOrEmpty) ||
                 week.AttemptIds.Distinct().Count() != week.AttemptIds.Count ||
                 week.Days.Distinct().Count() != week.Days.Count || week.Days.Count > week.AttemptIds.Count ||

@@ -35,10 +35,13 @@ namespace Vues.GameCore.ReturnActivities
         {
             Assets.Scripts.Diagnostics.EconomyTelemetry.Record("return_activity", action, kind);
             if (!AnalyticsManager.CanRecordReturnActivity) return;
+            string period = ReturnActivityService.IsReady
+                ? ActivityDayPolicy.Day(ReturnActivityService.UtcNow, ReturnActivityService.DayPolicyVersion)
+                : ActivityDayPolicy.Day(DateTime.UtcNow);
             AnalyticsManager.RecordReturnActivity(new ReturnActivityEvent
             {
                 Id = Guid.NewGuid().ToString("N"), Action = action, Kind = kind,
-                Period = ActivityDayPolicy.Day(DateTime.UtcNow), Correlation = string.Empty
+                Period = period, Correlation = string.Empty
             });
         }
 

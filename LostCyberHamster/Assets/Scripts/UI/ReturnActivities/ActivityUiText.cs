@@ -21,11 +21,23 @@ namespace LostCyberHamster.UI
         public static string RewardTitle(ActivityRewardSnapshot reward) => reward.Kind == "week"
             ? Get("week_complete") : reward.Step == 7 ? Get("cycle_complete") : Get("day_title", reward.Step);
 
-        public static string NextReset(DateTime utc) => utc.ToUniversalTime().Date.AddDays(1)
-            .ToLocalTime().ToString("dd.MM HH:mm", CultureInfo.CurrentCulture);
+        public static string NextReset(DateTime now, string dayPolicyVersion = null)
+        {
+            dayPolicyVersion ??= ActivityDayPolicy.Version;
+            var boundary = ActivityDayPolicy.Normalize(now, dayPolicyVersion).Date.AddDays(1);
+            if (string.Equals(dayPolicyVersion, ActivityDayPolicy.LegacyVersion, StringComparison.Ordinal))
+                boundary = boundary.ToLocalTime();
+            return boundary.ToString("dd.MM HH:mm", CultureInfo.CurrentCulture);
+        }
 
-        public static string WeekDeadline(DateTime utc) => ActivityDayPolicy.WeekStart(utc).AddDays(7)
-            .ToLocalTime().ToString("dd.MM HH:mm", CultureInfo.CurrentCulture);
+        public static string WeekDeadline(DateTime now, string dayPolicyVersion = null)
+        {
+            dayPolicyVersion ??= ActivityDayPolicy.Version;
+            var boundary = ActivityDayPolicy.WeekStart(now, dayPolicyVersion).AddDays(7);
+            if (string.Equals(dayPolicyVersion, ActivityDayPolicy.LegacyVersion, StringComparison.Ordinal))
+                boundary = boundary.ToLocalTime();
+            return boundary.ToString("dd.MM HH:mm", CultureInfo.CurrentCulture);
+        }
 
         public static string Status(bool compact = false)
         {

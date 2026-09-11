@@ -10,6 +10,7 @@ namespace Vues.GameCore.ReturnActivities
     {
         public int SchemaVersion = 1;
         public string Epoch;
+        public string DayPolicyVersion = string.Empty;
         public long Revision;
         public int TotalDays;
         public string LastCreditedDay;
@@ -45,6 +46,7 @@ namespace Vues.GameCore.ReturnActivities
         public void Normalize()
         {
             Epoch ??= Guid.NewGuid().ToString("N");
+            DayPolicyVersion ??= string.Empty;
             CycleRewards ??= new();
             Week ??= new();
             Week.AttemptIds ??= new();

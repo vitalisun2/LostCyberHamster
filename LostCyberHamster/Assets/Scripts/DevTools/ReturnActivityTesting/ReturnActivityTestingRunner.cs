@@ -27,7 +27,7 @@ namespace Assets.Scripts.DevTools.ReturnActivityTesting
                 data.IsFirstLaunch = false; data.IsTutorialCompleted = true; data.IsTutorialSkipped = true;
                 data.HasReceivedTutorialExperience = true; data.ReturnActivities = new ReturnActivityState();
             });
-            ReturnActivityService.DevelopmentUtc = ActivityDayPolicy.WeekStart(DateTime.UtcNow).AddHours(12);
+            ReturnActivityService.DevelopmentUtc = ActivityDayPolicy.WeekStart(DateTime.Now).AddHours(12);
             ReturnActivityService.RefreshPeriods();
         });
 
@@ -72,7 +72,7 @@ namespace Assets.Scripts.DevTools.ReturnActivityTesting
         {
             var state = ReturnActivityService.GetSnapshot();
             Status = state == null ? "Профиль не загружен." :
-                $"UTC {ReturnActivityService.UtcNow:O}\nИзолированный: {GameDataManager.IsProgressionTestingProfile}\n" +
+                $"Время устройства {ReturnActivityService.LocalNow:O}\nАктивности {ReturnActivityService.PolicyNow:O} ({ReturnActivityService.DayPolicyVersion})\nИзолированный: {GameDataManager.IsProgressionTestingProfile}\n" +
                 $"Дни {state.TotalDays}; цикл {state.Cycle}, шаг {state.Step}/7; last {state.LastCreditedDay}\n" +
                 $"Неделя {state.Week.Id}: {state.Week.AttemptIds.Count}/{state.Week.TargetWins} побед, " +
                 $"{state.Week.Days.Count}/{state.Week.TargetDays} дней; completed={state.Week.Completed}\n" +

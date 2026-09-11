@@ -25,8 +25,11 @@ namespace Vues.GameCore.ReturnActivities
         internal static DateTime? DevelopmentUtc;
 #endif
         public static bool IsReady => GameDataManager.IsLoaded && State != null;
+        public static string DayPolicyVersion => !IsReady ? ActivityDayPolicy.Version : ResolveDayPolicyVersion(UtcNow);
+        public static DateTime LocalNow => UtcNow.ToLocalTime();
+        public static DateTime PolicyNow => ActivityDayPolicy.Normalize(UtcNow, DayPolicyVersion);
         public static bool IsClockBlocked => IsReady &&
-            string.CompareOrdinal(ActivityDayPolicy.Day(UtcNow), State.MaxObservedDay) < 0;
+            string.CompareOrdinal(ActivityDayPolicy.Day(UtcNow, DayPolicyVersion), State.MaxObservedDay) < 0;
         public static bool CanMutate => IsReady && !TutorialStorage.IsPlayerDataBackupActive &&
             string.IsNullOrEmpty(GameDataManager.ActiveConflictOwner) && !ReturnActivityRecovery.IsRequired;
 
@@ -39,20 +42,46 @@ namespace Vues.GameCore.ReturnActivities
                 catch (Exception exception) { Debug.LogException(exception); }
         }
 
+        private static string ResolveDayPolicyVersion(DateTime now)
+        {
+            if (State == null) return ActivityDayPolicy.Version;
+            string stored = string.IsNullOrEmpty(State.DayPolicyVersion) ? ActivityDayPolicy.LegacyVersion : State.DayPolicyVersion;
+            if (string.Equals(stored, ActivityDayPolicy.Version, StringComparison.Ordinal)) return stored;
+            return CanAdoptCurrentPolicy(now) ? ActivityDayPolicy.Version : stored;
+        }
+
+        private static bool CanAdoptCurrentPolicy(DateTime now)
+        {
+            string currentDay = ActivityDayPolicy.Day(now, ActivityDayPolicy.Version);
+            string currentWeek = ActivityDayPolicy.Week(now, ActivityDayPolicy.Version);
+            return (string.IsNullOrEmpty(State.MaxObservedDay) || string.CompareOrdinal(currentDay, State.MaxObservedDay) >= 0) &&
+                (string.IsNullOrEmpty(State.Week?.Id) || string.CompareOrdinal(currentWeek, State.Week.Id) >= 0);
+        }
+
+        private static void StoreResolvedDayPolicy(string version)
+        {
+            if (State == null || string.Equals(State.DayPolicyVersion, version, StringComparison.Ordinal)) return;
+            State.DayPolicyVersion = version;
+        }
+
         /// <summary>Обновляет календарь при входе/возврате, не начисляя день за посещение.</summary>
         public static void RefreshPeriods()
         {
             var config = ReturnActivityConfig.Current;
             if (!CanMutate || config?.Enabled != true || IsClockBlocked) return;
             var now = UtcNow;
-            string day = ActivityDayPolicy.Day(now);
-            if (State.MaxObservedDay == day && State.Week.Id == ActivityDayPolicy.Week(now)) return;
+            string dayPolicyVersion = ResolveDayPolicyVersion(now);
+            string day = ActivityDayPolicy.Day(now, dayPolicyVersion);
+            string week = ActivityDayPolicy.Week(now, dayPolicyVersion);
+            if (State.MaxObservedDay == day && State.Week.Id == week &&
+                string.Equals(State.DayPolicyVersion, dayPolicyVersion, StringComparison.Ordinal)) return;
             try
             {
                 GameDataManager.ExecuteTransaction(CheckpointReason.ReturnActivityPeriodChanged, () =>
                 {
+                    StoreResolvedDayPolicy(dayPolicyVersion);
                     State.MaxObservedDay = day;
-                    WeeklyActivityPolicy.Rotate(State, now, config);
+                    WeeklyActivityPolicy.Rotate(State, now, config, dayPolicyVersion);
                     ReturnActivityRecovery.Store(State);
                 }, PublishChanged);
             }
@@ -66,17 +95,19 @@ namespace Vues.GameCore.ReturnActivities
             if (attempt == null || !attempt.IsCurrent || attempt.Level != level || stars < 1 || stars > 3 ||
                 !CanMutate || config?.Enabled != true || IsClockBlocked || State.LastAttemptId == attempt.Id) return false;
             var now = UtcNow;
-            string day = ActivityDayPolicy.Day(now);
+            string dayPolicyVersion = ResolveDayPolicyVersion(now);
+            string day = ActivityDayPolicy.Day(now, dayPolicyVersion);
 
             // Дата и оба прогресса становятся durable вместе с исходным Win.
+            StoreResolvedDayPolicy(dayPolicyVersion);
             State.MaxObservedDay = day;
-            WeeklyActivityPolicy.Rotate(State, now, config);
+            WeeklyActivityPolicy.Rotate(State, now, config, dayPolicyVersion);
             if (State.Week.AttemptIds.Contains(attempt.Id)) return false;
             State.LastAttemptId = attempt.Id;
             State.LastWin = new ActivityWinReceipt
             {
                 AttemptId = attempt.Id, Level = level, Stars = stars,
-                CommittedUtc = now.ToString("O"), Day = day, Week = State.Week.Id
+                CommittedUtc = now.ToUniversalTime().ToString("O"), Day = day, Week = State.Week.Id
             };
             var daily = SevenWinDaysPolicy.Apply(State, day, config);
             bool weeklyWasCompleted = State.Week.Completed;

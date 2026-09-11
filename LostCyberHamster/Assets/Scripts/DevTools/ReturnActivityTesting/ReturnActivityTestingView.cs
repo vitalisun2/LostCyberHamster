@@ -23,9 +23,9 @@ namespace Assets.Scripts.DevTools.ReturnActivityTesting
             _mutations = new[]
             {
                 factory.CreateButton("ReturnWin", parent, "Победа (без XP)", DevToolsTheme.Button, _runner.Win),
-                factory.CreateButton("ReturnDay", parent, "Следующий UTC-день", DevToolsTheme.Button, _runner.NextDay),
-                factory.CreateButton("ReturnBackDay", parent, "Предыдущий UTC-день", DevToolsTheme.Button, _runner.PreviousDay),
-                factory.CreateButton("ReturnWeek", parent, "+7 UTC-дней", DevToolsTheme.Button, _runner.NextWeek),
+                factory.CreateButton("ReturnDay", parent, "Следующий локальный день", DevToolsTheme.Button, _runner.NextDay),
+                factory.CreateButton("ReturnBackDay", parent, "Предыдущий локальный день", DevToolsTheme.Button, _runner.PreviousDay),
+                factory.CreateButton("ReturnWeek", parent, "+7 локальных дней", DevToolsTheme.Button, _runner.NextWeek),
                 factory.CreateButton("ReturnClaim", parent, "Claim одной награды", DevToolsTheme.Button, _runner.Claim)
             };
             factory.CreateButton("ReturnInspect", parent, "Прочитать активности", DevToolsTheme.Button, _runner.Inspect);

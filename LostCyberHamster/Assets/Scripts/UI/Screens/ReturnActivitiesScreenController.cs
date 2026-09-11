@@ -137,17 +137,20 @@ namespace LostCyberHamster.UI
             if (_busy) return;
             var state = ReturnActivityService.GetSnapshot();
             var now = ReturnActivityService.UtcNow;
+            var policyNow = ReturnActivityService.PolicyNow;
+            string dayPolicyVersion = ReturnActivityService.DayPolicyVersion;
             _contentRoot.Q("return-screen").EnableInClassList("return-screen--recovery", ReturnActivityRecovery.IsRequired);
             bool warning = !ReturnActivityService.CanMutate || ReturnActivityRecovery.IsRequired || ReturnActivityService.IsClockBlocked;
             Label("return-status").text = warning ? ActivityUiText.Status() : string.Empty;
             Button("return-recover").style.display = ReturnActivityRecovery.IsRequired ? DisplayStyle.Flex : DisplayStyle.None;
             if (state == null) { Button("return-action").SetEnabled(false); return; }
-            string signature = $"{GameDataManager.ProfileId}/{GameDataManager.Generation}/{state.Revision}/{ActivityDayPolicy.Day(now)}/{_receipt?.Id}";
+            string dayId = ActivityDayPolicy.Day(now, dayPolicyVersion);
+            string signature = $"{GameDataManager.ProfileId}/{GameDataManager.Generation}/{state.Revision}/{dayId}/{_receipt?.Id}";
             if (_rendered == signature) { RefreshAction(); return; }
             _rendered = signature;
 
             // Показываем заработанные дни текущего цикла, включая уже подтверждённые награды.
-            int cycle = state.Step == 7 && state.LastCreditedDay != ActivityDayPolicy.Day(now) ? state.Cycle + 1 : state.Cycle;
+            int cycle = state.Step == 7 && state.LastCreditedDay != dayId ? state.Cycle + 1 : state.Cycle;
             int earned = cycle == state.Cycle ? state.Step : 0;
             var amounts = cycle != state.Cycle || state.CycleRewards.Count != 7 ? ReturnActivityConfig.Current?.Days : state.CycleRewards.ToArray();
             var days = _contentRoot.Q("return-days-first");
@@ -175,7 +178,9 @@ namespace LostCyberHamster.UI
                     days.Add(day);
                 }
             Label("return-cycle-progress").text = Text("retention_cycle_progress", earned);
-            Label("return-calendar").text = _kind == "cycle" ? Text("retention_daily_reset", ActivityUiText.NextReset(now)) : ActivityUiText.Get("week_rule", state.Week.TargetWins, state.Week.TargetDays);
+            Label("return-calendar").text = _kind == "cycle"
+                ? Text("retention_daily_reset", ActivityUiText.NextReset(now, dayPolicyVersion))
+                : ActivityUiText.Get("week_rule", state.Week.TargetWins, state.Week.TargetDays);
 
             // Победы и разные дни имеют самостоятельные счётчики и шкалы.
             var week = state.Week;
@@ -183,9 +188,10 @@ namespace LostCyberHamster.UI
             int activeDays = Math.Min(week.TargetDays, week.Days.Count);
             RenderProgress("wins", wins, week.TargetWins);
             RenderProgress("days", activeDays, week.TargetDays);
-            Label("return-week-deadline").text = Text("retention_deadline", Math.Max(0, (int)Math.Ceiling((ActivityDayPolicy.WeekStart(now).AddDays(7) - now).TotalDays)));
+            var weekEnd = ActivityDayPolicy.WeekStart(now, dayPolicyVersion).AddDays(7);
+            Label("return-week-deadline").text = Text("retention_deadline", Math.Max(0, (int)Math.Ceiling((weekEnd - policyNow).TotalDays)));
             int remainingDays = Math.Max(0, week.TargetDays - activeDays);
-            int possibleDays = (ActivityDayPolicy.WeekStart(now).AddDays(7) - now.Date).Days - (week.Days.Contains(ActivityDayPolicy.Day(now)) ? 1 : 0);
+            int possibleDays = (weekEnd - policyNow.Date).Days - (week.Days.Contains(dayId) ? 1 : 0);
             Label("return-week-hint").text = week.Completed ? Text("retention_week_done") :
                 remainingDays > possibleDays ? ActivityUiText.Get("week_too_late") :
                 wins == week.TargetWins && remainingDays > 0 ? Text("retention_more_days", remainingDays) : Text("retention_more_wins", Math.Max(0, week.TargetWins - wins));

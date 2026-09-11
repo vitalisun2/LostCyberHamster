@@ -121,7 +121,7 @@ namespace LostCyberHamster.UI
         private void Refresh()
         {
             // Смена игрового дня также обновляет квестовые кандидаты; периоды рассчитывает владелец активности.
-            var day = ReturnActivityService.UtcNow.Date;
+            var day = ReturnActivityService.PolicyNow.Date;
             if (day != _day) { _day = day; _dirty = true; ReturnActivityService.RefreshPeriods(); }
             if (!_dirty || GameDataManager.PlayerData == null) return;
             _dirty = false;

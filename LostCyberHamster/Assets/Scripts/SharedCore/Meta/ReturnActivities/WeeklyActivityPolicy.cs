@@ -5,9 +5,9 @@ namespace Vues.GameCore.ReturnActivities
     /// <summary>Считает независимые победы и даты в одной календарной неделе.</summary>
     public static class WeeklyActivityPolicy
     {
-        public static bool Rotate(ReturnActivityState state, DateTime utc, ReturnActivityConfig config)
+        public static bool Rotate(ReturnActivityState state, DateTime now, ReturnActivityConfig config, string dayPolicyVersion)
         {
-            string week = ActivityDayPolicy.Week(utc);
+            string week = ActivityDayPolicy.Week(now, dayPolicyVersion);
             if (string.CompareOrdinal(week, state.Week.Id) <= 0) return false;
             state.Week = new ActivityWeekState
             {
