@@ -241,6 +241,7 @@ namespace Assets.Scripts.Gameplay
                 needCheckCollisionInRunFromRoofAfterShift: NeedCheckCollisionInRunFromRoofAfterShift,
                 jumpOverEvent: JumpOverEvent,
                 destroyObstacleEvent: DestroyObstacleEvent,
+                destroyObstacleBySuperAttackEvent: DestroyObstacleBySuperAttackEvent,
                 pendingJumpedOnObstacle: PendingJumpedOnObstacle,
                 pendingDamageObstacle: PendingDamageObstacle,
                 obstacleDamageGate: new ObstacleDamageGate(

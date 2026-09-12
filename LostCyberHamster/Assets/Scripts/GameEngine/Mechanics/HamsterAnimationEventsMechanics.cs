@@ -15,6 +15,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<bool> _needCheckCollisionInRunFromRoofAfterShift;
         private readonly AtomicEvent _jumpOverEvent;
         private readonly AtomicEvent<Obstacle> _destroyObstacleEvent;
+        private readonly AtomicEvent<Obstacle> _destroyObstacleBySuperAttackEvent;
         private readonly AtomicVariable<Obstacle> _pendingJumpedOnObstacle;
         private readonly AtomicVariable<Obstacle> _pendingDamageObstacle;
         private readonly ObstacleDamageGate _obstacleDamageGate;
@@ -25,6 +26,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<bool> needCheckCollisionInRunFromRoofAfterShift,
             AtomicEvent jumpOverEvent,
             AtomicEvent<Obstacle> destroyObstacleEvent,
+            AtomicEvent<Obstacle> destroyObstacleBySuperAttackEvent,
             AtomicVariable<Obstacle> pendingJumpedOnObstacle,
             AtomicVariable<Obstacle> pendingDamageObstacle,
             ObstacleDamageGate obstacleDamageGate)
@@ -34,6 +36,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _needCheckCollisionInRunFromRoofAfterShift = needCheckCollisionInRunFromRoofAfterShift;
             _jumpOverEvent = jumpOverEvent;
             _destroyObstacleEvent = destroyObstacleEvent;
+            _destroyObstacleBySuperAttackEvent = destroyObstacleBySuperAttackEvent;
             _pendingJumpedOnObstacle = pendingJumpedOnObstacle;
             _pendingDamageObstacle = pendingDamageObstacle;
             _spriteAnimatorController = spriteAnimatorController;
@@ -43,11 +46,13 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public void OnEnable()
         {
             _transformAnimatorEventsDispatcher.OnEvent += OnEvent;
+            _destroyObstacleBySuperAttackEvent.Subscribe(OnObstacleDestroyedBySuperAttack);
         }
 
         public void OnDisable()
         {
             _transformAnimatorEventsDispatcher.OnEvent -= OnEvent;
+            _destroyObstacleBySuperAttackEvent.Unsubscribe(OnObstacleDestroyedBySuperAttack);
         }
 
         private void OnEvent(string animEvent)
@@ -171,6 +176,16 @@ namespace Assets.Scripts.GameEngine.Mechanics
         {
             _obstacleDamageGate.HandleContact(_pendingDamageObstacle.Value);
             _pendingDamageObstacle.Value = null;
+        }
+
+        private void OnObstacleDestroyedBySuperAttack(Obstacle destroyedObstacle)
+        {
+            // Сбрасываем отложенные ссылки, если суперудар убрал obstacle до завершения прыжка.
+            if (ReferenceEquals(_pendingJumpedOnObstacle.Value, destroyedObstacle))
+                _pendingJumpedOnObstacle.Value = null;
+
+            if (ReferenceEquals(_pendingDamageObstacle.Value, destroyedObstacle))
+                _pendingDamageObstacle.Value = null;
         }
 
         private void ClearPendingDamage()

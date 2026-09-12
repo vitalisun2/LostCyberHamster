@@ -30,6 +30,10 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void HandleContact(Obstacle obstacle)
         {
+            // Pooled obstacle уже снят со сцены и не должен повторно участвовать в damage pipeline.
+            if (obstacle != null && !obstacle.isActiveAndEnabled)
+                return;
+
             if (_isProtected.Value)
             {
                 if (obstacle != null)
