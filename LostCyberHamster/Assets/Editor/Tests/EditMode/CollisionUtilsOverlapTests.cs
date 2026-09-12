@@ -11,9 +11,9 @@ namespace Assets.Tests.EditMode
             bool result = CollisionUtils.IsOverlapWithInset(
                 0f,
                 1f,
-                0.96f,
+                0.985f,
                 1.4f,
-                0.05f);
+                0.02f);
 
             Assert.IsFalse(result);
         }
@@ -24,9 +24,9 @@ namespace Assets.Tests.EditMode
             bool result = CollisionUtils.IsOverlapWithInset(
                 0f,
                 1f,
-                0.94f,
+                0.975f,
                 1.4f,
-                0.05f);
+                0.02f);
 
             Assert.IsTrue(result);
         }

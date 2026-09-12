@@ -45,7 +45,7 @@ public class CollisionController : MonoBehaviour
     /// <summary>
     /// Смягчаем урон от едва заметных боковых касаний в trigger-based столкновениях.
     /// </summary>
-    private const float HorizontalDamageForgivenessRatio = 0.05f;
+    private const float HorizontalDamageForgivenessRatio = 0.02f;
 
     /// <summary>
     /// Запускает обработку столкновения при первом входе в триггер препятствия.
