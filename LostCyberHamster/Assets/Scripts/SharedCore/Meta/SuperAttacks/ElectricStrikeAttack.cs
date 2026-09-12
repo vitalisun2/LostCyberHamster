@@ -85,7 +85,6 @@ namespace Vues.GameCore
             var effectObject = HelpMethods.CreateUltaEffect(_effectPrefab, _hamster);
             _effects.Add(effectObject);
             var effect = effectObject.GetComponent<ElectricStrikeUlta>();
-            effect.LockWorldY(effectObject.transform.position.y);
             effect.SetRangeMultiplier(_hamster.RightX, _level.RangeMultiplier);
 
             // Физическое действие мгновенно; последовательный световой эффект живёт отдельно.

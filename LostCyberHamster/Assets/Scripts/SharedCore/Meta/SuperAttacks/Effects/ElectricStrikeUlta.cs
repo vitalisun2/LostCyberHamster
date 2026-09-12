@@ -14,8 +14,12 @@ public class ElectricStrikeUlta : MonoBehaviour
     [SerializeField] private float delayBetweenEffects = 0.1f; // Задержка между эффектами - по умолчанию 0.1 сек
     [SerializeField] private float effectSpeedMultiplier = 1.0f; // Общая скорость эффекта
 
-    private bool _lockWorldY;
-    private float _lockedWorldY;
+    private bool _isEffect1WorldYLocked;
+    private bool _isEffect2WorldYLocked;
+    private bool _isEffect3WorldYLocked;
+    private float _effect1WorldY;
+    private float _effect2WorldY;
+    private float _effect3WorldY;
 
     /// <summary>
     /// Возвращает признак полностью настроенного визуального эффекта.
@@ -33,13 +37,6 @@ public class ElectricStrikeUlta : MonoBehaviour
         effectRenderer2.bounds.max.x,
         effectRenderer3.bounds.max.x);
 
-    public void LockWorldY(float worldY)
-    {
-        _lockWorldY = true;
-        _lockedWorldY = worldY;
-        ApplyLockedWorldY();
-    }
-
     private void Start()
     {
         if (!IsConfigured)
@@ -53,8 +50,9 @@ public class ElectricStrikeUlta : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_lockWorldY)
-            ApplyLockedWorldY();
+        ApplyLockedRendererWorldY(effectRenderer1, _isEffect1WorldYLocked, _effect1WorldY);
+        ApplyLockedRendererWorldY(effectRenderer2, _isEffect2WorldYLocked, _effect2WorldY);
+        ApplyLockedRendererWorldY(effectRenderer3, _isEffect3WorldYLocked, _effect3WorldY);
     }
 
     /// <summary>Масштабирует видимую дальность относительно точки начала физического удара.</summary>
@@ -100,6 +98,7 @@ public class ElectricStrikeUlta : MonoBehaviour
     private System.Collections.IEnumerator AnimateFadeInAndOut(SpriteRenderer spriteRenderer)
     {
         spriteRenderer.gameObject.SetActive(true);
+        LockRendererWorldY(spriteRenderer);
 
         // Fade in
         yield return Fade(spriteRenderer, 0f, 1f, fadeInDuration * (1 / effectSpeedMultiplier));
@@ -128,11 +127,38 @@ public class ElectricStrikeUlta : MonoBehaviour
         spriteRenderer.color = color;
     }
 
-    private void ApplyLockedWorldY()
+    private void LockRendererWorldY(SpriteRenderer spriteRenderer)
     {
-        Vector3 position = transform.position;
-        position.y = _lockedWorldY;
-        transform.position = position;
+        float worldY = spriteRenderer.transform.position.y;
+        if (spriteRenderer == effectRenderer1)
+        {
+            _isEffect1WorldYLocked = true;
+            _effect1WorldY = worldY;
+            return;
+        }
+
+        if (spriteRenderer == effectRenderer2)
+        {
+            _isEffect2WorldYLocked = true;
+            _effect2WorldY = worldY;
+            return;
+        }
+
+        if (spriteRenderer == effectRenderer3)
+        {
+            _isEffect3WorldYLocked = true;
+            _effect3WorldY = worldY;
+        }
+    }
+
+    private static void ApplyLockedRendererWorldY(SpriteRenderer spriteRenderer, bool isLocked, float worldY)
+    {
+        if (!isLocked || spriteRenderer == null)
+            return;
+
+        Vector3 position = spriteRenderer.transform.position;
+        position.y = worldY;
+        spriteRenderer.transform.position = position;
     }
 
     private static bool HasSprite(SpriteRenderer renderer)
