@@ -11,6 +11,14 @@ def snapshot(coins=0, crystals=0, xp=0, level=1):
                 skins=[0], abilities=[], upgrades=[], quests=[], receipts=[], campaign=[], return_rewards=[])
 
 
+def runtime(**values):
+    item = dict(action="", reason="", placement="", request_id="", loot_disposition="",
+                run_coins=0, run_crystals=0, gross_run_coins=0, wallet_coins=0, wallet_crystals=0,
+                spend_total=0, spend_from_run=0, spend_from_wallet=0, lives_after=-1, attempt_preserved=False)
+    item.update(values)
+    return item
+
+
 def event(n, kind, **values):
     return dict(schema_version=1, event_id=f"s:{n}", sequence=n, session_id="s", profile_id="p",
                 save_generation="p", balance_version="b1", cohort="playtest", build_version="a1",
@@ -50,6 +58,32 @@ class SummaryChecks(unittest.TestCase):
         self.assertEqual(group["sources"]["pickup"]["coins_income"], 100)
         self.assertEqual(group["sources"]["RunRefillPurchased"]["coins_expense"], 80)
         self.assertEqual(group["final_state"]["coins"], 20)
+
+        def test_run_transitions_and_runtime_are_preserved(self):
+          start = snapshot(coins=40, crystals=2)
+          finish = snapshot(coins=60, crystals=3)
+          group = self.summarize([
+            event(1, "session_started", after=start),
+            event(2, "run_started", run_id="r", level="L", before=start,
+                runtime=runtime(loot_disposition="pending", wallet_coins=40, wallet_crystals=2)),
+            event(3, "run_transition", run_id="r", level="L", source="revive_requested", detail="rewarded",
+                runtime=runtime(reason="rewarded", placement="rewarded", request_id="req-1",
+                            loot_disposition="pending", run_coins=12, wallet_coins=40, wallet_crystals=2)),
+            event(4, "run_transition", run_id="r", level="L", source="refill_purchased", detail="energy", value=50,
+                runtime=runtime(reason="energy", placement="energy", spend_total=50,
+                            spend_from_run=20, spend_from_wallet=30, run_coins=0, wallet_coins=10)),
+            event(5, "run_finished", run_id="r", level="L", active_seconds=25, source="win", after=finish,
+                confirmed=True, runtime=runtime(loot_disposition="committed", run_coins=20, run_crystals=1,
+                                      gross_run_coins=70, wallet_coins=60, wallet_crystals=3,
+                                      lives_after=2, attempt_preserved=True))
+          ])["groups"][0]
+
+          run = group["runs"][0]
+          self.assertEqual(run["runtime"]["loot_disposition"], "committed")
+          self.assertEqual(run["runtime"]["run_coins"], 20)
+          self.assertEqual(len(run["transitions"]), 2)
+          self.assertEqual(run["transitions"][0]["action"], "revive_requested")
+          self.assertEqual(run["transitions"][1]["runtime"]["spend_from_wallet"], 30)
 
     def test_conflict_gap_incomplete(self):
         one = event(1, "session_started", after=snapshot())

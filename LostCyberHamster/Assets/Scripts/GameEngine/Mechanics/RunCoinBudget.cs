@@ -12,5 +12,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
         public bool CanSpend(int price) => RunLootBuffer.CanSpendCoins(price);
 
         public bool TrySpend(int price) => RunLootBuffer.TrySpendCoins(price);
+
+        public bool TrySpend(int price, out RunLootSpendResult spendResult) =>
+            RunLootBuffer.TrySpendCoins(price, out spendResult);
     }
 }

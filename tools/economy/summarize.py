@@ -41,6 +41,7 @@ def ensure_run(runs, run_id, level=None):
                                    "outcome": "unfinished", "result": "unfinished",
                                    "termination_reason": "unfinished", "remaining_lives": None,
                                    "has_start": False, "confirmed": False, "evidence": [],
+                                   "runtime": None, "transitions": [],
                                    "loot": empty_flow_totals(), "loot_sources": {},
                                    "expenses": empty_resource_totals(), "expense_sources": {},
                                    "net": {"xp": 0, "points": 0, "coins": 0, "crystals": 0}})
@@ -165,16 +166,27 @@ def summarize_group(events):
                 run["before"] = event.get("before")
                 run["previous_best_stars"] = event.get("previous_best_stars", 0)
                 run["attempt_kind"] = event.get("source")
+                run["runtime"] = event.get("runtime") or run.get("runtime")
                 run["evidence"].append(evidence(event))
             elif event["type"] == "run_finished":
                 reason = event.get("source") or "unfinished"
                 run.update(outcome=reason, result=classify_run_result(reason), termination_reason=reason,
                            stars=event.get("stars"), after=event.get("after"),
                            confirmed=event.get("confirmed", False))
+                if event.get("runtime"):
+                    run["runtime"] = event.get("runtime")
                 if event.get("remaining_lives", -1) >= 0:
                     run["remaining_lives"] = event.get("remaining_lives")
                 add_run_flows(run, event.get("flows"))
                 run["evidence"].append(evidence(event))
+            elif event["type"] == "run_progress" and event.get("runtime"):
+                run["runtime"] = event.get("runtime")
+            elif event["type"] == "run_transition":
+                run["transitions"].append({"utc": event["utc"], "action": event.get("source"),
+                                           "reason": event.get("detail"), "value": event.get("value", 0),
+                                           "runtime": event.get("runtime"), **evidence(event)})
+                if event.get("runtime"):
+                    run["runtime"] = event.get("runtime")
         if event["type"] in ("monetization", "return_activity", "first_session"):
             # Placement is before the hashed correlation ID; no raw purchase receipts are present.
             placement = (event.get("detail") or "").split(":", 1)[0] if event["type"] == "monetization" else ""

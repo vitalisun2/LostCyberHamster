@@ -186,6 +186,15 @@ namespace GameAds
             };
             _lastStatus = string.Empty;
             MonetizationEvent.Record("choice", intent.IsRevive ? "revive" : intent.IsWinBonus ? "win" : "shop", intent.RequestId, intent.RewardAmount);
+            if (intent.IsRevive)
+            {
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_requested", "rewarded", intent.RewardAmount,
+                    runtime =>
+                    {
+                        runtime.placement = "rewarded";
+                        runtime.request_id = intent.RequestId;
+                    });
+            }
             DebugManager.DiagStability($"[ADS] {intent.RequestId} Preparing.");
             RequestInitialization();
             Notify();
@@ -322,6 +331,15 @@ namespace GameAds
             if (_active == request && !request.TerminalReceived && request.IsNativePending)
             {
                 MonetizationEvent.Record("show", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
+                if (request.Intent.IsRevive)
+                {
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_started", "rewarded", 0,
+                        runtime =>
+                        {
+                            runtime.placement = "rewarded";
+                            runtime.request_id = request.RequestId;
+                        });
+                }
                 SetState(request, RewardedAdState.Showing);
             }
         }
@@ -333,6 +351,15 @@ namespace GameAds
             request.TerminalReceived = true;
             if (request.IsNativePending) InterstitialAdService.Instance.ResetInterval();
             MonetizationEvent.Record("failed", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
+            if (request.Intent.IsRevive)
+            {
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_failed", "rewarded", 0,
+                    runtime =>
+                    {
+                        runtime.placement = "rewarded";
+                        runtime.request_id = request.RequestId;
+                    });
+            }
             DebugManager.DiagStability($"[ADS] {request.RequestId} SDK failure: {error}.");
             Finish(request, RewardedAdState.Failed, "ads_try_again");
         }
@@ -346,6 +373,15 @@ namespace GameAds
             MonetizationEvent.Record(completed ? "completed" : "skipped", request.Intent.IsRevive ? "revive" : request.Intent.IsWinBonus ? "win" : "shop", request.RequestId);
             if (!completed)
             {
+                if (request.Intent.IsRevive)
+                {
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_skipped", "rewarded", 0,
+                        runtime =>
+                        {
+                            runtime.placement = "rewarded";
+                            runtime.request_id = request.RequestId;
+                        });
+                }
                 Finish(request, RewardedAdState.Skipped, "ads_not_completed");
                 return;
             }
@@ -416,6 +452,13 @@ namespace GameAds
                 if (newlyGranted && request.Intent.IsRevive && !request.ContextCancelled &&
                     reviveContext && IsCurrentOwner(request))
                 {
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_granted", "rewarded", 1,
+                        runtime =>
+                        {
+                            runtime.placement = "rewarded";
+                            runtime.request_id = request.RequestId;
+                            runtime.attempt_preserved = true;
+                        });
                     try { request.Revive?.Invoke(); }
                     catch (Exception exception) { Debug.LogException(exception); }
                 }
@@ -500,6 +543,15 @@ namespace GameAds
         {
             if (_active != request)
                 return;
+            if (state == RewardedAdState.Cancelled && request.Intent.IsRevive)
+            {
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_cancelled", "rewarded", 0,
+                    runtime =>
+                    {
+                        runtime.placement = "rewarded";
+                        runtime.request_id = request.RequestId;
+                    });
+            }
             request.State = state;
             DebugManager.DiagStability($"[ADS] {request.RequestId} {state}.");
             request.ProfileBlock?.Dispose();

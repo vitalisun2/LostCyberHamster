@@ -282,8 +282,11 @@ namespace Vues.GameCore
             return IsCurrent && price > 0 && AvailableCoins + ResourceManager.GetCurrentBalance(ResourceType.Coins) >= price;
         }
 
-        public static bool TrySpendCoins(int price)
+        public static bool TrySpendCoins(int price) => TrySpendCoins(price, out _);
+
+        public static bool TrySpendCoins(int price, out RunLootSpendResult spendResult)
         {
+            spendResult = null;
             if (!CanSpendCoins(price))
             {
                 return false;
@@ -295,11 +298,14 @@ namespace Vues.GameCore
             if (fromWallet == 0)
             {
                 _coins -= fromRun;
+                spendResult = new RunLootSpendResult(price, fromRun, 0, _coins,
+                    ResourceManager.GetCurrentBalance(ResourceType.Coins));
                 NotifyChanged();
                 return true;
             }
 
             bool committed = false;
+            RunLootSpendResult result = null;
             GameDataManager.ExecuteTransaction(CheckpointReason.RunRefillPurchased, () =>
             {
                 if (!IsCurrent || !ResourceManager.SpendResource(ResourceType.Coins, fromWallet, notify: false))
@@ -315,9 +321,25 @@ namespace Vues.GameCore
 
                 _coins -= fromRun;
                 committed = true;
+                result = new RunLootSpendResult(price, fromRun, fromWallet, _coins,
+                    ResourceManager.GetCurrentBalance(ResourceType.Coins));
                 NotifyChanged();
             });
+            spendResult = result;
             return committed;
+        }
+
+        public static RunLootSnapshot Capture()
+        {
+            bool current = IsCurrent;
+            return new RunLootSnapshot(
+                current,
+                current ? _levelKey : GameDataManager.PlayerData?.CurrentLevel,
+                current ? _coins : 0,
+                current ? _crystals : 0,
+                current ? _grossCoins : 0,
+                ResourceManager.IsReady ? ResourceManager.GetCurrentBalance(ResourceType.Coins) : 0,
+                ResourceManager.IsReady ? ResourceManager.GetCurrentBalance(ResourceType.Crystals) : 0);
         }
 
         public static void CommitToPersistentWallet()
@@ -352,5 +374,53 @@ namespace Vues.GameCore
         {
             Changed?.Invoke();
         }
+    }
+
+    public sealed class RunLootSnapshot
+    {
+        public RunLootSnapshot(
+            bool isCurrent,
+            string levelKey,
+            int runCoins,
+            int runCrystals,
+            int grossCoins,
+            int walletCoins,
+            int walletCrystals)
+        {
+            IsCurrent = isCurrent;
+            LevelKey = levelKey ?? string.Empty;
+            RunCoins = Math.Max(0, runCoins);
+            RunCrystals = Math.Max(0, runCrystals);
+            GrossCoins = Math.Max(0, grossCoins);
+            WalletCoins = Math.Max(0, walletCoins);
+            WalletCrystals = Math.Max(0, walletCrystals);
+        }
+
+        public bool IsCurrent { get; }
+        public string LevelKey { get; }
+        public int RunCoins { get; }
+        public int RunCrystals { get; }
+        public int GrossCoins { get; }
+        public int WalletCoins { get; }
+        public int WalletCrystals { get; }
+        public bool HasLoot => RunCoins > 0 || RunCrystals > 0 || GrossCoins > 0;
+    }
+
+    public sealed class RunLootSpendResult
+    {
+        public RunLootSpendResult(int price, int fromRunLoot, int fromWallet, int runCoinsAfter, int walletCoinsAfter)
+        {
+            Price = Math.Max(0, price);
+            FromRunLoot = Math.Max(0, fromRunLoot);
+            FromWallet = Math.Max(0, fromWallet);
+            RunCoinsAfter = Math.Max(0, runCoinsAfter);
+            WalletCoinsAfter = Math.Max(0, walletCoinsAfter);
+        }
+
+        public int Price { get; }
+        public int FromRunLoot { get; }
+        public int FromWallet { get; }
+        public int RunCoinsAfter { get; }
+        public int WalletCoinsAfter { get; }
     }
 }

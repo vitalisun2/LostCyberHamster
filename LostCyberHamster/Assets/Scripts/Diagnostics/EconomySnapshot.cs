@@ -71,6 +71,7 @@ namespace Assets.Scripts.Diagnostics
         public EconomySnapshot before, after;
         public long xp_delta, coins_delta, crystals_delta, points_delta;
         public EconomyFlow[] flows;
+        public EconomyRuntimeState runtime;
     }
 
     [Serializable]
@@ -78,5 +79,16 @@ namespace Assets.Scripts.Diagnostics
     {
         public string source, resource;
         public long income, expense;
+    }
+
+    [Serializable]
+    internal sealed class EconomyRuntimeState
+    {
+        public string action, reason, placement, request_id, loot_disposition;
+        public int run_coins, run_crystals, gross_run_coins;
+        public int wallet_coins, wallet_crystals;
+        public int spend_total, spend_from_run, spend_from_wallet;
+        public int lives_after = -1;
+        public bool attempt_preserved;
     }
 }

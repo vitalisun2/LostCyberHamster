@@ -192,9 +192,22 @@ namespace Assets.Scripts.GameEngine.Mechanics
             try
             {
                 // После сохранения расхода уменьшаем HUD-остаток; квестовая добыча остаётся валовой.
-                if (!_runCoinBudget.TrySpend(ultra ? UltraRefillPrice : EnergyRefillPrice)) return;
+                if (!_runCoinBudget.TrySpend(ultra ? UltraRefillPrice : EnergyRefillPrice, out var spend)) return;
                 if (ultra) _character.AddUltaCharge(100);
                 else _character.AddEnergy(100);
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition(
+                    "refill_purchased",
+                    ultra ? "ultra" : "energy",
+                    ultra ? UltraRefillPrice : EnergyRefillPrice,
+                    runtime =>
+                    {
+                        runtime.placement = ultra ? "ultra" : "energy";
+                        runtime.spend_total = spend.Price;
+                        runtime.spend_from_run = spend.FromRunLoot;
+                        runtime.spend_from_wallet = spend.FromWallet;
+                        runtime.run_coins = spend.RunCoinsAfter;
+                        runtime.wallet_coins = spend.WalletCoinsAfter;
+                    });
                 SyncRunResources();
                 ResourceManager.NotifyBalancesChangedAfterCommit();
             }

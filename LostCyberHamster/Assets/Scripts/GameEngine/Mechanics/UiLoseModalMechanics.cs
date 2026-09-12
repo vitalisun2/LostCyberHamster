@@ -59,7 +59,21 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private void EndAttempt()
         {
             if (_runEnded) return;
-            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("loss", 0, 0);
+            var discardedLoot = RunLootBuffer.Capture();
+            if (discardedLoot.HasLoot)
+            {
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("loot_discarded", "loss", 0,
+                    runtime =>
+                    {
+                        runtime.loot_disposition = "discarded";
+                        runtime.run_coins = discardedLoot.RunCoins;
+                        runtime.run_crystals = discardedLoot.RunCrystals;
+                        runtime.gross_run_coins = discardedLoot.GrossCoins;
+                        runtime.wallet_coins = discardedLoot.WalletCoins;
+                        runtime.wallet_crystals = discardedLoot.WalletCrystals;
+                    });
+            }
+            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("loss", 0, 0, "discarded");
             FirstSessionTelemetry.Record("attempt_failed", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
             RunLootBuffer.Discard();
             _runEnded = true;
@@ -73,7 +87,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 return;
             _request = RewardedAdService.Instance.RequestRevive(_runId, _sceneHandle,
                 CanContinue,
-                Revive);
+                () => Revive("rewarded"));
             _loseModalController.SetAdvertisementRequest(_request);
         }
 
@@ -104,14 +118,21 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (!committed) return;
                 MonetizationEvent.Record("crystal_spent", "revive", _runId, 1);
                 ResourceManager.NotifyBalancesChangedAfterCommit();
-                Revive();
+                Revive("crystal");
             }
             catch (Exception exception) { Debug.LogException(exception); }
             finally { _purchasing = false; }
         }
 
-        private void Revive()
+        private void Revive(string source)
         {
+            Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("revive_completed", source, 1,
+                runtime =>
+                {
+                    runtime.placement = source;
+                    runtime.lives_after = 1;
+                    runtime.attempt_preserved = true;
+                });
             FirstSessionTelemetry.Record("attempt_revived", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
             _character.Lives.Value = 1;
             _uiManager.CloseModal(ScreenEnum.LoseModal);

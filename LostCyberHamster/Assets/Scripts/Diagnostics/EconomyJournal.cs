@@ -137,6 +137,7 @@ namespace Assets.Scripts.Diagnostics
             public int remaining_lives = -1;
             public EconomySnapshot snapshot;
             public EconomySnapshot run_snapshot;
+            public EconomyRuntimeState run_runtime;
             public EconomyFlow[] pending_flows = Array.Empty<EconomyFlow>();
             public List<string> dev_profiles = new();
         }

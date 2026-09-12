@@ -9,6 +9,7 @@
 - T3: Python-скрипт без зависимостей, фильтры профиля/периода/баланса/cohort, дедупликация, конфликты/пропуски, `summary.json` с происхождением чисел. UI и новая UGS-схема относятся к следующим этапам.
 - DEV/Tools/Testing: общие runner-ы подготовки XP/прохождений, квестов и скинов помечают искусственные операции. Список помеченных профилей хранится в sidecar и переживает переключение профилей/перезапуск.
 - T4: целевые проверки логики/доставки на компьютере выполнены; Android APK и пользовательская приёмка отслеживаются ниже.
+- Дополнение: редкие переходы забега теперь пишутся отдельными `run_transition` событиями, а `run_finished.runtime` хранит transient loot, постоянный кошелёк и `loot_disposition` без спама по pickup.
 
 ## Точки записи
 
@@ -17,7 +18,7 @@
 | Первая победа, новые звёзды, очки за повышение | `GameDataManager.ExecuteTransaction`, `LevelManager.CompleteLevel`; изменение общего XP из фактических уровня и остатка |
 | Daily, Story, общий Daily, weekly | Причины `QuestRewardClaimed`, `DailyQuestCommonRewardClaimed`, `WeeklyLeaderboardRecordRewarded`; ID в `detail` и снимках |
 | Возвращаемые активности | Состояние дней/наград и квитанции после transaction; `ReturnActivityTelemetry.RecordView` для показа |
-| Rewarded, покупки, обмен, развитие, refill, revive | Те же post-commit hooks; игровые квитанции, расход и остатки; `MonetizationEvent.Record` для воронки |
+| Rewarded, покупки, обмен, развитие, refill, revive | Те же post-commit hooks; игровые квитанции, расход и остатки; `MonetizationEvent.Record` для воронки; редкие `run_transition` для `revive_*`, `refill_purchased`, `loot_committed`, `loot_discarded` |
 | Обучение | `TutorialSession.RestoreSnapshot` после очистки временного backup; `FirstSessionTelemetry.Record` для этапов |
 | Добыча | `ResourceManager` после успешного начисления, source из `GameEventsManager`; причины в pickup/jump/bonus producers |
 | Попытки и время | `OnLevelStarted`, post-commit Win, окончательный Lose, unload сцены; `GameManager.State == PLAYING`, focus/background |

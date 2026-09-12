@@ -10,6 +10,7 @@ using Assets.Scripts.Tutorial;
 using GameManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Vues.GameCore;
 
 namespace Assets.Scripts.Diagnostics
 {
@@ -86,6 +87,7 @@ namespace Assets.Scripts.Diagnostics
                     run_id = previous.run, level = previous.level, active_seconds = previous.active, confirmed = false,
                     remaining_lives = previous.remaining_lives,
                     after = previous.run_snapshot ?? previous.snapshot ?? _last,
+                    runtime = CloneRuntimeState(previous.run_runtime, RecoverUnfinishedLootDisposition(previous.run_close_hint)),
                     flows = CloneFlows(previous.pending_flows, allowEmpty: false) });
             Emit(new EconomyEvent { type = "session_started", after = _last, confirmed = true,
                 ads_test_mode = GameAds.MonetizationConfig.Current.AdsTestMode,
@@ -152,6 +154,19 @@ namespace Assets.Scripts.Diagnostics
             if (Ready(allowTutorial: true)) _instance.Emit(new EconomyEvent { type = type, source = source, detail = detail, value = value });
         });
 
+        /// <summary>Редкие переходы попытки и рекламы: revive, refill и судьба добычи.</summary>
+        internal static void RecordRunTransition(
+            string action,
+            string reason,
+            int value = 0,
+            Action<EconomyRuntimeState> enrich = null,
+            bool allowTutorial = false) => Safe(() =>
+        {
+            if (!Ready(allowTutorial) || string.IsNullOrWhiteSpace(action))
+                return;
+            _instance.EmitRunTransition(action, reason, value, enrich);
+        });
+
         /// <summary>Помечает профиль после искусственной подготовки общими DEV/Editor runner-ами.</summary>
         public static void MarkDevelopment(string source) => Safe(() =>
         {
@@ -166,7 +181,7 @@ namespace Assets.Scripts.Diagnostics
         private void StartRun(int _) => Safe(() =>
         {
             if (!Ready(allowTutorial: true)) return;
-            if (!string.IsNullOrEmpty(_run)) FinishInternal("exit", 0, false);
+            if (!string.IsNullOrEmpty(_run)) FinishInternal("exit", 0, false, -1, "discarded");
             _run = Guid.NewGuid().ToString("N");
             _level = GameDataManager.PlayerData.CurrentLevel;
             _active = 0;
@@ -175,23 +190,26 @@ namespace Assets.Scripts.Diagnostics
             _hamster = FindAnyObjectByType<Hamster>();
             int best = LevelManager.TryGetCurrentProgressKey(out var key) ? GameDataManager.PlayerData.Progress.GetStars(key) : 0;
             Emit(new EconomyEvent { type = "run_started", previous_best_stars = best,
-                source = best > 0 ? "repeat" : "uncompleted", before = EconomySnapshot.Capture(GameDataManager.PlayerData) });
+                source = best > 0 ? "repeat" : "uncompleted", before = EconomySnapshot.Capture(GameDataManager.PlayerData),
+                runtime = CaptureRuntimeState("pending") });
             PersistState();
         });
 
-        public static void FinishRun(string outcome, int stars = 0, int remainingLives = -1) => Safe(() =>
+        public static void FinishRun(string outcome, int stars = 0, int remainingLives = -1, string lootDisposition = null) => Safe(() =>
         {
             if (Ready(allowTutorial: true))
-                _instance.FinishInternal(outcome, stars, outcome == "win" || outcome == "tutorial_completed", remainingLives);
+                _instance.FinishInternal(outcome, stars, outcome == "win" || outcome == "tutorial_completed", remainingLives, lootDisposition);
         });
 
-        private void FinishInternal(string outcome, int stars, bool confirmed, int remainingLives = -1)
+        private void FinishInternal(string outcome, int stars, bool confirmed, int remainingLives = -1,
+            string lootDisposition = null)
         {
             if (string.IsNullOrEmpty(_run)) return;
             var flows = CloneFlows(_pending, allowEmpty: false);
+            var runtime = CaptureRuntimeState(lootDisposition);
             Emit(new EconomyEvent { type = "run_finished", source = outcome, stars = stars, confirmed = confirmed,
                 remaining_lives = remainingLives >= 0 ? remainingLives : CurrentRemainingLives(),
-                after = EconomySnapshot.Capture(GameDataManager.PlayerData), flows = flows });
+                after = EconomySnapshot.Capture(GameDataManager.PlayerData), runtime = runtime, flows = flows });
             _pending.Clear();
             _run = null;
             _level = null;
@@ -219,7 +237,8 @@ namespace Assets.Scripts.Diagnostics
             {
                 if (!Ready(allowTutorial: true)) return;
                 if (!string.IsNullOrEmpty(_run))
-                    Emit(new EconomyEvent { type = "run_progress", source = "unconfirmed", after = EconomySnapshot.Capture(GameDataManager.PlayerData) });
+                    Emit(new EconomyEvent { type = "run_progress", source = "unconfirmed", after = EconomySnapshot.Capture(GameDataManager.PlayerData),
+                        runtime = CaptureRuntimeState("pending") });
                 PersistState();
                 _journal.RequestUpload();
             });
@@ -242,7 +261,7 @@ namespace Assets.Scripts.Diagnostics
             if (!string.IsNullOrEmpty(_run))
             {
                 _runCloseHint = "quitting";
-                FinishInternal("app_closed", 0, false);
+                FinishInternal("app_closed", 0, false, -1, "discarded");
             }
             PersistState();
             _journal?.RequestUpload();
@@ -260,6 +279,7 @@ namespace Assets.Scripts.Diagnostics
             _journal.State.run_close_hint = _runCloseHint;
             _journal.State.remaining_lives = string.IsNullOrEmpty(_run) ? -1 : CurrentRemainingLives();
             _journal.State.run_snapshot = string.IsNullOrEmpty(_run) ? null : EconomySnapshot.Capture(GameDataManager.PlayerData);
+            _journal.State.run_runtime = string.IsNullOrEmpty(_run) ? null : CaptureRuntimeState("pending");
             _journal.State.pending_flows = string.IsNullOrEmpty(_run) ? Array.Empty<EconomyFlow>() : CloneFlows(_pending);
             _journal.SaveState();
         }
@@ -277,6 +297,10 @@ namespace Assets.Scripts.Diagnostics
         private static string RecoverUnfinishedOutcome(string hint) => hint == "backgrounded" || hint == "quitting"
             ? "app_closed"
             : "interrupted";
+
+        private static string RecoverUnfinishedLootDisposition(string hint) => hint == "backgrounded" || hint == "quitting"
+            ? "discarded"
+            : "discarded";
 
         private static EconomyFlow[] CloneFlows(IEnumerable<EconomyFlow> flows, bool allowEmpty = true)
         {
@@ -308,6 +332,103 @@ namespace Assets.Scripts.Diagnostics
             if (item.active_seconds == 0) item.active_seconds = _active;
             item.lost_packets = _journal.State.lost_packets;
             _journal.Append(JsonUtility.ToJson(item));
+            WriteDiagnosticLine(item);
+        }
+
+        private void EmitRunTransition(string action, string reason, int value, Action<EconomyRuntimeState> enrich)
+        {
+            var runtime = CaptureRuntimeState();
+            runtime.action = action;
+            runtime.reason = reason ?? string.Empty;
+            enrich?.Invoke(runtime);
+            Emit(new EconomyEvent { type = "run_transition", source = action, detail = reason, value = value,
+                confirmed = true, runtime = runtime });
+        }
+
+        private EconomyRuntimeState CaptureRuntimeState(string lootDisposition = null)
+        {
+            var loot = RunLootBuffer.Capture();
+            return new EconomyRuntimeState
+            {
+                loot_disposition = lootDisposition ?? string.Empty,
+                run_coins = loot.RunCoins,
+                run_crystals = loot.RunCrystals,
+                gross_run_coins = loot.GrossCoins,
+                wallet_coins = loot.WalletCoins,
+                wallet_crystals = loot.WalletCrystals,
+                lives_after = CurrentRemainingLives()
+            };
+        }
+
+        private static EconomyRuntimeState CloneRuntimeState(EconomyRuntimeState runtime, string lootDispositionOverride = null)
+        {
+            if (runtime == null)
+                return string.IsNullOrEmpty(lootDispositionOverride)
+                    ? null
+                    : new EconomyRuntimeState { loot_disposition = lootDispositionOverride };
+            return new EconomyRuntimeState
+            {
+                action = runtime.action,
+                reason = runtime.reason,
+                placement = runtime.placement,
+                request_id = runtime.request_id,
+                loot_disposition = string.IsNullOrEmpty(lootDispositionOverride)
+                    ? runtime.loot_disposition
+                    : lootDispositionOverride,
+                run_coins = runtime.run_coins,
+                run_crystals = runtime.run_crystals,
+                gross_run_coins = runtime.gross_run_coins,
+                wallet_coins = runtime.wallet_coins,
+                wallet_crystals = runtime.wallet_crystals,
+                spend_total = runtime.spend_total,
+                spend_from_run = runtime.spend_from_run,
+                spend_from_wallet = runtime.spend_from_wallet,
+                lives_after = runtime.lives_after,
+                attempt_preserved = runtime.attempt_preserved
+            };
+        }
+
+        private static void WriteDiagnosticLine(EconomyEvent item)
+        {
+            if (item == null)
+                return;
+            switch (item.type)
+            {
+                case "run_started":
+                    DebugManager.DiagEconomy($"[Run] phase=start run={item.run_id} level={item.level} best={item.previous_best_stars} {FormatRuntime(item.runtime)}");
+                    break;
+                case "run_finished":
+                    DebugManager.DiagEconomy($"[Run] phase=finish outcome={item.source} run={item.run_id} level={item.level} stars={item.stars} confirmed={item.confirmed} lives={item.remaining_lives} {FormatRuntime(item.runtime)}");
+                    break;
+                case "run_transition":
+                    DebugManager.DiagEconomy($"[Run] phase={item.source} run={item.run_id} level={item.level} {FormatRuntime(item.runtime)}");
+                    break;
+            }
+        }
+
+        private static string FormatRuntime(EconomyRuntimeState runtime)
+        {
+            if (runtime == null)
+                return string.Empty;
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(runtime.reason)) parts.Add("reason=" + runtime.reason);
+            if (!string.IsNullOrEmpty(runtime.placement)) parts.Add("kind=" + runtime.placement);
+            if (!string.IsNullOrEmpty(runtime.request_id)) parts.Add("request=" + runtime.request_id);
+            if (!string.IsNullOrEmpty(runtime.loot_disposition)) parts.Add("loot=" + runtime.loot_disposition);
+            parts.Add($"run_coins={runtime.run_coins}");
+            parts.Add($"run_crystals={runtime.run_crystals}");
+            parts.Add($"gross_coins={runtime.gross_run_coins}");
+            parts.Add($"wallet_coins={runtime.wallet_coins}");
+            parts.Add($"wallet_crystals={runtime.wallet_crystals}");
+            if (runtime.spend_total > 0)
+            {
+                parts.Add($"price={runtime.spend_total}");
+                parts.Add($"from_run={runtime.spend_from_run}");
+                parts.Add($"from_wallet={runtime.spend_from_wallet}");
+            }
+            if (runtime.lives_after >= 0) parts.Add($"lives_after={runtime.lives_after}");
+            if (runtime.attempt_preserved) parts.Add("attempt_preserved=true");
+            return string.Join(" ", parts);
         }
 
         private static bool Ready(bool allowTutorial = false) => Enabled && GameDataManager.IsLoaded &&

@@ -425,6 +425,7 @@ namespace Assets.Scripts.System
             ExperienceGrantResult experience = default;
             var activityAttempt = ActivityAttemptContext.PendingCompletion;
             bool activityRecorded = false;
+            var lootAtFinish = RunLootBuffer.Capture();
             GameDataManager.ExecuteTransaction(CheckpointReason.LevelCompleted, () =>
             {
                 RunLootBuffer.CommitToPersistentWallet();
@@ -441,7 +442,20 @@ namespace Assets.Scripts.System
             }, () =>
             {
                 _lastCompletionExperience = experience;
-                Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("win", stars, stars);
+                if (lootAtFinish.HasLoot)
+                {
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("loot_committed", "win", 0,
+                        runtime =>
+                        {
+                            runtime.loot_disposition = "committed";
+                            runtime.run_coins = lootAtFinish.RunCoins;
+                            runtime.run_crystals = lootAtFinish.RunCrystals;
+                            runtime.gross_run_coins = lootAtFinish.GrossCoins;
+                            runtime.wallet_coins = ResourceManager.GetCurrentBalance(ResourceType.Coins);
+                            runtime.wallet_crystals = ResourceManager.GetCurrentBalance(ResourceType.Crystals);
+                        });
+                }
+                Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("win", stars, stars, "committed");
                 _completionProfile = GameDataManager.ProfileId;
                 _completionGeneration = GameDataManager.Generation;
                 RunLootBuffer.MarkCommitted();

@@ -108,8 +108,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_leaving || UiInputBlock.IsBlocked)
                 return;
             _leaving = true;
-            if (_tutorial == null)
-                RunLootBuffer.Discard();
+            var discardedLoot = _tutorial == null ? RunLootBuffer.Capture() : null;
 
             // Выход из обучения сохраняет rollback до загрузки меню.
             try
@@ -118,7 +117,21 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     _tutorial.ExitToMenu();
                 else
                 {
-                    Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("exit");
+                    if (discardedLoot?.HasLoot == true)
+                    {
+                        Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("loot_discarded", "exit", 0,
+                            runtime =>
+                            {
+                                runtime.loot_disposition = "discarded";
+                                runtime.run_coins = discardedLoot.RunCoins;
+                                runtime.run_crystals = discardedLoot.RunCrystals;
+                                runtime.gross_run_coins = discardedLoot.GrossCoins;
+                                runtime.wallet_coins = discardedLoot.WalletCoins;
+                                runtime.wallet_crystals = discardedLoot.WalletCrystals;
+                            });
+                    }
+                    Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("exit", 0, -1, "discarded");
+                    RunLootBuffer.Discard();
                     SceneManager.LoadScene("Menu");
                 }
             }
@@ -135,7 +148,21 @@ namespace Assets.Scripts.GameEngine.Mechanics
             if (_leaving || _tutorial != null || UiInputBlock.IsBlocked)
                 return;
             _leaving = true;
-            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("restart");
+            var discardedLoot = RunLootBuffer.Capture();
+            if (discardedLoot.HasLoot)
+            {
+                Assets.Scripts.Diagnostics.EconomyTelemetry.RecordRunTransition("loot_discarded", "restart", 0,
+                    runtime =>
+                    {
+                        runtime.loot_disposition = "discarded";
+                        runtime.run_coins = discardedLoot.RunCoins;
+                        runtime.run_crystals = discardedLoot.RunCrystals;
+                        runtime.gross_run_coins = discardedLoot.GrossCoins;
+                        runtime.wallet_coins = discardedLoot.WalletCoins;
+                        runtime.wallet_crystals = discardedLoot.WalletCrystals;
+                    });
+            }
+            Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("restart", 0, -1, "discarded");
             RunLootBuffer.Discard();
             _uiManager.CloseModal(ScreenEnum.PauseModal);
             LevelController.Instance.Replay();

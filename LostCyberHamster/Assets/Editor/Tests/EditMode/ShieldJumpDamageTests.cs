@@ -78,7 +78,6 @@ namespace Assets.Tests.EditMode
                     needCheckCollisionInRunFromRoofAfterShift,
                     jumpOverEvent,
                     destroyObstacleEvent,
-                    destroyObstacleBySuperAttackEvent,
                     pendingJumpedOnObstacle,
                     pendingDamageObstacle,
                     gate);
