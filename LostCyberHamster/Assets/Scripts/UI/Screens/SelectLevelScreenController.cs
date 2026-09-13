@@ -657,11 +657,18 @@ namespace LostCyberHamster.UI
                 return string.Empty;
             }
 
+            int requiredStars = DefaultUnlockPolicy.GetRequiredStarsForNextPart(
+                previousPart.TotalLevels);
+            if (requiredStars <= 0)
+            {
+                return string.Empty;
+            }
+
             int collectedStars = Math.Max(
                 0,
                 Math.Min(
                     previousPart.TotalStars,
-                    DefaultUnlockPolicy.NextPartStarRequirement));
+                    requiredStars));
             string template = LocalizationManager.GetLocalizedString("select_level_part_unlock_progress");
             if (string.IsNullOrWhiteSpace(template) ||
                 string.Equals(template, "select_level_part_unlock_progress", StringComparison.Ordinal))
@@ -672,7 +679,7 @@ namespace LostCyberHamster.UI
             return string.Format(
                 template,
                 collectedStars,
-                DefaultUnlockPolicy.NextPartStarRequirement);
+                requiredStars);
         }
 
         /// <summary>

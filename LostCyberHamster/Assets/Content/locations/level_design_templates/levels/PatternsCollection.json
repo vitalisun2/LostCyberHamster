@@ -1,4 +1,4 @@
-﻿{
+{
     "patterns": [
         {
             "name": "easy_run",
@@ -6367,7 +6367,7 @@
             ]
         },
         {
-            "name": "roof_bonus_chain ",
+            "name": "roof_bonus_chain",
             "description": "серия бонусов на крышах, собираемых ритмичными прыжками.",
             "nextObstacleId": 38,
             "obstacles": [
@@ -6886,7 +6886,7 @@
             ]
         },
         {
-            "name": "shift_zigzag_easy ",
+            "name": "shift_zigzag_easy",
             "description": "чередование препятствий на линиях с комфортными смещениями. ",
             "nextObstacleId": 23,
             "obstacles": [
@@ -9190,7 +9190,7 @@
             ]
         },
         {
-            "name": "shift_mirror_trap ",
+            "name": "shift_mirror_trap",
             "description": "линии выглядят одинаково, но только одна безопасна.",
             "nextObstacleId": 193,
             "obstacles": [

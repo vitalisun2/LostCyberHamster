@@ -6,7 +6,7 @@ namespace GameManagement.Progress
 {
     public sealed class DefaultUnlockPolicy : IUnlockPolicy
     {
-        public const int NextPartStarRequirement = 10;
+        public const int NextPartUnlockPercent = 80;
 
         private readonly HierarchicalLevelCatalog _catalog;
         private readonly int _starUnlockOffset;
@@ -71,6 +71,17 @@ namespace GameManagement.Progress
             return Math.Max(requiredStars - currentStars, 0);
         }
 
+        public static int GetRequiredStarsForNextPart(int levelCount)
+        {
+            if (levelCount <= 0)
+            {
+                return 0;
+            }
+
+            var maxStars = levelCount * LevelProgressEntry.MaxStars;
+            return (int)Math.Ceiling(maxStars * (NextPartUnlockPercent / 100d));
+        }
+
         private int CalculateMaxStarsForLocation(int locationIndex)
         {
             if (!_catalog.TryGetLocation(locationIndex, out var location))
@@ -106,11 +117,12 @@ namespace GameManagement.Progress
                 .EnumeratePart(currentLevel.LocationId, currentLevel.PartOfDayId)
                 .ToList();
             var requiredLevelCount = currentPart.Levels?.Count ?? 0;
+            var requiredStars = GetRequiredStarsForNextPart(requiredLevelCount);
 
-            return requiredLevelCount > 0 &&
+            return requiredStars > 0 &&
                    entries.Count >= requiredLevelCount &&
                    entries.All(entry => entry.Stars > 0) &&
-                   entries.Sum(entry => entry.Stars) >= NextPartStarRequirement;
+                   entries.Sum(entry => entry.Stars) >= requiredStars;
         }
     }
 }

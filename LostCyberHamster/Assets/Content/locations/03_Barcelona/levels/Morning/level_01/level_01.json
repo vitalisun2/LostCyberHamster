@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_zigzag_easy",
+                                "spriteSeed":  5109,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "medium_difficulty_2",
                                 "spriteSeed":  5106,
                                 "overrides":  [

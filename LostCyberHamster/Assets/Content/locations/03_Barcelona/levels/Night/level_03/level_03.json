@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_mirror_trap_3",
+                                "spriteSeed":  8309,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "shift_force_switch_2",
                                 "spriteSeed":  8306,
                                 "overrides":  [

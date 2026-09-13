@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_force_switch_3",
+                                "spriteSeed":  8409,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "roof_wide_gap_2",
                                 "spriteSeed":  8406,
                                 "overrides":  [

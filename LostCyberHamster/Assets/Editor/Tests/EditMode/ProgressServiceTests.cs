@@ -138,14 +138,14 @@ namespace Assets.Tests.EditMode
             var morningPartId = catalog.GetPartId(0, 0);
             var afternoonPartId = catalog.GetPartId(0, 1);
 
-            var afterMorning = CompleteLevels(service, snapshot, locationId, morningPartId, 1, 1, 1, 1, 1);
+            var afterMorning = CompleteLevels(service, snapshot, locationId, morningPartId, 2, 2, 2, 2, 2);
 
             Assert.IsTrue(afterMorning.TryGet(new LevelProgressKey(locationId, afternoonPartId, 0), out var entry));
             Assert.IsFalse(entry.IsUnlocked);
         }
 
         [Test]
-        public void HandleLevelCompleted_UnlocksNextPartWhenAllLevelsCompletedAndStarsAtLeastTen()
+        public void HandleLevelCompleted_UnlocksNextPartWhenAllLevelsCompletedAndStarsReachEightyPercent()
         {
             var catalog = CreatePartUnlockCatalog();
             var service = CreateService(catalog);
@@ -155,10 +155,17 @@ namespace Assets.Tests.EditMode
             var morningPartId = catalog.GetPartId(0, 0);
             var afternoonPartId = catalog.GetPartId(0, 1);
 
-            var afterMorning = CompleteLevels(service, snapshot, locationId, morningPartId, 2, 2, 2, 2, 2);
+            var afterMorning = CompleteLevels(service, snapshot, locationId, morningPartId, 3, 3, 2, 2, 2);
 
             Assert.IsTrue(afterMorning.TryGet(new LevelProgressKey(locationId, afternoonPartId, 0), out var entry));
             Assert.IsTrue(entry.IsUnlocked);
+        }
+
+        [Test]
+        public void GetRequiredStarsForNextPart_RoundsUpToEightyPercentOfMaxStars()
+        {
+            Assert.AreEqual(12, DefaultUnlockPolicy.GetRequiredStarsForNextPart(5));
+            Assert.AreEqual(17, DefaultUnlockPolicy.GetRequiredStarsForNextPart(7));
         }
 
         [Test]

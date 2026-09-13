@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_force_switch_3",
+                                "spriteSeed":  6509,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "jump_challenge_2",
                                 "spriteSeed":  6506,
                                 "overrides":  [

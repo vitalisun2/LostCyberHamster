@@ -25,6 +25,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_force_switch_3",
+                                "spriteSeed":  8609,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "medium_difficulty_2",
                                 "spriteSeed":  8604,
                                 "overrides":  [

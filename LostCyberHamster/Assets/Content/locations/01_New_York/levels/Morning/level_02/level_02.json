@@ -1,150 +1,159 @@
 {
-    "skyTexture": "",
-    "background2Texture": "bg_2_new_york_morning",
-    "backgroundTexture": "bg_new_york_morning",
-    "roadTexture": "",
-    "location": "01_New_York",
-    "patternSequence": [
-        {
-            "ref": "ny_morning_intro_charge_01",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_intro_charge_02",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_single_lanes",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_lower_roof",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_first_pair",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_pair_repeat",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_roof_repeat",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "ny_morning_l2_finish",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 3,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        }
-    ],
-    "decorationPatterns": []
+    "skyTexture":  "",
+    "background2Texture":  "bg_2_new_york_morning",
+    "backgroundTexture":  "bg_new_york_morning",
+    "roadTexture":  "",
+    "location":  "01_New_York",
+    "patternSequence":  [
+                            {
+                                "ref":  "ny_morning_intro_charge_01",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  3,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_intro_charge_02",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  1,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_single_lanes",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  4,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_lower_roof",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  4,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_first_pair",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  3,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  5,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_pair_repeat",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  3,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  5,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_roof_repeat",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  1,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  3,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "small_jumps_2",
+                                "spriteSeed":  1,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "ny_morning_l2_finish",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  1,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  3,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+
+                           ]
 }

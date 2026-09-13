@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "roof_bonus_chain",
+                                "spriteSeed":  7409,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "roof_wide_gap_2",
                                 "spriteSeed":  7406,
                                 "overrides":  [

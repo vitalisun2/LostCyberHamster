@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_mirror_trap",
+                                "spriteSeed":  3109,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "medium_difficulty_2",
                                 "spriteSeed":  3106,
                                 "overrides":  [

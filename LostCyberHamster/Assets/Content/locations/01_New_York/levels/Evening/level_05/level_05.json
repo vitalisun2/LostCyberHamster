@@ -1,52 +1,77 @@
-﻿{
-    "skyTexture": "",
-    "roadTexture": "",
-    "location": "01_New_York",
-    "patternSequence": [
-        {
-            "ref": "easy_run_3",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "small_jumps_2",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "medium_difficulty_3",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "roof_switch_line_2",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bonus_strip_3",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "shift_force_switch_4",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "peak_3",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "easy_run",
-            "spriteSeed": 0,
-            "overrides": []
-        }
-    ],
-    "decorationPatterns": [
-        {
-            "decorationTiles": []
-        }
-    ]
+{
+    "skyTexture":  "",
+    "roadTexture":  "",
+    "location":  "01_New_York",
+    "patternSequence":  [
+                            {
+                                "ref":  "easy_run_3",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "small_jumps_2",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty_3",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "roof_switch_line_2",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip_3",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "shift_mirror_trap_2",
+                                "spriteSeed":  1,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "shift_force_switch_4",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "peak_3",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+                               {
+                                   "decorationTiles":  [
+
+                                                       ]
+                               }
+                           ]
 }

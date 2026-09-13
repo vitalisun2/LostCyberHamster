@@ -25,6 +25,13 @@
                                               ]
                             },
                             {
+                                "ref":  "roof_bonus_chain",
+                                "spriteSeed":  8509,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "shift_bonus_path",
                                 "spriteSeed":  8504,
                                 "overrides":  [

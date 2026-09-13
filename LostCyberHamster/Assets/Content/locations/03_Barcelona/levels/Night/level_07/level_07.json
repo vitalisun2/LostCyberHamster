@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_mirror_trap",
+                                "spriteSeed":  8709,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "jump_challenge_2",
                                 "spriteSeed":  8706,
                                 "overrides":  [

@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_line_choice",
+                                "spriteSeed":  1209,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "easy_run_2",
                                 "spriteSeed":  1206,
                                 "overrides":  [

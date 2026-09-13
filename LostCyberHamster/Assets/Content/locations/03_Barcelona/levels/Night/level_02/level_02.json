@@ -32,6 +32,13 @@
                                               ]
                             },
                             {
+                                "ref":  "roof_bonus_chain",
+                                "spriteSeed":  8209,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "bonus_strip",
                                 "spriteSeed":  8205,
                                 "overrides":  [

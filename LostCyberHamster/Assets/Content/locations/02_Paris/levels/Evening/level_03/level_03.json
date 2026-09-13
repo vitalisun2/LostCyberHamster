@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_force_switch_2",
+                                "spriteSeed":  3309,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "shift_zigzag_tight",
                                 "spriteSeed":  3306,
                                 "overrides":  [

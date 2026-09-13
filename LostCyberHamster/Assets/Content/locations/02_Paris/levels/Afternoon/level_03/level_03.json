@@ -39,6 +39,13 @@
                                               ]
                             },
                             {
+                                "ref":  "shift_mirror_trap",
+                                "spriteSeed":  2309,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
                                 "ref":  "shift_jump_mix",
                                 "spriteSeed":  2306,
                                 "overrides":  [

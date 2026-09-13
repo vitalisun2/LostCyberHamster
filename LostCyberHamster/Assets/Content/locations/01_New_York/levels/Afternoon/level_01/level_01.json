@@ -1,73 +1,96 @@
-﻿{
-    "skyTexture": "",
-    "roadTexture": "",
-    "location": "01_New_York",
-    "patternSequence": [
-        {
-            "ref": "ny_afternoon_intro",
-            "spriteSeed": 0,
-            "overrides": [
-                {
-                    "obstacleId": 0,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 1,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 2,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 4,
-                    "spriteName": "obstacle_new_york_homeless"
-                },
-                {
-                    "obstacleId": 5,
-                    "spriteName": "obstacle_new_york_homeless"
-                }
-            ]
-        },
-        {
-            "ref": "bonus_strip",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "small_jumps_2",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "easy_run_3",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "medium_difficulty",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "bonus_strip_2",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "medium_difficulty_energy",
-            "spriteSeed": 0,
-            "overrides": []
-        },
-        {
-            "ref": "easy_run_2",
-            "spriteSeed": 0,
-            "overrides": []
-        }
-    ],
-    "decorationPatterns": [
-        {
-            "decorationTiles": []
-        }
-    ]
+{
+    "skyTexture":  "",
+    "roadTexture":  "",
+    "location":  "01_New_York",
+    "patternSequence":  [
+                            {
+                                "ref":  "ny_afternoon_intro",
+                                "spriteSeed":  0,
+                                "overrides":  [
+                                                  {
+                                                      "obstacleId":  0,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  1,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  2,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  4,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  },
+                                                  {
+                                                      "obstacleId":  5,
+                                                      "spriteName":  "obstacle_new_york_homeless"
+                                                  }
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "small_jumps_2",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run_3",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "bonus_strip_2",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "medium_difficulty_energy",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "shift_zigzag_easy",
+                                "spriteSeed":  1,
+                                "overrides":  [
+
+                                              ]
+                            },
+                            {
+                                "ref":  "easy_run_2",
+                                "spriteSeed":  0,
+                                "overrides":  [
+
+                                              ]
+                            }
+                        ],
+    "decorationPatterns":  [
+                               {
+                                   "decorationTiles":  [
+
+                                                       ]
+                               }
+                           ]
 }
