@@ -664,11 +664,8 @@ namespace LostCyberHamster.UI
                 return string.Empty;
             }
 
-            int collectedStars = Math.Max(
-                0,
-                Math.Min(
-                    previousPart.TotalStars,
-                    requiredStars));
+            int collectedStars = Math.Max(previousPart.TotalStars, 0);
+            int maximumStars = previousPart.TotalLevels * LevelProgressEntry.MaxStars;
             string template = LocalizationManager.GetLocalizedString("select_level_part_unlock_progress");
             if (string.IsNullOrWhiteSpace(template) ||
                 string.Equals(template, "select_level_part_unlock_progress", StringComparison.Ordinal))
@@ -679,7 +676,7 @@ namespace LostCyberHamster.UI
             return string.Format(
                 template,
                 collectedStars,
-                requiredStars);
+                maximumStars);
         }
 
         /// <summary>
