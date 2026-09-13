@@ -419,8 +419,8 @@
     position: absolute;
     left: 16.666667%;
     right: 16.666667%;
-    top: 60px;
-    height: 64px;
+    top: 56px;
+    height: 80px;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -429,7 +429,7 @@
 .leaderboard-action-button,
 .leaderboard-rules-close {
     flex-shrink: 0;
-    padding: 4px 20px;
+    padding: 6px 20px;
     background-image: url("/Assets/Content/ui/sprites/settings/button_primary_base.png");
     -unity-background-scale-mode: stretch-to-fill;
     -unity-slice-left: 18;
@@ -446,12 +446,12 @@
 
 .leaderboard-action-button--rules {
     width: 220px;
-    height: 52px;
+    height: 64px;
 }
 
 .leaderboard-action-button--play {
     width: 320px;
-    height: 64px;
+    height: 78px;
     color: rgb(255, 255, 255);
     background-image: url("/Assets/Content/ui/sprites/shared/button_reward_primary_base.png");
     -unity-slice-left: 38;
@@ -472,6 +472,7 @@
     right: 0;
     top: 0;
     bottom: 0;
+    padding-top: 86px;
     align-items: center;
     justify-content: center;
 }
@@ -500,9 +501,10 @@
 }
 
 .leaderboard-rules-panel {
-    width: 960px;
-    height: 680px;
-    padding: 28px 40px 32px;
+    width: 1600px;
+    height: 780px;
+    padding: 34px 40px 40px;
+    align-items: center;
     background-image: url("/Assets/Content/ui/sprites/shared/panel_reward_base.png");
     -unity-background-scale-mode: stretch-to-fill;
     -unity-slice-left: 80;
@@ -517,7 +519,7 @@
     padding: 0;
     flex-shrink: 0;
     color: rgb(16, 32, 53);
-    font-size: 22px;
+    font-size: 26px;
     -unity-font-style: bold;
     -unity-text-outline-width: 0;
     -unity-text-align: upper-left;
@@ -525,8 +527,9 @@
 }
 
 .leaderboard-rules-title {
-    font-size: 32px;
-    margin-bottom: 16px;
+    width: 1320px;
+    font-size: 38px;
+    margin-bottom: 22px;
     -unity-text-align: middle-center;
 }
 
@@ -534,32 +537,35 @@
     flex-grow: 1;
     flex-shrink: 1;
     min-height: 0;
+    width: 1320px;
     margin: 0;
 }
 
 .leaderboard-rules-scroll .unity-scroll-view__content-container {
-    padding-right: 14px;
+    padding-right: 18px;
+    padding-bottom: 6px;
 }
 
 .leaderboard-rules-section-title {
-    margin-top: 12px;
-    margin-bottom: 4px;
-    font-size: 24px;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-size: 28px;
 }
 
 .leaderboard-rules-paragraph {
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .leaderboard-rules-note {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    font-size: 19px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    font-size: 22px;
 }
 
 .leaderboard-rules-close {
     width: 270px;
-    height: 58px;
-    margin-top: 16px;
+    height: 70px;
+    margin-top: 20px;
+    font-size: 26px;
     align-self: center;
 }
