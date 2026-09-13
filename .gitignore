@@ -139,6 +139,7 @@ Desktop.ini
 # Temporary files and reports
 /.temp/
 /debug.log
+/artifacts/
 __pycache__/
 *.pyc
 
