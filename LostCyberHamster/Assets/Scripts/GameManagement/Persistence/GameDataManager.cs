@@ -67,7 +67,7 @@ namespace GameManagement
         public static Task LoadDataAsync()
         {
             // Незавершённая DEV-сессия восстанавливается и в обычной сборке до чтения профиля.
-            if (HasProgressionTestingBackup) RestoreProgressionTestingEnvelope();
+            if (HasProgressionTestingBackup) RestoreProgressionTestingEnvelope(discardUnreadable: true);
             var fromPrimary = TryReadEnvelope(_playerDataKey, out var loaded, out _);
             if (!fromPrimary && !TryReadEnvelope(_playerDataBackupKey, out loaded, out _))
                 loaded = CreateEnvelope(CreateDefaultPlayerData(), legacy: false);
@@ -580,10 +580,17 @@ namespace GameManagement
             else PlayerPrefs.DeleteKey(key);
         }
 
-        private static void RestoreProgressionTestingEnvelope()
+        private static void RestoreProgressionTestingEnvelope(bool discardUnreadable = false)
         {
             if (!TryReadEnvelope(_progressionTestingBackupKey, out var original, out _))
-                throw new InvalidOperationException("Testing backup is unreadable; recovery marker retained.");
+            {
+                if (!discardUnreadable)
+                    throw new InvalidOperationException("Testing backup is unreadable; recovery marker retained.");
+
+                Debug.LogWarning("[GameData] Progression testing backup is unreadable. Clearing DEV recovery marker and continuing with the durable save.");
+                ClearProgressionTestingRecoveryMarker();
+                return;
+            }
             var previous = _envelope;
             var previousPlayer = PlayerData;
             var backup = PlayerPrefs.GetString(_progressionTestingBackupKey);
@@ -610,6 +617,13 @@ namespace GameManagement
                 try { PlayerPrefs.Save(); } catch (Exception exception) { Debug.LogException(exception); }
                 throw;
             }
+        }
+
+        private static void ClearProgressionTestingRecoveryMarker()
+        {
+            PlayerPrefs.DeleteKey(_progressionTestingBackupKey);
+            PlayerPrefs.DeleteKey(_progressionTestingProfileKey);
+            PlayerPrefs.Save();
         }
 
         private static void Notify(Action handlers)
