@@ -382,6 +382,7 @@ namespace GameManagement
                 throw new ArgumentException("Cloud owner and revision are required.");
             EnsureEnvelope();
             if (!CanApplyCloudProgress) throw new InvalidOperationException("Cloud restore requires a settled menu checkpoint.");
+            EnsureProgressConsistency(replacement);
             EnsureValidated(replacement);
             var before = JsonUtility.ToJson(_envelope);
             try
@@ -747,6 +748,11 @@ namespace GameManagement
         }
         private static void EnsureProgressConsistency()
         {
+            EnsureProgressConsistency(PlayerData);
+        }
+
+        private static void EnsureProgressConsistency(PlayerData data)
+        {
             if (!LevelCatalogService.HasCatalog)
             {
                 return;
@@ -761,7 +767,7 @@ namespace GameManagement
                 }
 
                 var baseSnapshot = LevelProgressSnapshot.CreateFromCatalog(catalog);
-                var existingSnapshot = PlayerData.Progress;
+                var existingSnapshot = data.Progress;
 
                 var existingEntries = new Dictionary<LevelProgressKey, LevelProgressEntry>();
                 foreach (var entry in existingSnapshot.Entries)
@@ -782,8 +788,9 @@ namespace GameManagement
                     }
                 }
 
-                PlayerData.Progress = new LevelProgressSnapshot(mergedEntries);
-                EnsureCurrentLevelValid(catalog);
+                data.Progress = ProgressService.CreateDefault(catalog)
+                    .ReconcileUnlocks(new LevelProgressSnapshot(mergedEntries));
+                EnsureCurrentLevelValid(data, catalog);
             }
             catch (Exception ex)
             {
@@ -823,18 +830,18 @@ namespace GameManagement
             };
         }
 
-        private static void EnsureCurrentLevelValid(HierarchicalLevelCatalog catalog)
+        private static void EnsureCurrentLevelValid(PlayerData data, HierarchicalLevelCatalog catalog)
         {
             if (catalog.IsEmpty)
             {
                 return;
             }
 
-            if (LevelCatalogService.TryFindLevel(PlayerData.CurrentLevel, out var descriptor))
+            if (LevelCatalogService.TryFindLevel(data.CurrentLevel, out var descriptor))
             {
                 if (!string.IsNullOrWhiteSpace(descriptor.Address))
                 {
-                    PlayerData.CurrentLevel = descriptor.Address.Trim();
+                    data.CurrentLevel = descriptor.Address.Trim();
                 }
 
                 return;
@@ -848,7 +855,7 @@ namespace GameManagement
 
             if (!string.IsNullOrWhiteSpace(firstLevel.Address))
             {
-                PlayerData.CurrentLevel = firstLevel.Address.Trim();
+                data.CurrentLevel = firstLevel.Address.Trim();
             }
         }
     }

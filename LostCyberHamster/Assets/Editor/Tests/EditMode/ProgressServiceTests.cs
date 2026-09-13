@@ -169,6 +169,32 @@ namespace Assets.Tests.EditMode
         }
 
         [Test]
+        public void ReconcileUnlocks_UnlocksNextPartFromExistingStars()
+        {
+            var catalog = CreatePartUnlockCatalog();
+            var service = CreateService(catalog);
+            var snapshot = LevelProgressSnapshot.CreateFromCatalog(catalog);
+            var locationId = catalog.GetLocationId(0);
+            var morningPartId = catalog.GetPartId(0, 0);
+            var afternoonPartId = catalog.GetPartId(0, 1);
+
+            foreach (var item in new[] { 3, 3, 3, 2, 2 }.Select((stars, index) => (stars, index)))
+            {
+                snapshot = snapshot.Set(new LevelProgressEntry(
+                    new LevelProgressKey(locationId, morningPartId, item.index),
+                    true,
+                    item.stars));
+            }
+
+            var reconciled = service.ReconcileUnlocks(snapshot);
+
+            Assert.IsTrue(reconciled.TryGet(
+                new LevelProgressKey(locationId, afternoonPartId, 0),
+                out var entry));
+            Assert.IsTrue(entry.IsUnlocked);
+        }
+
+        [Test]
         public void HandleLevelCompleted_DoesNotRelockAlreadyUnlockedNextPart()
         {
             var catalog = CreatePartUnlockCatalog();

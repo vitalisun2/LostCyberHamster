@@ -24,6 +24,13 @@ namespace GameManagement.Progress
             _unlockPolicy = unlockPolicy ?? throw new ArgumentNullException(nameof(unlockPolicy));
         }
 
+        public static ProgressService CreateDefault(HierarchicalLevelCatalog catalog)
+        {
+            return new ProgressService(
+                catalog,
+                new DefaultUnlockPolicy(catalog, DefaultUnlockPolicy.DefaultStarUnlockOffset));
+        }
+
         /// <summary>
         /// Применяет результат прохождения и открывает следующий доступный уровень или локацию.
         /// </summary>
@@ -59,6 +66,44 @@ namespace GameManagement.Progress
             }
 
             return snapshot;
+        }
+
+        /// <summary>
+        /// Восстанавливает производные unlock-флаги из сохранённых результатов.
+        /// </summary>
+        public LevelProgressSnapshot ReconcileUnlocks(LevelProgressSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            var current = snapshot;
+            foreach (var descriptor in _catalog.EnumerateLevels()
+                         .OrderBy(level => level.LocationIndex)
+                         .ThenBy(level => level.PartIndex)
+                         .ThenBy(level => level.LevelIndex))
+            {
+                var progressKey = new LevelProgressKey(
+                    descriptor.LocationId,
+                    descriptor.PartId,
+                    descriptor.LevelIndex);
+                if (!current.TryGet(progressKey, out var entry) || !entry.IsCompleted ||
+                    !TryGetNextProgressKey(progressKey, out var nextKey))
+                {
+                    continue;
+                }
+
+                var shouldUnlock = string.Equals(progressKey.LocationId, nextKey.LocationId, StringComparison.OrdinalIgnoreCase)
+                    ? _unlockPolicy.CanUnlockNextLevel(current, progressKey, nextKey)
+                    : _unlockPolicy.CanUnlockNextLocation(current, progressKey.LocationId, nextKey.LocationId);
+                if (shouldUnlock && (!current.TryGet(nextKey, out var nextEntry) || !nextEntry.IsUnlocked))
+                {
+                    current = current.Set(new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0));
+                }
+            }
+
+            return current;
         }
 
         /// <summary>

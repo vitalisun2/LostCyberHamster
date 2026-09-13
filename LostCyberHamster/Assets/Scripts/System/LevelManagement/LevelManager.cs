@@ -15,7 +15,6 @@ namespace Assets.Scripts.System
 {
     public static class LevelManager
     {
-        private const int _starUnlockOffset = 2;
         private static readonly PlayerExperienceService _playerExperienceService = new();
         private static ProgressService _progressService;
         private static HierarchicalLevelCatalog _progressCatalog;
@@ -531,8 +530,7 @@ namespace Assets.Scripts.System
 
             if (_progressService == null || !ReferenceEquals(_progressCatalog, Catalog))
             {
-                var policy = new DefaultUnlockPolicy(Catalog, _starUnlockOffset);
-                _progressService = new ProgressService(Catalog, policy);
+                _progressService = ProgressService.CreateDefault(Catalog);
                 _progressCatalog = Catalog;
             }
 

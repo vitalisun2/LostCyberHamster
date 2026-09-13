@@ -7,6 +7,7 @@ namespace GameManagement.Progress
     public sealed class DefaultUnlockPolicy : IUnlockPolicy
     {
         public const int NextPartUnlockPercent = 80;
+        public const int DefaultStarUnlockOffset = 2;
 
         private readonly HierarchicalLevelCatalog _catalog;
         private readonly int _starUnlockOffset;
