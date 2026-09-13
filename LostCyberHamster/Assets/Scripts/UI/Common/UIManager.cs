@@ -43,6 +43,11 @@ namespace LostCyberHamster.UI
             }
         }
 
+        public static void RequestScreen(ScreenEnum screen)
+        {
+            OnScreenShow?.Invoke(screen);
+        }
+
         public static void RequestScreenFromInput(ScreenEnum screen)
         {
             OnScreenShowFromInput?.Invoke(screen);
@@ -104,6 +109,12 @@ namespace LostCyberHamster.UI
                 await _transitionGate.WaitAsync(cancellationToken);
                 gateEntered = true;
                 cancellationToken.ThrowIfCancellationRequested();
+                if (closeActiveModal && _currentModal.HasValue &&
+                    _hasCurrentScreen && _activeScreenEventsSubscribed && _currentScreen == screen)
+                {
+                    CloseModal(_currentModal.Value);
+                    return;
+                }
                 if (!forceReload && _hasCurrentScreen &&
                     _activeScreenEventsSubscribed && _currentScreen == screen)
                     return;
