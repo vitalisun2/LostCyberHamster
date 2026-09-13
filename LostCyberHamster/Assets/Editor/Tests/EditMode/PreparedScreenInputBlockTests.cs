@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
 using LostCyberHamster.UI;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
@@ -46,6 +47,38 @@ namespace Assets.Tests.UI
 
             InvokeSetInputBlocked(prepared, owner, false);
             Assert.AreEqual(0, GetOwnerCount(prepared));
+        }
+
+        [Test]
+        public void LoadScreenAsync_SameScreenRequestClosesActiveModal()
+        {
+            var document = CreateDocument();
+            using var prepared = CreatePreparedScreen();
+            var screenController = new TestScreenController(document);
+            var modalController = new TestModalController(document);
+            var modalContent = document.rootVisualElement.Q<VisualElement>("modal__content");
+            modalContent.Add(new Label("marker"));
+
+            SetPrivateField(screenController, "_screen", prepared);
+            InvokeSetModalInputBlocked(screenController, true);
+
+            var manager = new UIManager(new IScreenController[]
+            {
+                screenController,
+                modalController
+            });
+            SetPrivateField(manager, "_currentScreen", ScreenEnum.HomeScreen);
+            SetPrivateField(manager, "_hasCurrentScreen", true);
+            SetPrivateField(manager, "_activeScreenEventsSubscribed", true);
+            SetPrivateField(manager, "_currentModal", ScreenEnum.AccountPromptModal);
+
+            InvokeLoadScreenAsync(manager, ScreenEnum.HomeScreen, forceReload: false, closeActiveModal: true);
+
+            Assert.IsNull(GetPrivateField(manager, "_currentModal"));
+            Assert.AreEqual(0, GetOwnerCount(prepared));
+            Assert.AreEqual(0, modalContent.childCount);
+
+            UnityEngine.Object.DestroyImmediate(document.gameObject);
         }
 
         [UnityTest]
@@ -118,6 +151,118 @@ namespace Assets.Tests.UI
             return typeof(ScreenController).Assembly.GetType(
                 "LostCyberHamster.UI.PreparedScreen",
                 throwOnError: true);
+        }
+
+        private static UIDocument CreateDocument()
+        {
+            var gameObject = new GameObject("ui-test-document");
+            var document = gameObject.AddComponent<UIDocument>();
+            var root = document.rootVisualElement;
+            root.Add(new VisualElement { name = "background" });
+            root.Add(new VisualElement { name = "content" });
+            root.Add(new Button { name = "btn_close-modal" });
+            var modal = new VisualElement { name = "modal" };
+            modal.Add(new VisualElement { name = "modal__content" });
+            root.Add(modal);
+            return document;
+        }
+
+        private static void InvokeSetModalInputBlocked(
+            ScreenController screenController,
+            bool blocked)
+        {
+            var method = typeof(ScreenController).GetMethod(
+                "SetModalInputBlocked",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Invoke(screenController, new object[] { blocked });
+        }
+
+        private static void InvokeLoadScreenAsync(
+            UIManager manager,
+            ScreenEnum screen,
+            bool forceReload,
+            bool closeActiveModal)
+        {
+            var method = typeof(UIManager).GetMethod(
+                "LoadScreenAsync",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: new[] { typeof(ScreenEnum), typeof(bool), typeof(bool) },
+                modifiers: null);
+            var task = (Task)method.Invoke(
+                manager,
+                new object[] { screen, forceReload, closeActiveModal });
+            task.GetAwaiter().GetResult();
+        }
+
+        private static object GetPrivateField(object instance, string name)
+        {
+            return instance.GetType().GetField(
+                name,
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(instance);
+        }
+
+        private static void SetPrivateField(object instance, string name, object value)
+        {
+            var type = instance.GetType();
+            while (type != null)
+            {
+                var field = type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+                if (field != null)
+                {
+                    field.SetValue(instance, value);
+                    return;
+                }
+
+                type = type.BaseType;
+            }
+
+            throw new MissingFieldException(instance.GetType().FullName, name);
+        }
+
+        private sealed class TestScreenController : ScreenController
+        {
+            public TestScreenController(UIDocument document)
+                : base(document)
+            {
+            }
+
+            protected override ScreenEnum _screenAssetName => ScreenEnum.HomeScreen;
+
+            protected override void BindView()
+            {
+            }
+
+            protected override void OnSubscribeToEvents()
+            {
+            }
+
+            protected override void OnUnsubscribeFromEvents()
+            {
+            }
+        }
+
+        private sealed class TestModalController : ModalController
+        {
+            public TestModalController(UIDocument document)
+                : base(document)
+            {
+            }
+
+            protected override ScreenEnum _modalAssetName => ScreenEnum.AccountPromptModal;
+
+            protected override Task OnShowAsync()
+            {
+                return Task.CompletedTask;
+            }
+
+            protected override void OnSubscribeToEvents()
+            {
+            }
+
+            protected override void OnUnsubscribeFromEvents()
+            {
+            }
         }
     }
 }
