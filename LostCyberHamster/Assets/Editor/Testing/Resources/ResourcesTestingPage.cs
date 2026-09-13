@@ -1,5 +1,6 @@
 using System;
 using GameManagement;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 using Vues.GameCore;
@@ -23,51 +24,78 @@ namespace LostCyberHamster.Editor.Testing.Resources
 
         public void Draw(Action navigateBack)
         {
-            using (new EditorGUILayout.HorizontalScope())
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                if (GUILayout.Button("Back", GUILayout.Width(70f)))
-                    navigateBack?.Invoke();
-                EditorGUILayout.LabelField("Resources", EditorStyles.boldLabel);
-            }
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(140f),
+                            GUILayout.Height(60f)))
+                    {
+                        navigateBack?.Invoke();
+                    }
 
-            EditorGUILayout.Space(8f);
-            bool isReady = EditorApplication.isPlaying && ResourceManager.IsReady;
-            int previousAmount = _amount;
-            using (new EditorGUI.DisabledScope(!isReady))
-                _amount = EditorGUILayout.IntField("Amount", _amount);
-            if (_amount != previousAmount)
-            {
-                _status = "Укажите Amount и нажмите Add Money.";
-                _statusType = MessageType.Info;
-            }
+                    GUILayout.Space(12f);
+                    EditorGUILayout.LabelField("Resources", TestingWindowLayout.PageTitleStyle);
+                }
 
-            int balance = isReady
-                ? ResourceManager.GetCurrentBalance(ResourceType.Coins)
-                : 0;
-            bool amountValid = _amount > 0 && balance <= int.MaxValue - _amount;
-            using (new EditorGUI.DisabledScope(!isReady || !amountValid))
-            {
-                if (GUILayout.Button("Add Money"))
-                    AddMoney();
-            }
+                TestingWindowLayout.SpaceSection();
+                bool isReady = EditorApplication.isPlaying && ResourceManager.IsReady;
+                int previousAmount = _amount;
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("MONEY", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        "Точное DEV-начисление Money. Значение и результат совпадают с runtime DEV.",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+                    using (new EditorGUI.DisabledScope(!isReady))
+                        _amount = EditorGUILayout.IntField("Amount", _amount);
+                    if (_amount != previousAmount)
+                    {
+                        _status = "Укажите Amount и нажмите Add Money.";
+                        _statusType = MessageType.Info;
+                    }
 
-            if (!isReady)
-            {
-                EditorGUILayout.HelpBox(
-                    "Resources доступны в Play Mode после загрузки PlayerData.",
-                    MessageType.Info);
-            }
-            else if (_amount <= 0)
-            {
-                EditorGUILayout.HelpBox("Amount должен быть больше 0.", MessageType.Warning);
-            }
-            else if (!amountValid)
-            {
-                EditorGUILayout.HelpBox("Amount переполняет Money balance.", MessageType.Warning);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(_status, _statusType);
+                    int balance = isReady
+                        ? ResourceManager.GetCurrentBalance(ResourceType.Coins)
+                        : 0;
+                    bool amountValid = _amount > 0 && balance <= int.MaxValue - _amount;
+                    EditorGUILayout.Space(8f);
+                    using (new EditorGUI.DisabledScope(!isReady || !amountValid))
+                    {
+                        if (GUILayout.Button(
+                                "Add Money",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Height(68f)))
+                        {
+                            AddMoney();
+                        }
+                    }
+
+                    TestingWindowLayout.SpaceSection();
+                    EditorGUILayout.LabelField("STATUS", TestingWindowLayout.SectionTitleStyle);
+                    if (!isReady)
+                    {
+                        EditorGUILayout.LabelField(
+                            "Resources доступны в Play Mode после загрузки PlayerData.",
+                            TestingWindowLayout.BodyStyle);
+                    }
+                    else if (_amount <= 0)
+                    {
+                        EditorGUILayout.LabelField("Amount должен быть больше 0.", TestingWindowLayout.BodyStyle);
+                    }
+                    else if (!amountValid)
+                    {
+                        EditorGUILayout.LabelField("Amount переполняет Money balance.", TestingWindowLayout.BodyStyle);
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField(_status, TestingWindowLayout.BodyStyle);
+                    }
+                }
             }
         }
 

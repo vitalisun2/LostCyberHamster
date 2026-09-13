@@ -26,22 +26,19 @@ namespace Assets.Scripts.DevTools.Core
     internal sealed class DevToolsOverlayShell
     {
         private const int _sortingOrder = 32767;
-        private const float _baseMargin = 10f;
-        private const float _baseOpenButtonWidth = 64f;
-        private const float _baseOpenButtonTopOffset = 80f;
-        private const float _baseHeaderHeight = 40f;
-        private const float _baseRootPanelWidth = 300f;
-        private const float _baseRootPanelHeight = 270f + DevToolsTheme.PrimaryButtonHeight + DevToolsTheme.ContentSpacing;
-        private const float _baseFeaturePanelWidth = 540f;
-        private const float _baseFeaturePanelHeight = 569f;
-        private const float _baseMinimumPanelWidth = 300f;
-        private const float _baseMinimumPanelHeight = 220f;
-        private const float _baseInset = 16f;
-        private const float _baseBackButtonWidth = 88f;
-        private const float _baseResizeHandleSize = 44f;
+        private const float _baseMargin = 10f * DevToolsTheme.UiScale;
+        private const float _baseOpenButtonWidth = 64f * DevToolsTheme.UiScale;
+        private const float _baseOfflineOpenButtonWidth = 96f * DevToolsTheme.UiScale;
+        private const float _baseOpenButtonTopOffset = 80f * DevToolsTheme.UiScale;
+        private const float _baseHeaderHeight = 40f * DevToolsTheme.UiScale;
+        private const float _baseMinimumPanelWidth = 300f * DevToolsTheme.UiScale;
+        private const float _baseMinimumPanelHeight = 220f * DevToolsTheme.UiScale;
+        private const float _baseInset = 16f * DevToolsTheme.UiScale;
+        private const float _baseBackButtonWidth = 88f * DevToolsTheme.UiScale;
+        private const float _baseResizeHandleSize = 44f * DevToolsTheme.UiScale;
 
         private static readonly Color _openButtonColor = new Color(1f, 1f, 1f, 0.72f);
-        private static readonly Color _panelColor = new Color(1f, 1f, 1f, 0.985f);
+        private static readonly Color _panelColor = new Color(1f, 1f, 1f, 1f);
 
         private readonly GameObject _host;
         private readonly GameObject _openButtonObject;
@@ -70,7 +67,6 @@ namespace Assets.Scripts.DevTools.Core
         private bool _isFeatureScreenOpen;
         private bool _hasPanelLayout;
         private bool _hasUserPanelSize;
-        private bool _layoutWasFeatureScreen;
         private Vector2 _panelTopLeft;
         private Vector2 _panelSize;
         private bool? _displayedOffline;
@@ -371,32 +367,30 @@ namespace Assets.Scripts.DevTools.Core
                 _openButtonRect,
                 defaultLeft,
                 openButtonTop,
-                (_displayedOffline == true ? 96f : _baseOpenButtonWidth) * scale,
+                (_displayedOffline == true ? _baseOfflineOpenButtonWidth : _baseOpenButtonWidth) * scale,
                 _baseHeaderHeight * scale);
 
             float availableWidth = Mathf.Max(
                 _baseOpenButtonWidth * scale,
                 safeArea.width - margin * 2f);
             float availableHeight = Mathf.Max(_baseHeaderHeight * scale, safeArea.height - margin * 2f);
-            float baseWidth = _isFeatureScreenOpen ? _baseFeaturePanelWidth : _baseRootPanelWidth;
-            float baseHeight = _isFeatureScreenOpen ? _baseFeaturePanelHeight : _baseRootPanelHeight;
             Vector2 defaultSize = new Vector2(
-                Mathf.Min(baseWidth * scale, availableWidth),
-                Mathf.Min(baseHeight * scale, availableHeight));
+                availableWidth,
+                availableHeight);
 
-            // До первого resize сохраняем прежние root/feature размеры, затем используем пользовательский размер.
+            // Пока пользователь не менял layout, DEV-панель занимает весь безопасный экран.
             if (!_hasPanelLayout)
             {
                 _panelTopLeft = new Vector2(defaultLeft, defaultTop);
                 _panelSize = defaultSize;
                 _hasPanelLayout = true;
             }
-            else if (!_hasUserPanelSize && _layoutWasFeatureScreen != _isFeatureScreenOpen)
+            else if (!_hasUserPanelSize)
             {
+                _panelTopLeft = new Vector2(defaultLeft, defaultTop);
                 _panelSize = defaultSize;
             }
 
-            _layoutWasFeatureScreen = _isFeatureScreenOpen;
             ClampPanelLayout(safeArea, margin, scale);
 
             float left = _panelTopLeft.x;
@@ -443,7 +437,7 @@ namespace Assets.Scripts.DevTools.Core
             float contentRight = Mathf.Max(inset, resizeHandleSize * 0.75f);
             float contentBottom = Mathf.Max(inset, resizeHandleSize * 0.75f);
             _activeScreen?.ApplyLayout(inset, contentTop, contentRight, contentBottom);
-            _titleText.fontSize = Mathf.RoundToInt(16f * scale);
+            _titleText.fontSize = Mathf.RoundToInt(DevToolsTheme.WindowTitleFontSize * scale);
             foreach (Text text in _openButtonObject.GetComponentsInChildren<Text>(true))
             {
                 text.fontSize = Mathf.RoundToInt(DevToolsTheme.ButtonFontSize * scale);
@@ -457,6 +451,7 @@ namespace Assets.Scripts.DevTools.Core
 
             float scale = GetScale();
             _panelTopLeft += new Vector2(pointerDelta.x, -pointerDelta.y);
+            _hasUserPanelSize = true;
             ClampPanelLayout(GetSafeArea(), _baseMargin * scale, scale);
             ApplyLayout();
         }
@@ -518,9 +513,7 @@ namespace Assets.Scripts.DevTools.Core
 
         private static float GetScale()
         {
-            float widthScale = Screen.width / 720f;
-            float heightScale = Screen.height / 360f;
-            return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 1f, 1.6f);
+            return DevToolsTheme.GetScreenScale();
         }
 
         private static Rect GetSafeArea()

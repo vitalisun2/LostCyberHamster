@@ -11,7 +11,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
     internal sealed class ExperienceProgressTestingView
     {
         private readonly Assets.Scripts.DevTools.ReturnActivityTesting.ReturnActivityTestingView _returnActivities;
-        private const int OutputFontSize = 18;
+        private const int OutputFontSize = DevToolsTheme.HeadingFontSize + 6;
 
         private readonly GameObject _mainMenuHint;
         private readonly Button _prepareNewRecordButton;
@@ -39,21 +39,31 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 "ExperienceProgressTestingHeading",
                 content,
                 "XP/LEVEL PROGRESS TESTING");
+
+            Transform overviewCard = uiFactory.CreateCard(
+                "ExperienceOverviewCard",
+                content,
+                DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("ExperienceOverviewHeading", overviewCard, "FLOW");
             _mainMenuHint = uiFactory.CreateBodyText(
                 "MainMenuHint",
-                content,
+                overviewCard,
                 "Откройте Main Menu. Тест не переключает текущий экран.")
                 .gameObject;
             uiFactory.CreateBodyText(
                 "ProgressInfo",
-                content,
+                overviewCard,
                 "Target остаётся тем же до completion. Prepare берёт реальный weekly best + 10. " +
                 "Complete всегда записывает 3 stars; без Prepare использует random score 0–100.");
 
-            // Передаём две команды общему runner через события представления.
+            Transform runCard = uiFactory.CreateCard(
+                "ExperienceRunCard",
+                content,
+                DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("ExperienceRunHeading", runCard, "RUN");
             _prepareNewRecordButton = uiFactory.CreateButton(
                 "PrepareNewRecordButton",
-                content,
+                runCard,
                 "Prepare New Record",
                 DevToolsTheme.Button,
                 () => PrepareNewRecordRequested?.Invoke());
@@ -61,7 +71,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 _prepareNewRecordButton.GetComponentInChildren<Text>();
             _completeNextLevelButton = uiFactory.CreateButton(
                 "CompleteNextLevelButton",
-                content,
+                runCard,
                 "Complete Next Uncompleted Level",
                 DevToolsTheme.Primary,
                 () => CompleteNextLevelRequested?.Invoke(),
@@ -79,19 +89,51 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 "Status",
                 "Status");
 
-            // Ручная выдача и инспекция первой сессии совпадают с Tools/Testing.
+            Transform firstSessionCard = uiFactory.CreateCard(
+                "FirstSessionCard",
+                content,
+                DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("FirstSessionHeading", firstSessionCard, "FIRST SESSION");
+            uiFactory.CreateBodyText(
+                "FirstSessionDescription",
+                firstSessionCard,
+                "Ручная выдача и инспекция первой сессии совпадают с editor Tools/Testing.");
             _grantTutorialBonusButton = uiFactory.CreateButton(
-                "GrantTutorialBonusButton", content, "Выдать tutorial-бонус (один раз)",
+                "GrantTutorialBonusButton", firstSessionCard, "Выдать tutorial-бонус (один раз)",
                 DevToolsTheme.Button, () => GrantTutorialBonusRequested?.Invoke());
             _inspectFirstSessionButton = uiFactory.CreateButton(
-                "InspectFirstSessionButton", content, "Обновить состояние первой сессии",
+                "InspectFirstSessionButton", firstSessionCard, "Обновить состояние первой сессии",
                 DevToolsTheme.Button, () => InspectFirstSessionRequested?.Invoke());
-            _firstSessionStateText = CreateOutput(uiFactory, content, "FirstSessionState", "First Session · Snapshot");
-            uiFactory.CreateSectionHeading("ProgressionTesting", content, "PROGRESSION · ИЗОЛИРОВАННЫЙ ПРОФИЛЬ");
+
+            Text firstSessionSnapshotHeading = uiFactory.CreateSectionHeading(
+                "FirstSessionSnapshotHeading",
+                firstSessionCard,
+                "SNAPSHOT");
+            firstSessionSnapshotHeading.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
+            _firstSessionStateText = uiFactory.CreateBodyText(
+                "FirstSessionState",
+                firstSessionCard,
+                string.Empty);
+            _firstSessionStateText.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
+
+            Transform progressionCard = uiFactory.CreateCard(
+                "ProgressionCard",
+                content,
+                DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("ProgressionTesting", progressionCard, "PROGRESSION · ИЗОЛИРОВАННЫЙ ПРОФИЛЬ");
             foreach (var command in AbilityProgressTestingRunner.Shared.Commands)
                 _progressionButtons.Add(uiFactory.CreateButton("ProgressionCommand" + _progressionButtons.Count,
-                    content, command.Label, DevToolsTheme.Button, () => command.Execute()));
-            _progressionState = CreateOutput(uiFactory, content, "ProgressionSnapshot", "Progression · Snapshot");
+                    progressionCard, command.Label, DevToolsTheme.Button, () => command.Execute()));
+            Text progressionSnapshotHeading = uiFactory.CreateSectionHeading(
+                "ProgressionSnapshotHeading",
+                progressionCard,
+                "SNAPSHOT");
+            progressionSnapshotHeading.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
+            _progressionState = uiFactory.CreateBodyText(
+                "ProgressionSnapshot",
+                progressionCard,
+                string.Empty);
+            _progressionState.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
             _returnActivities = new Assets.Scripts.DevTools.ReturnActivityTesting.ReturnActivityTestingView(content, uiFactory);
         }
 
@@ -137,13 +179,13 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 card,
                 heading);
             headingText.fontStyle = FontStyle.Bold;
-            headingText.fontSize = OutputFontSize;
+            headingText.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
 
             Text valueText = uiFactory.CreateBodyText(
                 $"{name}Text",
                 card,
                 string.Empty);
-            valueText.fontSize = OutputFontSize;
+            valueText.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
             return valueText;
         }
     }

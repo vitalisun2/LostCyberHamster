@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts.DevTools.SkinTesting;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace LostCyberHamster.Editor.Testing.SkinTesting
     /// </summary>
     internal sealed class SkinTestingPage : IDisposable
     {
-        private const float ActionButtonWidth = 260f;
+        private const float ActionButtonWidth = 360f;
 
         private readonly Action _repaint;
         private readonly SkinTestingRunner _runner;
@@ -26,28 +27,32 @@ namespace LostCyberHamster.Editor.Testing.SkinTesting
         /// <summary>Рисует одну команду и её компактный результат.</summary>
         public void Draw(Action navigateBack)
         {
-            DrawHeader(navigateBack);
-
-            // Показываем текущую готовность bootstrap и каталога.
-            EditorGUILayout.HelpBox(
-                _runner.AvailabilityStatus,
-                MessageType.Info);
-            EditorGUILayout.Space(6f);
-
-            // Запускаем единый production flow без дополнительных шагов UI.
-            using (new EditorGUI.DisabledScope(!_runner.CanRun))
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                if (GUILayout.Button(
-                        "Unlock, Buy & Equip Next Skin",
-                        GUILayout.Width(ActionButtonWidth),
-                        GUILayout.Height(34f)))
-                {
-                    _runner.UnlockBuyAndEquipNextSkin();
-                }
-            }
+                DrawHeader(navigateBack);
 
-            EditorGUILayout.Space(10f);
-            DrawStatus();
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("FLOW", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(_runner.AvailabilityStatus, TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+
+                    using (new EditorGUI.DisabledScope(!_runner.CanRun))
+                    {
+                        if (GUILayout.Button(
+                                "Unlock, Buy & Equip Next Skin",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Width(ActionButtonWidth),
+                                GUILayout.Height(68f)))
+                        {
+                            _runner.UnlockBuyAndEquipNextSkin();
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(12f);
+                DrawStatus();
+            }
         }
 
         /// <summary>Передаёт runner вход и выход из Play Mode.</summary>
@@ -73,16 +78,17 @@ namespace LostCyberHamster.Editor.Testing.SkinTesting
                 if (GUILayout.Button("Back", GUILayout.Width(70f)))
                     navigateBack?.Invoke();
 
-                EditorGUILayout.LabelField("Skin Testing", EditorStyles.boldLabel);
+                GUILayout.Space(12f);
+                EditorGUILayout.LabelField("Skin Testing", TestingWindowLayout.PageTitleStyle);
             }
         }
 
         private void DrawStatus()
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (TestingWindowLayout.BeginCard())
             {
-                EditorGUILayout.LabelField("Status", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField(_runner.Status, EditorStyles.wordWrappedLabel);
+                EditorGUILayout.LabelField("Status", TestingWindowLayout.SectionTitleStyle);
+                EditorGUILayout.LabelField(_runner.Status, TestingWindowLayout.BodyStyle);
                 EditorGUILayout.LabelField("Target", _runner.TargetStatus);
                 EditorGUILayout.LabelField("Price", _runner.PriceStatus);
                 EditorGUILayout.LabelField("Granted", _runner.GrantedStatus);

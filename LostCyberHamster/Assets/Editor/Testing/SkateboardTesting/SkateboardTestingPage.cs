@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts.DevTools.SkateboardTesting;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,8 +11,8 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
     /// </summary>
     internal sealed class SkateboardTestingPage : IDisposable
     {
-        private const float CommandButtonWidth = 210f;
-        private const int StatusFontSize = 14;
+        private const float CommandButtonWidth = 360f;
+        private const int StatusFontSize = 20;
 
         private readonly Action _repaint;
         private readonly SkateboardTestingRunner _runner;
@@ -33,22 +34,26 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
         /// </summary>
         public void Draw(Action navigateBack)
         {
-            DrawHeader(navigateBack);
-
-            if (!EditorApplication.isPlaying)
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                EditorGUILayout.HelpBox(
-                    "Skateboard Testing доступен только в Play Mode.",
-                    MessageType.Info);
-            }
+                DrawHeader(navigateBack);
 
-            DrawPreparation();
-            EditorGUILayout.Space(8f);
-            DrawScriptedScenarios();
-            EditorGUILayout.Space(8f);
-            DrawGuidedBehaviorChecks();
-            EditorGUILayout.Space(8f);
-            DrawLiveStatus();
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorGUILayout.LabelField(
+                        "Skateboard Testing доступен только в Play Mode.",
+                        TestingWindowLayout.BodyStyle);
+                    TestingWindowLayout.SpaceSection();
+                }
+
+                DrawPreparation();
+                EditorGUILayout.Space(12f);
+                DrawScriptedScenarios();
+                EditorGUILayout.Space(12f);
+                DrawGuidedBehaviorChecks();
+                EditorGUILayout.Space(12f);
+                DrawLiveStatus();
+            }
         }
 
         /// <summary>
@@ -79,13 +84,17 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             {
                 using (new EditorGUI.DisabledScope(_runner.IsBusy))
                 {
-                    if (GUILayout.Button("Back", GUILayout.Width(70f)))
+                        if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(140f),
+                            GUILayout.Height(60f)))
                         navigateBack?.Invoke();
                 }
 
                 EditorGUILayout.LabelField(
                     "Skateboard Testing",
-                    EditorStyles.boldLabel);
+                        TestingWindowLayout.PageTitleStyle);
             }
         }
 
@@ -98,7 +107,9 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
                 {
                     if (GUILayout.Button(
                             "Unlock & Select Skateboard",
-                            GUILayout.Width(CommandButtonWidth)))
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(CommandButtonWidth),
+                            GUILayout.Height(68f)))
                     {
                         _runner.PrepareUnlockAndSelectSkateboard();
                     }
@@ -109,13 +120,13 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             {
                 using (new EditorGUI.DisabledScope(!_runner.CanTogglePause))
                 {
-                    if (GUILayout.Button(_runner.PauseButtonLabel))
+                    if (GUILayout.Button(_runner.PauseButtonLabel, TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.TogglePause();
                 }
 
                 using (new EditorGUI.DisabledScope(!_runner.CanStopCheck))
                 {
-                    if (GUILayout.Button("Stop Check"))
+                    if (GUILayout.Button("Stop Check", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.StopCheck();
                 }
             }
@@ -130,9 +141,9 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Jump"))
+                    if (GUILayout.Button("Jump", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.RunJumpScenario();
-                    if (GUILayout.Button("Super Jump"))
+                    if (GUILayout.Button("Super Jump", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.RunSuperJumpScenario();
                 }
             }
@@ -147,17 +158,17 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Timeout (automatic)"))
+                    if (GUILayout.Button("Timeout (automatic)", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.RunTimeoutCheck();
-                    if (GUILayout.Button("Ride Collision"))
+                    if (GUILayout.Button("Ride Collision", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.StartRideCollisionCheck();
                 }
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Jump Collision"))
+                    if (GUILayout.Button("Jump Collision", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.StartJumpCollisionCheck();
-                    if (GUILayout.Button("Lane Shift"))
+                    if (GUILayout.Button("Lane Shift", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f)))
                         _runner.StartLaneShiftCheck();
                 }
             }
@@ -221,7 +232,7 @@ namespace LostCyberHamster.Editor.Testing.SkateboardTesting
         }
 
         private GUIStyle StatusStyle =>
-            _statusStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            _statusStyle ??= new GUIStyle(TestingWindowLayout.BodyStyle)
             {
                 fontSize = StatusFontSize,
                 wordWrap = true

@@ -9,6 +9,8 @@ namespace LostCyberHamster.Editor.Testing
     /// <summary>Показывает общий Tools/Testing с доступными testing-страницами.</summary>
     public sealed class CloudSaveTestingWindow : EditorWindow
     {
+        private CloudSaveTestingUiToolkitController _uiToolkitController;
+
         private enum TestingPage
         {
             Start,
@@ -24,34 +26,34 @@ namespace LostCyberHamster.Editor.Testing
         }
 
         /// <summary>Минимальная ширина окна.</summary>
-        private const float MinWindowWidth = 520f;
+        private const float MinWindowWidth = 960f;
 
         /// <summary>Минимальная высота окна.</summary>
-        private const float MinWindowHeight = 560f;
+        private const float MinWindowHeight = 900f;
 
         /// <summary>Ширина кнопки запуска.</summary>
-        private const float TestButtonWidth = 80f;
+        private const float TestButtonWidth = 180f;
 
         /// <summary>Ширина кнопок управления.</summary>
-        private const float CommandButtonWidth = 100f;
+        private const float CommandButtonWidth = 220f;
 
         /// <summary>Минимальная пауза между автоматическими шагами.</summary>
         private const int MinStepDelaySeconds = 1;
 
         /// <summary>Ширина поля паузы между автоматическими шагами.</summary>
-        private const float StepDelayFieldWidth = 44f;
+        private const float StepDelayFieldWidth = 88f;
 
         /// <summary>Размер текста шага и результата.</summary>
-        private const int OutputFontSize = 22;
+        private const int OutputFontSize = 32;
 
         /// <summary>Отступ между выводом шага и результата.</summary>
-        private const float OutputBlockSpacing = 6f;
+        private const float OutputBlockSpacing = 12f;
 
         /// <summary>Ширина кнопок выбора продукта.</summary>
-        private const float ProductButtonWidth = 190f;
+        private const float ProductButtonWidth = 360f;
 
         /// <summary>Высота кнопок выбора продукта.</summary>
-        private const float ProductButtonHeight = 34f;
+        private const float ProductButtonHeight = 68f;
 
         /// <summary>Выполняет выбранный сценарий.</summary>
         private CloudSaveE2ERunner _runner;
@@ -89,12 +91,26 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Стиль крупного текста шага и результата.</summary>
         private GUIStyle _outputStyle;
 
+        public void CreateGUI()
+        {
+            EnsureUiToolkitController();
+        }
+
         /// <summary>Открывает общее окно тестирования.</summary>
         [MenuItem("Tools/Testing", priority = 700)]
         public static void ShowWindow()
         {
             var window = GetWindow<CloudSaveTestingWindow>("Testing");
             window.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
+            if (window.position.width < MinWindowWidth || window.position.height < MinWindowHeight)
+            {
+                var rect = window.position;
+                window.position = new Rect(
+                    rect.x,
+                    rect.y,
+                    Mathf.Max(rect.width, MinWindowWidth),
+                    Mathf.Max(rect.height, MinWindowHeight));
+            }
             window.BindNetworkFacade();
             window.OnNetworkModeChanged();
             window.Focus();
@@ -103,6 +119,12 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Создаёт testing-страницы и подключает единый Play Mode callback.</summary>
         private void OnEnable()
         {
+            EnsureUiToolkitController();
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            if (_uiToolkitController != null)
+                return;
+
             _runner = new CloudSaveE2ERunner();
             _runner.Changed += Repaint;
             _gameProgressPage = new GameProgress.GameProgressTestingPage(Repaint);
@@ -120,6 +142,14 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Освобождает testing-страницы при закрытии окна.</summary>
         private void OnDisable()
         {
+            if (_uiToolkitController != null)
+            {
+                EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                _uiToolkitController.Dispose();
+                _uiToolkitController = null;
+                return;
+            }
+
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             if (_networkFacade != null)
                 _networkFacade.NetworkModeChanged -= OnNetworkModeChanged;
@@ -143,6 +173,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует текущую страницу окна.</summary>
         private void OnGUI()
         {
+            if (_uiToolkitController != null)
+                return;
+
             BindNetworkFacade();
             switch (_currentPage)
             {
@@ -184,146 +217,164 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует список доступных продуктов.</summary>
         private void DrawStartPage()
         {
-            EditorGUILayout.LabelField("Testing", EditorStyles.boldLabel);
-            EditorGUILayout.Space(8f);
-            if (GUILayout.Button("Аккаунт", GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-                _currentPage = TestingPage.Account;
-
-            using (new EditorGUILayout.HorizontalScope())
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                if (GUILayout.Button(
-                        "Cloud Save Testing",
-                        GUILayout.Width(ProductButtonWidth),
-                        GUILayout.Height(ProductButtonHeight)))
-                {
-                    _currentPage = TestingPage.CloudSave;
-                }
+                EditorGUILayout.LabelField("Testing", TestingWindowLayout.PageTitleStyle);
+                EditorGUILayout.LabelField(
+                    "Общий каталог testing-разделов. Структура совпадает с runtime DEV, но адаптирована под editor-окно.",
+                    TestingWindowLayout.BodyStyle);
+                TestingWindowLayout.SpaceSection();
 
-                if (GUILayout.Button(
-                        "Game Progress Testing",
-                        GUILayout.Width(ProductButtonWidth),
-                        GUILayout.Height(ProductButtonHeight)))
-                {
-                    _currentPage = TestingPage.GameProgress;
-                }
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                DrawNavigationCard(
+                    "Аккаунт",
+                    "Чистый старт, local reset и unlink тестового аккаунта.",
+                    () => _currentPage = TestingPage.Account);
+                DrawNavigationCard(
+                    "Cloud Save Testing",
+                    "Сценарии конфликтов и последовательных действий для Cloud Save.",
+                    () => _currentPage = TestingPage.CloudSave);
+                DrawNavigationCard(
+                    "Game Progress Testing",
+                    "Подготовка level up и победа по реальному production flow.",
+                    () => _currentPage = TestingPage.GameProgress);
+                DrawNavigationCard(
                     "XP/Level Progress Testing",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.ExperienceProgress;
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                    "Прогресс уровня, первая сессия и activity/return сценарии.",
+                    () => _currentPage = TestingPage.ExperienceProgress);
+                DrawNavigationCard(
                     "Quests",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.Quests;
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                    "Выбор активного квеста и команды его жизненного цикла.",
+                    () => _currentPage = TestingPage.Quests);
+                DrawNavigationCard(
                     "Skateboard Mode Testing",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.Skateboard;
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                    "Скриптовые и guided проверки skateboard режима.",
+                    () => _currentPage = TestingPage.Skateboard);
+                DrawNavigationCard(
                     "Skin Testing",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.Skin;
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                    "Unlock, buy и equip следующего скина единым production flow.",
+                    () => _currentPage = TestingPage.Skin);
+                DrawNavigationCard(
                     "Resources",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.Resources;
-            }
-
-            EditorGUILayout.Space(6f);
-            if (GUILayout.Button(
+                    "Точное DEV-начисление Money и проверка текущего баланса.",
+                    () => _currentPage = TestingPage.Resources);
+                DrawNavigationCard(
                     "Networking",
-                    GUILayout.Width(ProductButtonWidth),
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                _currentPage = TestingPage.Networking;
+                    "Forced offline режим с тем же состоянием, что и в runtime DEV.",
+                    () => _currentPage = TestingPage.Networking);
             }
         }
 
         /// <summary>Показывает актуальный игровой сервис и общий с DEV чистый старт.</summary>
         private void DrawAccountPage()
         {
-            if (GUILayout.Button("Back", GUILayout.Width(70f))) _currentPage = TestingPage.Start;
-            EditorGUILayout.LabelField("Аккаунт", EditorStyles.boldLabel);
-            var account = EditorApplication.isPlaying && Zenject.ProjectContext.HasInstance
-                ? Zenject.ProjectContext.Instance.Container.TryResolve<AccountService>() : null;
-            if (!ReferenceEquals(account, _testingAccount))
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                _testingAccount = account;
-                _accountResult = null;
-            }
-            EditorGUILayout.HelpBox(
-                "Чистый старт заменяет локальный прогресс новым гостевым профилем. " +
-                "Настройки сохраняются. Без сети гостевой аккаунт подключится позже.", MessageType.Info);
-            EditorGUILayout.LabelField("Состояние", account?.State.ToString() ?? "Запустите Play Mode");
-
-            // Доступность определяется тем же сервисом при каждой перерисовке и смене Play Mode.
-            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
-            {
-                if (GUILayout.Button("ЧИСТЫЙ СТАРТ — НОВЫЙ ГОСТЬ"))
+                DrawPageHeader("Аккаунт", _runner?.IsActive == true, () => _currentPage = TestingPage.Start);
+                var account = EditorApplication.isPlaying && Zenject.ProjectContext.HasInstance
+                    ? Zenject.ProjectContext.Instance.Container.TryResolve<AccountService>() : null;
+                if (!ReferenceEquals(account, _testingAccount))
                 {
-                    try
-                    {
-                        account.StartFreshGuestForTesting();
-                        _accountResult = "Новый прогресс готов. Гостевой аккаунт подключится при доступной сети.";
-                    }
-                    catch (Exception exception)
-                    {
-                        _accountResult = "Чистый старт не завершён. " + exception.Message;
-                        Debug.LogError($"[Account] Fresh start failed: {exception}");
-                    }
-                    Repaint();
+                    _testingAccount = account;
+                    _accountResult = null;
                 }
-            }
-            if (!string.IsNullOrEmpty(_accountResult))
-                EditorGUILayout.HelpBox(_accountResult, MessageType.Info);
 
-            // Технические сбросы используют те же методы, что и отдельные действия DEV.
-            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
-            {
-                if (GUILayout.Button("RESET LOCAL ACCOUNT STATE"))
+                using (TestingWindowLayout.BeginCard())
                 {
-                    try
+                    EditorGUILayout.LabelField("СОСТОЯНИЕ", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        account?.State.ToString() ?? "Запустите Play Mode",
+                        TestingWindowLayout.BodyStyle);
+                }
+
+                TestingWindowLayout.SpaceSection();
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("ЧИСТЫЙ СТАРТ", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        "Чистый старт заменяет локальный прогресс новым гостевым профилем. Настройки сохраняются. Без сети гостевой аккаунт подключится позже.",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+                    using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
                     {
-                        account.ResetLocalAccountStateForTesting();
-                        _accountResult = "Локальная сессия очищена. Прогресс сохраняет прежнего владельца.";
-                    }
-                    catch (Exception exception)
-                    {
-                        _accountResult = exception.Message;
-                        Debug.LogError($"[Account] Local reset failed: {exception}");
+                        if (GUILayout.Button(
+                                "ЧИСТЫЙ СТАРТ — НОВЫЙ ГОСТЬ",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Height(ProductButtonHeight)))
+                        {
+                            try
+                            {
+                                account.StartFreshGuestForTesting();
+                                _accountResult = "Новый прогресс готов. Гостевой аккаунт подключится при доступной сети.";
+                            }
+                            catch (Exception exception)
+                            {
+                                _accountResult = "Чистый старт не завершён. " + exception.Message;
+                                Debug.LogError($"[Account] Fresh start failed: {exception}");
+                            }
+                            Repaint();
+                        }
                     }
                 }
-            }
-            using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting ||
-                       !account.TryGetLinkedPlayerId(out _)))
-            {
-                if (GUILayout.Button("ОТВЯЗАТЬ АККАУНТ И ОЧИСТИТЬ СЕССИЮ"))
-                    UnlinkAccountForTesting(account);
+
+                TestingWindowLayout.SpaceSection();
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("LOCAL RESET", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        "Очищает локальную сессию. Текущий прогресс остаётся привязан к прежнему владельцу.",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+                    using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting))
+                    {
+                        if (GUILayout.Button(
+                                "RESET LOCAL ACCOUNT STATE",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Height(ProductButtonHeight)))
+                        {
+                            try
+                            {
+                                account.ResetLocalAccountStateForTesting();
+                                _accountResult = "Локальная сессия очищена. Прогресс сохраняет прежнего владельца.";
+                            }
+                            catch (Exception exception)
+                            {
+                                _accountResult = exception.Message;
+                                Debug.LogError($"[Account] Local reset failed: {exception}");
+                            }
+                        }
+                    }
+                }
+
+                TestingWindowLayout.SpaceSection();
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("ОТВЯЗКА ДЛЯ ТЕСТОВ", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        "Удаляет серверную привязку и локальную сессию прежнего аккаунта. Для новой игры используйте чистый старт.",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+                    using (new EditorGUI.DisabledScope(account == null || !account.CanStartFreshGuestForTesting ||
+                               !account.TryGetLinkedPlayerId(out _)))
+                    {
+                        if (GUILayout.Button(
+                                "ОТВЯЗАТЬ АККАУНТ И ОЧИСТИТЬ СЕССИЮ",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Height(ProductButtonHeight)))
+                        {
+                            UnlinkAccountForTesting(account);
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(_accountResult))
+                {
+                    TestingWindowLayout.SpaceSection();
+                    using (TestingWindowLayout.BeginCard())
+                    {
+                        EditorGUILayout.LabelField("РЕЗУЛЬТАТ", TestingWindowLayout.SectionTitleStyle);
+                        EditorGUILayout.LabelField(_accountResult, TestingWindowLayout.BodyStyle);
+                    }
+                }
             }
         }
 
@@ -355,6 +406,9 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Обновляет состояние аккаунта после действий в DEV и фонового входа.</summary>
         private void OnInspectorUpdate()
         {
+            if (_uiToolkitController != null)
+                return;
+
             if (_currentPage == TestingPage.Account) Repaint();
         }
 
@@ -381,45 +435,110 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Управляет тем же офлайн-режимом, что и runtime DEV, в том числе до запуска игры.</summary>
         private void DrawNetworkingPage()
         {
+            using (TestingWindowLayout.BeginCenteredColumn())
+            {
+                DrawPageHeader("Networking", false, () => _currentPage = TestingPage.Start);
+
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("FORCED OFFLINE", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        "Тот же переключатель offline режима, что и в runtime DEV. Состояние сохраняется между перезапусками.",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.Space(8f);
+                    if (GUILayout.Button(
+                            _networkFacade.IsForcedOffline ? "Turn on network" : "Turn off network",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Height(ProductButtonHeight)))
+                    {
+                        try { _networkFacade.SetForcedOffline(!_networkFacade.IsForcedOffline); }
+                        catch (Exception exception) { _networkError = $"Не удалось сохранить режим: {exception.Message}"; }
+                    }
+                }
+
+                TestingWindowLayout.SpaceSection();
+                using (TestingWindowLayout.BeginCard())
+                {
+                    EditorGUILayout.LabelField("STATUS", TestingWindowLayout.SectionTitleStyle);
+                    EditorGUILayout.LabelField(
+                        _networkFacade.IsForcedOffline
+                            ? "Симуляция офлайна включена"
+                            : "Сетевые обращения разрешены",
+                        TestingWindowLayout.BodyStyle);
+                    EditorGUILayout.LabelField(
+                        "Режим сохраняется после перезапуска",
+                        TestingWindowLayout.CaptionStyle);
+                    if (!EditorApplication.isPlaying)
+                        EditorGUILayout.LabelField(
+                            "Можно включить офлайн до Play Mode для проверки запуска игры.",
+                            TestingWindowLayout.BodyStyle);
+                    if (!string.IsNullOrEmpty(_networkError))
+                        EditorGUILayout.LabelField(_networkError, TestingWindowLayout.ErrorStyle);
+                }
+            }
+        }
+
+        private void DrawNavigationCard(string title, string description, Action action)
+        {
+            using (TestingWindowLayout.BeginCard())
+            {
+                EditorGUILayout.LabelField(title, TestingWindowLayout.SectionTitleStyle);
+                EditorGUILayout.LabelField(description, TestingWindowLayout.BodyStyle);
+                EditorGUILayout.Space(8f);
+                if (GUILayout.Button(
+                        title,
+                        TestingWindowLayout.ButtonStyle,
+                        GUILayout.Width(ProductButtonWidth),
+                        GUILayout.Height(ProductButtonHeight)))
+                {
+                    action?.Invoke();
+                }
+            }
+
+            TestingWindowLayout.SpaceSection();
+        }
+
+        private static void DrawPageHeader(string title, bool disableBack, Action navigateBack)
+        {
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("Back", GUILayout.Width(70f)))
-                    _currentPage = TestingPage.Start;
-                EditorGUILayout.LabelField("Networking", EditorStyles.boldLabel);
+                using (new EditorGUI.DisabledScope(disableBack))
+                {
+                    if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(140f),
+                            GUILayout.Height(60f)))
+                    {
+                        navigateBack?.Invoke();
+                    }
+                }
+
+                GUILayout.Space(12f);
+                EditorGUILayout.LabelField(title, TestingWindowLayout.PageTitleStyle);
             }
 
-            EditorGUILayout.Space(8f);
-            if (GUILayout.Button(_networkFacade.IsForcedOffline ? "Turn on network" : "Turn off network",
-                    GUILayout.Height(ProductButtonHeight)))
-            {
-                try { _networkFacade.SetForcedOffline(!_networkFacade.IsForcedOffline); }
-                catch (Exception exception) { _networkError = $"Не удалось сохранить режим: {exception.Message}"; }
-            }
-
-            EditorGUILayout.HelpBox(_networkFacade.IsForcedOffline
-                ? "Симуляция офлайна включена"
-                : "Сетевые обращения разрешены", MessageType.Info);
-            EditorGUILayout.LabelField("Режим сохраняется после перезапуска", EditorStyles.wordWrappedMiniLabel);
-            if (!EditorApplication.isPlaying)
-                EditorGUILayout.HelpBox("Можно включить офлайн до Play Mode для проверки запуска игры.", MessageType.Info);
-            if (!string.IsNullOrEmpty(_networkError))
-                EditorGUILayout.HelpBox(_networkError, MessageType.Error);
+            TestingWindowLayout.SpaceSection();
         }
 
         /// <summary>Рисует страницу Cloud Save.</summary>
         private void DrawCloudSavePage()
         {
-            DrawCloudSaveHeader();
-
-            if (!EditorApplication.isPlaying)
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                EditorGUILayout.HelpBox(
-                    "Cloud Save тесты доступны только в Play Mode. Запустите игру через Bootstrap.",
-                    MessageType.Info);
-            }
+                DrawCloudSaveHeader();
 
-            DrawScenarioList();
-            DrawRunnerPanel();
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorGUILayout.LabelField(
+                        "Cloud Save тесты доступны только в Play Mode. Запустите игру через Bootstrap.",
+                        TestingWindowLayout.BodyStyle);
+                    TestingWindowLayout.SpaceSection();
+                }
+
+                DrawScenarioList();
+                DrawRunnerPanel();
+            }
         }
 
         /// <summary>Рисует заголовок страницы.</summary>
@@ -429,14 +548,19 @@ namespace LostCyberHamster.Editor.Testing
             {
                 using (new EditorGUI.DisabledScope(_runner.IsActive))
                 {
-                    if (GUILayout.Button("Back", GUILayout.Width(70f)))
+                    if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(140f),
+                            GUILayout.Height(60f)))
                         _currentPage = TestingPage.Start;
                 }
 
-                EditorGUILayout.LabelField("Cloud Save Testing", EditorStyles.boldLabel);
+                GUILayout.Space(12f);
+                EditorGUILayout.LabelField("Cloud Save Testing", TestingWindowLayout.PageTitleStyle);
             }
 
-            EditorGUILayout.Space(6f);
+            TestingWindowLayout.SpaceSection();
         }
 
         /// <summary>Рисует список сценариев.</summary>
@@ -456,17 +580,17 @@ namespace LostCyberHamster.Editor.Testing
         /// <summary>Рисует один сценарий.</summary>
         private void DrawScenarioCard(CloudSaveE2EScenario scenario)
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (TestingWindowLayout.BeginCard())
             {
                 EditorGUILayout.LabelField(
                     CloudSaveE2EScenarioCatalog.GetTitle(scenario),
-                    EditorStyles.boldLabel);
+                    TestingWindowLayout.SectionTitleStyle);
                 EditorGUILayout.LabelField(
                     CloudSaveE2EScenarioCatalog.GetDescription(scenario),
-                    EditorStyles.wordWrappedLabel);
+                    TestingWindowLayout.BodyStyle);
                 EditorGUILayout.LabelField(
                     $"Ожидаемый результат: {CloudSaveE2EScenarioCatalog.GetExpectedResult(scenario)}",
-                    EditorStyles.wordWrappedLabel);
+                    TestingWindowLayout.BodyStyle);
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -474,70 +598,89 @@ namespace LostCyberHamster.Editor.Testing
                     using (new EditorGUI.DisabledScope(
                                !EditorApplication.isPlaying || _runner.IsActive))
                     {
-                        if (GUILayout.Button("Test", GUILayout.Width(TestButtonWidth)))
+                        if (GUILayout.Button(
+                                "Test",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Width(TestButtonWidth),
+                                GUILayout.Height(ProductButtonHeight)))
                             _runner.Start(scenario);
                     }
                 }
             }
+
+            TestingWindowLayout.SpaceSection();
         }
 
         /// <summary>Рисует состояние текущего запуска.</summary>
         private void DrawRunnerPanel()
         {
-            EditorGUILayout.Space(6f);
-            EditorGUILayout.LabelField("Текущий тест", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Состояние", GetStateTitle(_runner.State));
-
-            if (_runner.HasScenario)
+            using (TestingWindowLayout.BeginCard())
             {
-                EditorGUILayout.LabelField(
-                    "Сценарий",
-                    CloudSaveE2EScenarioCatalog.GetTitle(_runner.CurrentScenario));
-            }
+                EditorGUILayout.LabelField("ТЕКУЩИЙ ТЕСТ", TestingWindowLayout.SectionTitleStyle);
+                EditorGUILayout.LabelField($"Состояние: {GetStateTitle(_runner.State)}", TestingWindowLayout.BodyStyle);
 
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                using (new EditorGUI.DisabledScope(!_runner.CanContinue))
+                if (_runner.HasScenario)
                 {
-                    if (GUILayout.Button("Continue", GUILayout.Width(CommandButtonWidth)))
-                        _runner.Continue();
+                    EditorGUILayout.LabelField(
+                        $"Сценарий: {CloudSaveE2EScenarioCatalog.GetTitle(_runner.CurrentScenario)}",
+                        TestingWindowLayout.BodyStyle);
                 }
 
-                using (new EditorGUI.DisabledScope(!_runner.IsActive))
+                EditorGUILayout.Space(8f);
+                using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Cancel", GUILayout.Width(CommandButtonWidth)))
-                        _runner.Cancel();
+                    using (new EditorGUI.DisabledScope(!_runner.CanContinue))
+                    {
+                        if (GUILayout.Button(
+                                "Continue",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Width(CommandButtonWidth),
+                                GUILayout.Height(ProductButtonHeight)))
+                            _runner.Continue();
+                    }
+
+                    using (new EditorGUI.DisabledScope(!_runner.IsActive))
+                    {
+                        if (GUILayout.Button(
+                                "Cancel",
+                                TestingWindowLayout.ButtonStyle,
+                                GUILayout.Width(CommandButtonWidth),
+                                GUILayout.Height(ProductButtonHeight)))
+                            _runner.Cancel();
+                    }
+
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.LabelField("Пауза, сек.", TestingWindowLayout.CaptionStyle, GUILayout.Width(112f));
+                    _runner.StepDelaySeconds = Mathf.Max(
+                        MinStepDelaySeconds,
+                        EditorGUILayout.IntField(
+                            _runner.StepDelaySeconds,
+                            GUILayout.Width(StepDelayFieldWidth)));
                 }
 
-                GUILayout.FlexibleSpace();
-                EditorGUILayout.LabelField("Пауза, сек.", GUILayout.Width(78f));
-                _runner.StepDelaySeconds = Mathf.Max(
-                    MinStepDelaySeconds,
-                    EditorGUILayout.IntField(
-                        _runner.StepDelaySeconds,
-                        GUILayout.Width(StepDelayFieldWidth)));
-            }
-
-            EditorGUILayout.Space(8f);
-            var outputStyle = GetOutputStyle();
-            var hasStep = !string.IsNullOrWhiteSpace(_runner.CurrentStep);
-            if (hasStep)
-                DrawOutputBlock("Шаг", _runner.CurrentStep, outputStyle);
-
-            if (!string.IsNullOrWhiteSpace(_runner.CurrentResult))
-            {
+                EditorGUILayout.Space(12f);
+                var outputStyle = GetOutputStyle();
+                var hasStep = !string.IsNullOrWhiteSpace(_runner.CurrentStep);
                 if (hasStep)
-                    EditorGUILayout.Space(OutputBlockSpacing);
+                    DrawOutputBlock("Шаг", _runner.CurrentStep, outputStyle);
 
-                DrawOutputBlock("Результат", _runner.CurrentResult, outputStyle);
+                if (!string.IsNullOrWhiteSpace(_runner.CurrentResult))
+                {
+                    if (hasStep)
+                        EditorGUILayout.Space(OutputBlockSpacing);
+
+                    DrawOutputBlock("Результат", _runner.CurrentResult, outputStyle);
+                }
             }
+
+            TestingWindowLayout.SpaceSection();
         }
 
         /// <summary>Рисует многострочный блок вывода с высотой по содержимому.</summary>
         private void DrawOutputBlock(string title, string value, GUIStyle style)
         {
             var content = new GUIContent($"{title}:\n{value}");
-            var availableWidth = Mathf.Max(1f, position.width - style.margin.horizontal);
+            var availableWidth = Mathf.Max(1f, TestingWindowLayout.CurrentContentWidth - style.margin.horizontal);
             var height = style.CalcHeight(content, availableWidth);
             EditorGUILayout.LabelField(content, style, GUILayout.Height(height));
         }
@@ -552,22 +695,25 @@ namespace LostCyberHamster.Editor.Testing
             {
                 fontSize = OutputFontSize,
                 wordWrap = true,
-                padding = new RectOffset(12, 12, 10, 10)
+                padding = new RectOffset(18, 18, 16, 16)
             };
-            _outputStyle.normal.textColor = Color.white;
             return _outputStyle;
         }
 
         /// <summary>Передаёт смену Play Mode testing-страницам.</summary>
         private void OnPlayModeStateChanged(PlayModeStateChange state)
         {
+            if (_uiToolkitController != null)
+            {
+                _uiToolkitController.HandlePlayModeStateChanged(state);
+                return;
+            }
+
             BindNetworkFacade();
             if (state == PlayModeStateChange.ExitingPlayMode &&
                 _runner != null &&
                 _runner.IsActive)
-            {
                 _runner.Cancel();
-            }
 
             _gameProgressPage?.HandlePlayModeStateChanged(state);
             _experienceProgressPage?.HandlePlayModeStateChanged(state);
@@ -590,6 +736,111 @@ namespace LostCyberHamster.Editor.Testing
                 CloudSaveE2ERunState.Cancelled => "Отменён",
                 _ => state.ToString()
             };
+        }
+
+        private void EnsureUiToolkitController()
+        {
+            _uiToolkitController ??= new CloudSaveTestingUiToolkitController(this);
+        }
+    }
+
+    internal static class TestingWindowLayout
+    {
+        private static GUIStyle _pageTitleStyle;
+        private static GUIStyle _sectionTitleStyle;
+        private static GUIStyle _bodyStyle;
+        private static GUIStyle _captionStyle;
+        private static GUIStyle _buttonStyle;
+        private static GUIStyle _errorStyle;
+
+        public static GUIStyle PageTitleStyle =>
+            _pageTitleStyle ??= new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 30,
+                fontStyle = FontStyle.Bold,
+                wordWrap = true
+            };
+
+        public static GUIStyle SectionTitleStyle =>
+            _sectionTitleStyle ??= new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 24,
+                fontStyle = FontStyle.Bold,
+                wordWrap = true
+            };
+
+        public static GUIStyle BodyStyle =>
+            _bodyStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            {
+                fontSize = 20,
+                wordWrap = true
+            };
+
+        public static GUIStyle CaptionStyle =>
+            _captionStyle ??= new GUIStyle(EditorStyles.wordWrappedMiniLabel)
+            {
+                fontSize = 16,
+                wordWrap = true
+            };
+
+        public static GUIStyle ButtonStyle =>
+            _buttonStyle ??= new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true,
+                padding = new RectOffset(18, 18, 14, 14)
+            };
+
+        public static GUIStyle ErrorStyle =>
+            _errorStyle ??= new GUIStyle(BodyStyle)
+            {
+                normal = { textColor = new Color(0.72f, 0.15f, 0.12f) }
+            };
+
+        public static IDisposable BeginCenteredColumn()
+        {
+            return new CenteredColumnScope(GetContentWidth());
+        }
+
+        public static IDisposable BeginCard()
+        {
+            return new EditorGUILayout.VerticalScope(EditorStyles.helpBox);
+        }
+
+        public static void SpaceSection()
+        {
+            EditorGUILayout.Space(12f);
+        }
+
+        public static float CurrentContentWidth => GetContentWidth();
+
+        private static float GetContentWidth()
+        {
+            float viewWidth = Mathf.Max(400f, EditorGUIUtility.currentViewWidth);
+            float maxWidth = viewWidth >= 1200f ? 980f : 760f;
+            return Mathf.Max(320f, Mathf.Min(maxWidth, viewWidth - 48f));
+        }
+
+        private sealed class CenteredColumnScope : IDisposable
+        {
+            private readonly EditorGUILayout.HorizontalScope _outerScope;
+            private readonly EditorGUILayout.VerticalScope _innerScope;
+
+            public CenteredColumnScope(float width)
+            {
+                _outerScope = new EditorGUILayout.HorizontalScope();
+                GUILayout.FlexibleSpace();
+                _innerScope = new EditorGUILayout.VerticalScope(GUILayout.Width(width));
+            }
+
+            public void Dispose()
+            {
+                _innerScope.Dispose();
+                GUILayout.FlexibleSpace();
+                _outerScope.Dispose();
+            }
         }
     }
 }

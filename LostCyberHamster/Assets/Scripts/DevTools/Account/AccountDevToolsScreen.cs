@@ -39,36 +39,52 @@ namespace Assets.Scripts.DevTools.Account
             RootObject = uiFactory.CreateScrollPage("AccountScreen", parent, out Transform content);
             _rootRect = RootObject.GetComponent<RectTransform>();
 
-            uiFactory.CreateSectionHeading("LocalResetHeading", content, "Local Account Reset");
+            uiFactory.CreateSectionHeading("AccountHeading", content, "АККАУНТ");
+            uiFactory.CreateBodyText(
+                "AccountDescription",
+                content,
+                "Общие production-команды аккаунта, выровненные по той же структуре, что и в Tools/Testing.");
+
+            Transform localResetCard = uiFactory.CreateCard("LocalResetCard", content, DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("LocalResetHeading", localResetCard, "LOCAL RESET");
             uiFactory.CreateBodyText(
                 "LocalResetDescription",
-                content,
-                "Clears local Unity Authentication and Player Accounts sessions. Server links remain untouched.");
+                localResetCard,
+                "Очищает локальные Unity Authentication и Player Accounts сессии. Серверная привязка остаётся нетронутой.");
             _localResetButton = uiFactory.CreateButton(
                 "ResetLocalAccountStateButton",
-                content,
+                localResetCard,
                 "RESET LOCAL ACCOUNT STATE",
                 new Color(1f, 0.78f, 0.78f),
                 ResetLocalAccountState);
 
-            uiFactory.CreateSectionHeading("FullResetHeading", content, "Чистый старт");
+            Transform fullResetCard = uiFactory.CreateCard("FullResetCard", content, DevToolsTheme.DangerCard);
+            uiFactory.CreateSectionHeading("FullResetHeading", fullResetCard, "ЧИСТЫЙ СТАРТ");
             uiFactory.CreateBodyText(
                 "FullResetDescription",
-                content,
+                fullResetCard,
                 "Создаёт нового гостя с нулевым прогрессом. Локальный прогресс заменяется; настройки сохраняются. Без сети вход завершится позже.");
             _fullResetButton = uiFactory.CreateButton(
                 "StartFreshGuestButton",
-                content,
+                fullResetCard,
                 "ЧИСТЫЙ СТАРТ — НОВЫЙ ГОСТЬ",
                 new Color(1f, 0.58f, 0.58f),
                 StartFreshGuest);
-            uiFactory.CreateSectionHeading("UnlinkHeading", content, "Отвязка для тестов");
-            uiFactory.CreateBodyText("UnlinkDescription", content,
+
+            Transform unlinkCard = uiFactory.CreateCard("UnlinkCard", content, DevToolsTheme.DangerCard);
+            uiFactory.CreateSectionHeading("UnlinkHeading", unlinkCard, "ОТВЯЗКА ДЛЯ ТЕСТОВ");
+            uiFactory.CreateBodyText("UnlinkDescription", unlinkCard,
                 "Удаляет серверную привязку и локальную сессию прежнего аккаунта. Для новой игры используйте чистый старт.");
-            _unlinkButton = uiFactory.CreateButton("FullResetTestAccountButton", content,
+            _unlinkButton = uiFactory.CreateButton("FullResetTestAccountButton", unlinkCard,
                 "ОТВЯЗАТЬ АККАУНТ И ОЧИСТИТЬ СЕССИЮ", new Color(1f, 0.58f, 0.58f), FullResetTestAccount);
-            _resultText = uiFactory.CreateBodyText("ResetResult", content, string.Empty);
-            _stateText = uiFactory.CreateBodyText("AccountState", content, string.Empty);
+
+            Transform stateCard = uiFactory.CreateCard("AccountStateCard", content, DevToolsTheme.StatusCard);
+            uiFactory.CreateSectionHeading("AccountStateHeading", stateCard, "СОСТОЯНИЕ");
+            _stateText = uiFactory.CreateBodyText("AccountState", stateCard, string.Empty);
+
+            Transform resultCard = uiFactory.CreateCard("ResetResultCard", content, DevToolsTheme.StatusCard);
+            uiFactory.CreateSectionHeading("ResetResultHeading", resultCard, "РЕЗУЛЬТАТ");
+            _resultText = uiFactory.CreateBodyText("ResetResult", resultCard, string.Empty);
 
             RootObject.SetActive(false);
         }

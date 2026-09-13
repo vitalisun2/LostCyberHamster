@@ -31,21 +31,28 @@ namespace Assets.Scripts.DevTools.Resources
             _setTitle = setTitle;
 
             var ui = new DevToolsUiFactory(font);
-            RootObject = ui.CreateStaticPage(
+            RootObject = ui.CreateScrollPage(
                 "ResourcesScreen",
                 parent,
                 out Transform content);
             _rootRect = RootObject.GetComponent<RectTransform>();
             ui.CreateSectionHeading("ResourcesHeading", content, "RESOURCES");
-            ui.CreateBodyText("AmountLabel", content, "Amount");
+
+            Transform moneyCard = ui.CreateCard("MoneyCard", content, DevToolsTheme.Surface);
+            ui.CreateSectionHeading("MoneyHeading", moneyCard, "MONEY");
+            ui.CreateBodyText(
+                "MoneyDescription",
+                moneyCard,
+                "Точное DEV-начисление Money. Значение и результат совпадают с editor Tools/Testing.");
+            ui.CreateBodyText("AmountLabel", moneyCard, "Amount");
             _amountField = ui.CreateInputField(
                 "AmountField",
-                content,
+                moneyCard,
                 _defaultAmount.ToString());
             _amountField.onValueChanged.AddListener(OnAmountChanged);
             _addMoneyButton = ui.CreateButton(
                 "AddMoneyButton",
-                content,
+                moneyCard,
                 "Add Money",
                 DevToolsTheme.Primary,
                 AddMoney,
@@ -54,6 +61,7 @@ namespace Assets.Scripts.DevTools.Resources
                 "StatusCard",
                 content,
                 DevToolsTheme.StatusCard);
+            ui.CreateSectionHeading("ResourcesStatusHeading", statusCard, "STATUS");
             _statusText = ui.CreateBodyText(
                 "StatusText",
                 statusCard,

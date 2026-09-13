@@ -27,9 +27,20 @@ namespace Assets.Scripts.DevTools.Gameplay
             RootObject = uiFactory.CreateScrollPage("GameplayScreen", parent, out Transform content);
 
             uiFactory.CreateSectionHeading("ActionsHeading", content, "GAMEPLAY И ПРОГРЕСС");
+            uiFactory.CreateBodyText(
+                "ActionsDescription",
+                content,
+                "Gameplay-тумблеры и testing-команды сгруппированы по смыслу, как в editor Testing Tool.");
+
+            Transform togglesCard = uiFactory.CreateCard("LiveTogglesCard", content, DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("LiveTogglesHeading", togglesCard, "LIVE TOGGLES");
+            uiFactory.CreateBodyText(
+                "LiveTogglesDescription",
+                togglesCard,
+                "Меняют активные DEV-флаги в текущей сессии и сразу показывают новое состояние.");
             _botButton = uiFactory.CreateButton(
                 "BotButton",
-                content,
+                togglesCard,
                 "Bot Off",
                 DevToolsTheme.Disabled,
                 () => BotToggleRequested?.Invoke());
@@ -38,27 +49,34 @@ namespace Assets.Scripts.DevTools.Gameplay
 
             _unlockAllButton = uiFactory.CreateButton(
                 "UnlockAllButton",
-                content,
+                togglesCard,
                 "Unlock All Off",
                 DevToolsTheme.Disabled,
                 () => UnlockAllToggleRequested?.Invoke());
             _unlockAllButtonText = _unlockAllButton.GetComponentInChildren<Text>();
             _unlockAllButtonImage = _unlockAllButton.GetComponent<Image>();
 
+            Transform testingCard = uiFactory.CreateCard("ProgressTestingCard", content, DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading("ProgressTestingHeading", testingCard, "PROGRESS TESTING");
+            uiFactory.CreateBodyText(
+                "ProgressTestingDescription",
+                testingCard,
+                "Переходы в те же сценарии тестирования прогресса, что и в Tools/Testing.");
             _gameProgressTestingButton = uiFactory.CreateButton(
                 "GameProgressTestingButton",
-                content,
+                testingCard,
                 "Game Progress Testing",
                 DevToolsTheme.Navigation,
                 () => GameProgressTestingRequested?.Invoke());
             _experienceProgressTestingButton = uiFactory.CreateButton(
                 "ExperienceProgressTestingButton",
-                content,
+                testingCard,
                 "XP/Level Progress Testing",
                 DevToolsTheme.Navigation,
                 () => ExperienceProgressTestingRequested?.Invoke());
 
             Transform statusCard = uiFactory.CreateCard("StatusCard", content, DevToolsTheme.StatusCard);
+            uiFactory.CreateSectionHeading("StatusHeading", statusCard, "STATUS");
             _statusCard = statusCard.gameObject;
             _statusText = uiFactory.CreateBodyText("StatusText", statusCard, string.Empty);
         }

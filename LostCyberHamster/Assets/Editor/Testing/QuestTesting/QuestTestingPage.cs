@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts.DevTools.QuestTesting;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 using Vues.GameCore.Quests;
@@ -12,12 +13,12 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         private static readonly string[] _categoryNames =
             { "Daily", "Story" };
 
-        private const float HeaderButtonWidth = 70f;
-        private const float SectionSpacing = 8f;
-        private const float CardSpacing = 4f;
-        private const float SelectorHeight = 24f;
-        private const float ActionButtonHeight = 30f;
-        private const float StateCardMinHeight = 58f;
+        private const float HeaderButtonWidth = 140f;
+        private const float SectionSpacing = 12f;
+        private const float CardSpacing = 8f;
+        private const float SelectorHeight = 44f;
+        private const float ActionButtonHeight = 60f;
+        private const float StateCardMinHeight = 116f;
 
         private readonly Action _repaint;
         private readonly QuestTestRunner _runner;
@@ -41,28 +42,33 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         /// <summary>Рисует выбор квеста и команды его реального жизненного цикла.</summary>
         public void Draw(Action navigateBack)
         {
-            DrawHeader(navigateBack);
-
-            if (!EditorApplication.isPlaying)
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                EditorGUILayout.HelpBox(
-                    "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
-                    MessageType.Info);
+                DrawHeader(navigateBack);
+
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorGUILayout.LabelField(
+                        "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
+                        TestingWindowLayout.BodyStyle);
+                    TestingWindowLayout.SpaceSection();
+                }
+
+                EditorGUILayout.LabelField(
+                    "Only selected quest gets progress. +1 Quest Day shifts only quest time and lets QuestManager react through the normal daily check.",
+                    TestingWindowLayout.BodyStyle);
+                TestingWindowLayout.SpaceSection();
+
+                DrawQuestDayCard();
+                EditorGUILayout.Space(SectionSpacing);
+                DrawQuestSelectionCard();
+                EditorGUILayout.Space(SectionSpacing);
+                DrawStatusCard();
+                EditorGUILayout.Space(SectionSpacing);
+                DrawStateCards();
+                EditorGUILayout.Space(SectionSpacing);
+                DrawActionCard();
             }
-
-            EditorGUILayout.HelpBox(
-                "Only selected quest gets progress. +1 Quest Day shifts only quest time and lets QuestManager react through the normal daily check.",
-                MessageType.None);
-
-            DrawQuestDayCard();
-            EditorGUILayout.Space(SectionSpacing);
-            DrawQuestSelectionCard();
-            EditorGUILayout.Space(SectionSpacing);
-            DrawStatusCard();
-            EditorGUILayout.Space(SectionSpacing);
-            DrawStateCards();
-            EditorGUILayout.Space(SectionSpacing);
-            DrawActionCard();
         }
 
         /// <summary>Передаёт shared runner вход и выход из Play Mode.</summary>
@@ -90,14 +96,19 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
             {
                 using (new EditorGUI.DisabledScope(_runner.IsBusy))
                 {
-                    if (GUILayout.Button("Back", GUILayout.Width(HeaderButtonWidth)))
+                    if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(HeaderButtonWidth),
+                            GUILayout.Height(60f)))
                         navigateBack?.Invoke();
                 }
 
-                EditorGUILayout.LabelField("Quest Testing", EditorStyles.boldLabel);
+                GUILayout.Space(12f);
+                EditorGUILayout.LabelField("Quest Testing", TestingWindowLayout.PageTitleStyle);
             }
 
-            EditorGUILayout.Space(6f);
+            TestingWindowLayout.SpaceSection();
         }
 
         private void DrawQuestDayCard()
@@ -286,22 +297,22 @@ namespace LostCyberHamster.Editor.Testing.QuestTesting
         }
 
         private GUIStyle SectionTitleStyle =>
-            _sectionTitleStyle ??= new GUIStyle(EditorStyles.boldLabel);
+            _sectionTitleStyle ??= new GUIStyle(TestingWindowLayout.SectionTitleStyle);
 
         private GUIStyle CaptionStyle =>
-            _captionStyle ??= new GUIStyle(EditorStyles.miniLabel)
+            _captionStyle ??= new GUIStyle(TestingWindowLayout.CaptionStyle)
             {
                 alignment = TextAnchor.MiddleLeft
             };
 
         private GUIStyle StatusStyle =>
-            _statusStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            _statusStyle ??= new GUIStyle(TestingWindowLayout.BodyStyle)
             {
                 wordWrap = true
             };
 
         private GUIStyle StateStyle =>
-            _stateStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
+            _stateStyle ??= new GUIStyle(TestingWindowLayout.BodyStyle)
             {
                 wordWrap = true
             };

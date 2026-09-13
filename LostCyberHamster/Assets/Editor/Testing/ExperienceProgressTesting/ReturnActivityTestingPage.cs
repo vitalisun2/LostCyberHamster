@@ -1,5 +1,6 @@
 using Assets.Scripts.DevTools.ReturnActivityTesting;
 using GameManagement;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,22 +12,56 @@ namespace LostCyberHamster.Editor.Testing.ExperienceProgress
         public static void Draw()
         {
             var runner = ReturnActivityTestingRunner.Shared;
-            EditorGUILayout.Space(12);
-            EditorGUILayout.LabelField("Активности / Return", EditorStyles.boldLabel);
-            using (new EditorGUI.DisabledScope(!runner.CanBegin))
-                if (GUILayout.Button("Начать изолированную сессию активностей")) runner.Begin();
-            using (new EditorGUI.DisabledScope(!GameDataManager.HasProgressionTestingBackup))
-                if (GUILayout.Button("Вернуть исходное сохранение")) runner.Restore();
-            using (new EditorGUI.DisabledScope(!runner.CanChange))
+
+            using (TestingWindowLayout.BeginCard())
             {
-                if (GUILayout.Button("Победа (без XP)")) runner.Win();
-                if (GUILayout.Button("Следующий UTC-день")) runner.NextDay();
-                if (GUILayout.Button("Предыдущий UTC-день")) runner.PreviousDay();
-                if (GUILayout.Button("+7 UTC-дней")) runner.NextWeek();
-                if (GUILayout.Button("Claim одной награды")) runner.Claim();
+                EditorGUILayout.LabelField("АКТИВНОСТИ / RETURN", TestingWindowLayout.SectionTitleStyle);
+                EditorGUILayout.LabelField(
+                    "Те же production-команды активностей, что и в runtime DEV, но в вертикальном editor layout.",
+                    TestingWindowLayout.BodyStyle);
+
+                EditorGUILayout.Space(8f);
+                using (new EditorGUI.DisabledScope(!runner.CanBegin))
+                    if (GUILayout.Button(
+                            "Начать изолированную сессию активностей",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Height(68f))) runner.Begin();
+                EditorGUILayout.Space(8f);
+                using (new EditorGUI.DisabledScope(!GameDataManager.HasProgressionTestingBackup))
+                    if (GUILayout.Button(
+                            "Вернуть исходное сохранение",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Height(68f))) runner.Restore();
             }
-            if (GUILayout.Button("Прочитать активности")) runner.Inspect();
-            EditorGUILayout.HelpBox(runner.Status, MessageType.None);
+
+            TestingWindowLayout.SpaceSection();
+            using (TestingWindowLayout.BeginCard())
+            {
+                EditorGUILayout.LabelField("MUTATIONS", TestingWindowLayout.SectionTitleStyle);
+                using (new EditorGUI.DisabledScope(!runner.CanChange))
+                {
+                    if (GUILayout.Button("Победа (без XP)", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.Win();
+                    EditorGUILayout.Space(8f);
+                    if (GUILayout.Button("Следующий UTC-день", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.NextDay();
+                    EditorGUILayout.Space(8f);
+                    if (GUILayout.Button("Предыдущий UTC-день", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.PreviousDay();
+                    EditorGUILayout.Space(8f);
+                    if (GUILayout.Button("+7 UTC-дней", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.NextWeek();
+                    EditorGUILayout.Space(8f);
+                    if (GUILayout.Button("Claim одной награды", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.Claim();
+                }
+            }
+
+            TestingWindowLayout.SpaceSection();
+            using (TestingWindowLayout.BeginCard())
+            {
+                EditorGUILayout.LabelField("SNAPSHOT", TestingWindowLayout.SectionTitleStyle);
+                if (GUILayout.Button("Прочитать активности", TestingWindowLayout.ButtonStyle, GUILayout.Height(68f))) runner.Inspect();
+                EditorGUILayout.Space(8f);
+                EditorGUILayout.LabelField(runner.Status, TestingWindowLayout.BodyStyle);
+            }
+
+            TestingWindowLayout.SpaceSection();
         }
     }
 }

@@ -18,32 +18,40 @@ namespace Assets.Scripts.DevTools.Root
             DevToolsUiFactory ui = new DevToolsUiFactory(font);
             _rootObject = ui.CreateUiObject("RootScreen", parent);
             _rootRect = _rootObject.GetComponent<RectTransform>();
-            GameObject page = ui.CreateStaticPage("RootNavigation", _rootObject.transform, out Transform content);
+            GameObject page = ui.CreateScrollPage("RootNavigation", _rootObject.transform, out Transform content);
             ui.CreateSectionHeading("FeaturesHeading", content, "РАЗДЕЛЫ");
-            ui.CreateButton(
-                "AccountButton",
+            ui.CreateBodyText(
+                "FeaturesDescription",
                 content,
+                "Те же DEV-разделы, что и в Tools/Testing, но в fullscreen mobile layout с крупными зонами касания.");
+            CreateNavigationCard(
+                ui,
+                content,
+                "Account",
                 "АККАУНТ",
-                DevToolsTheme.Navigation,
-                () => AccountRequested?.Invoke(),
-                DevToolsTheme.PrimaryButtonHeight);
-            ui.CreateButton(
-                "GameplayButton",
+                "Чистый старт, local reset и unlink тестового аккаунта.",
+                () => AccountRequested?.Invoke());
+            CreateNavigationCard(
+                ui,
                 content,
+                "Gameplay",
                 "GAMEPLAY И ПРОГРЕСС",
-                DevToolsTheme.Navigation,
-                () => GameplayRequested?.Invoke(),
-                DevToolsTheme.PrimaryButtonHeight);
-            ui.CreateButton(
-                "ResourcesButton",
+                "Живые toggles и оба progress testing-экрана в одной навигации.",
+                () => GameplayRequested?.Invoke());
+            CreateNavigationCard(
+                ui,
                 content,
                 "Resources",
-                DevToolsTheme.Navigation,
-                () => ResourcesRequested?.Invoke(),
-                DevToolsTheme.PrimaryButtonHeight);
-            ui.CreateButton(
-                "NetworkingButton", content, "Networking", DevToolsTheme.Navigation,
-                () => NetworkingRequested?.Invoke(), DevToolsTheme.PrimaryButtonHeight);
+                "RESOURCES",
+                "Точное DEV-начисление ресурсов без поиска по разным экранам.",
+                () => ResourcesRequested?.Invoke());
+            CreateNavigationCard(
+                ui,
+                content,
+                "Networking",
+                "NETWORKING",
+                "Forced offline с тем же состоянием, что видно в editor Testing Tool.",
+                () => NetworkingRequested?.Invoke());
             page.SetActive(true);
         }
 
@@ -65,6 +73,26 @@ namespace Assets.Scripts.DevTools.Root
             _rootRect.anchorMax = Vector2.one;
             _rootRect.offsetMin = new Vector2(left, bottom);
             _rootRect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static void CreateNavigationCard(
+            DevToolsUiFactory ui,
+            Transform parent,
+            string name,
+            string title,
+            string description,
+            Action action)
+        {
+            Transform card = ui.CreateCard($"{name}Card", parent, DevToolsTheme.Surface);
+            ui.CreateSectionHeading($"{name}Heading", card, title);
+            ui.CreateBodyText($"{name}Description", card, description);
+            ui.CreateButton(
+                $"{name}Button",
+                card,
+                title,
+                DevToolsTheme.Navigation,
+                () => action?.Invoke(),
+                DevToolsTheme.PrimaryButtonHeight);
         }
     }
 }

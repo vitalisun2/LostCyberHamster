@@ -11,10 +11,12 @@ namespace Assets.Scripts.DevTools.Core
     internal sealed class DevToolsUiFactory
     {
         private readonly Font _font;
+        private readonly float _screenScale;
 
         public DevToolsUiFactory(Font font)
         {
             _font = font;
+            _screenScale = DevToolsTheme.GetScreenScale();
         }
 
         public GameObject CreateUiObject(string name, Transform parent)
@@ -29,11 +31,15 @@ namespace Assets.Scripts.DevTools.Core
             GameObject page = CreateUiObject(name, parent);
             SetStretch(page.GetComponent<RectTransform>());
 
-            GameObject contentObject = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup));
-            contentObject.transform.SetParent(page.transform, false);
-            SetStretch(contentObject.GetComponent<RectTransform>());
-            ConfigureVerticalLayout(contentObject.GetComponent<VerticalLayoutGroup>());
-            content = contentObject.transform;
+            GameObject contentHost = new GameObject(
+                "ContentHost",
+                typeof(RectTransform),
+                typeof(VerticalLayoutGroup));
+            contentHost.transform.SetParent(page.transform, false);
+            SetStretch(contentHost.GetComponent<RectTransform>());
+            ConfigureCenteredHostLayout(contentHost.GetComponent<VerticalLayoutGroup>());
+
+            content = CreateResponsiveContentColumn(contentHost.transform);
             return page;
         }
 
@@ -53,23 +59,25 @@ namespace Assets.Scripts.DevTools.Core
             viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
             viewport.GetComponent<Mask>().showMaskGraphic = false;
 
-            GameObject contentObject = new GameObject(
-                "Content",
+            GameObject contentHost = new GameObject(
+                "ContentHost",
                 typeof(RectTransform),
                 typeof(VerticalLayoutGroup),
                 typeof(ContentSizeFitter));
-            contentObject.transform.SetParent(viewport.transform, false);
-            RectTransform contentRect = contentObject.GetComponent<RectTransform>();
+            contentHost.transform.SetParent(viewport.transform, false);
+            RectTransform contentRect = contentHost.GetComponent<RectTransform>();
             contentRect.anchorMin = new Vector2(0f, 1f);
             contentRect.anchorMax = new Vector2(1f, 1f);
             contentRect.pivot = new Vector2(0.5f, 1f);
             contentRect.anchoredPosition = Vector2.zero;
             contentRect.sizeDelta = Vector2.zero;
-            ConfigureVerticalLayout(contentObject.GetComponent<VerticalLayoutGroup>());
+            ConfigureCenteredHostLayout(contentHost.GetComponent<VerticalLayoutGroup>());
 
-            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+            ContentSizeFitter fitter = contentHost.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            content = CreateResponsiveContentColumn(contentHost.transform);
 
             ScrollRect scrollRect = page.AddComponent<ScrollRect>();
             scrollRect.viewport = viewport.GetComponent<RectTransform>();
@@ -77,8 +85,7 @@ namespace Assets.Scripts.DevTools.Core
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
-            scrollRect.scrollSensitivity = 22f;
-            content = contentObject.transform;
+            scrollRect.scrollSensitivity = DevToolsTheme.ScaleSize(22f * DevToolsTheme.UiScale);
             return page;
         }
 
@@ -96,8 +103,14 @@ namespace Assets.Scripts.DevTools.Core
 
             VerticalLayoutGroup layout = card.GetComponent<VerticalLayoutGroup>();
             ConfigureVerticalLayout(layout);
-            layout.padding = new RectOffset(12, 12, 10, 10);
-            layout.spacing = 5f;
+            int cardHorizontalPadding = Mathf.RoundToInt(12f * DevToolsTheme.UiScale * _screenScale);
+            int cardVerticalPadding = Mathf.RoundToInt(10f * DevToolsTheme.UiScale * _screenScale);
+            layout.padding = new RectOffset(
+                cardHorizontalPadding,
+                cardHorizontalPadding,
+                cardVerticalPadding,
+                cardVerticalPadding);
+            layout.spacing = 5f * DevToolsTheme.UiScale * _screenScale;
 
             ContentSizeFitter fitter = card.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -123,7 +136,7 @@ namespace Assets.Scripts.DevTools.Core
             buttonObject.transform.SetParent(parent, false);
             buttonObject.GetComponent<Image>().color = color;
             LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
-            layout.preferredHeight = height;
+            layout.preferredHeight = height * _screenScale;
             layout.flexibleWidth = 1f;
 
             Button button = buttonObject.GetComponent<Button>();
@@ -137,7 +150,7 @@ namespace Assets.Scripts.DevTools.Core
             button.colors = colors;
 
             Text text = CreateText("Text", buttonObject.transform, label, TextAnchor.MiddleCenter, FontStyle.Bold);
-            text.fontSize = DevToolsTheme.ButtonFontSize;
+            text.fontSize = DevToolsTheme.ScaleFont(DevToolsTheme.ButtonFontSize);
             SetStretch(text.GetComponent<RectTransform>());
             return button;
         }
@@ -157,7 +170,7 @@ namespace Assets.Scripts.DevTools.Core
             fieldObject.transform.SetParent(parent, false);
             fieldObject.GetComponent<Image>().color = Color.white;
             LayoutElement layout = fieldObject.GetComponent<LayoutElement>();
-            layout.preferredHeight = DevToolsTheme.ButtonHeight;
+            layout.preferredHeight = DevToolsTheme.ButtonHeight * _screenScale;
             layout.flexibleWidth = 1f;
 
             Text placeholder = CreateText(
@@ -196,7 +209,7 @@ namespace Assets.Scripts.DevTools.Core
         public Text CreateSectionHeading(string name, Transform parent, string text)
         {
             Text heading = CreateBodyText(name, parent, text, FontStyle.Bold);
-            heading.fontSize = DevToolsTheme.HeadingFontSize;
+            heading.fontSize = DevToolsTheme.ScaleFont(DevToolsTheme.HeadingFontSize);
             return heading;
         }
 
@@ -212,7 +225,7 @@ namespace Assets.Scripts.DevTools.Core
             Text uiText = textObject.GetComponent<Text>();
             uiText.text = text;
             uiText.font = _font;
-            uiText.fontSize = DevToolsTheme.BodyFontSize;
+            uiText.fontSize = DevToolsTheme.ScaleFont(DevToolsTheme.BodyFontSize);
             uiText.fontStyle = style;
             uiText.alignment = anchor;
             uiText.color = Color.black;
@@ -222,12 +235,52 @@ namespace Assets.Scripts.DevTools.Core
 
         public static void ConfigureVerticalLayout(VerticalLayoutGroup layout)
         {
-            layout.padding = new RectOffset(2, 4, 2, 8);
-            layout.spacing = DevToolsTheme.ContentSpacing;
+            float screenScale = DevToolsTheme.GetScreenScale();
+            layout.padding = new RectOffset(
+                Mathf.RoundToInt(2f * DevToolsTheme.UiScale * screenScale),
+                Mathf.RoundToInt(4f * DevToolsTheme.UiScale * screenScale),
+                Mathf.RoundToInt(2f * DevToolsTheme.UiScale * screenScale),
+                Mathf.RoundToInt(8f * DevToolsTheme.UiScale * screenScale));
+            layout.spacing = DevToolsTheme.ContentSpacing * screenScale;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
+        }
+
+        private static void ConfigureCenteredHostLayout(VerticalLayoutGroup layout)
+        {
+            layout.padding = new RectOffset(0, 0, 0, Mathf.RoundToInt(DevToolsTheme.ContentSpacing * DevToolsTheme.GetScreenScale()));
+            layout.spacing = 0f;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+        }
+
+        private static Transform CreateResponsiveContentColumn(Transform parent)
+        {
+            GameObject contentObject = new GameObject(
+                "Content",
+                typeof(RectTransform),
+                typeof(VerticalLayoutGroup),
+                typeof(ContentSizeFitter),
+                typeof(LayoutElement),
+                typeof(DevToolsResponsiveColumn));
+            contentObject.transform.SetParent(parent, false);
+            ConfigureVerticalLayout(contentObject.GetComponent<VerticalLayoutGroup>());
+
+            ContentSizeFitter fitter = contentObject.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            LayoutElement layout = contentObject.GetComponent<LayoutElement>();
+            layout.minWidth = 1f;
+            layout.preferredWidth = 1f;
+            layout.flexibleWidth = 0f;
+            contentObject.GetComponent<DevToolsResponsiveColumn>().Configure(layout);
+            return contentObject.transform;
         }
 
         public static void SetStretch(RectTransform rect)
@@ -250,8 +303,92 @@ namespace Assets.Scripts.DevTools.Core
         private static void ConfigureInputTextRect(RectTransform rect)
         {
             SetStretch(rect);
-            rect.offsetMin = new Vector2(10f, 4f);
-            rect.offsetMax = new Vector2(-10f, -4f);
+            float screenScale = DevToolsTheme.GetScreenScale();
+            rect.offsetMin = new Vector2(
+                10f * DevToolsTheme.UiScale * screenScale,
+                4f * DevToolsTheme.UiScale * screenScale);
+            rect.offsetMax = new Vector2(
+                -10f * DevToolsTheme.UiScale * screenScale,
+                -4f * DevToolsTheme.UiScale * screenScale);
+        }
+    }
+
+    [RequireComponent(typeof(LayoutElement))]
+    internal sealed class DevToolsResponsiveColumn : MonoBehaviour
+    {
+        private LayoutElement _layoutElement;
+        private RectTransform _rectTransform;
+        private float _lastParentWidth = -1f;
+        private float _lastParentHeight = -1f;
+
+        public void Configure(LayoutElement layoutElement)
+        {
+            _layoutElement = layoutElement;
+            CacheComponents();
+            ApplyWidth();
+        }
+
+        private void Awake()
+        {
+            CacheComponents();
+        }
+
+        private void OnEnable()
+        {
+            ApplyWidth();
+        }
+
+        private void LateUpdate()
+        {
+            CacheComponents();
+            RectTransform parentRect = _rectTransform?.parent as RectTransform;
+            if (parentRect == null)
+                return;
+
+            float parentWidth = parentRect.rect.width;
+            float parentHeight = parentRect.rect.height;
+            if (Mathf.Approximately(parentWidth, _lastParentWidth) &&
+                Mathf.Approximately(parentHeight, _lastParentHeight))
+            {
+                return;
+            }
+
+            ApplyWidth();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            ApplyWidth();
+        }
+
+        private void CacheComponents()
+        {
+            _layoutElement ??= GetComponent<LayoutElement>();
+            _rectTransform ??= GetComponent<RectTransform>();
+        }
+
+        private void ApplyWidth()
+        {
+            CacheComponents();
+            RectTransform parentRect = _rectTransform?.parent as RectTransform;
+            if (parentRect == null || _layoutElement == null)
+                return;
+
+            float parentWidth = Mathf.Max(1f, parentRect.rect.width);
+            float parentHeight = Mathf.Max(1f, parentRect.rect.height);
+            bool isLandscape = parentWidth >= parentHeight;
+            float maxWidth = isLandscape
+                ? DevToolsTheme.LandscapeContentWidth
+                : DevToolsTheme.PortraitContentWidth;
+            float targetWidth = Mathf.Min(
+                maxWidth,
+                Mathf.Max(1f, parentWidth - DevToolsTheme.ContentHorizontalPadding * 2f));
+
+            _layoutElement.minWidth = targetWidth;
+            _layoutElement.preferredWidth = targetWidth;
+            _layoutElement.flexibleWidth = 0f;
+            _lastParentWidth = parentWidth;
+            _lastParentHeight = parentHeight;
         }
     }
 }

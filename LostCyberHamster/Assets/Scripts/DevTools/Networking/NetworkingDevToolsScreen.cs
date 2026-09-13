@@ -26,15 +26,22 @@ namespace Assets.Scripts.DevTools.Networking
             _setTitle = setTitle;
             _network = GameNetworkFacade.Instance;
             var ui = new DevToolsUiFactory(font);
-            RootObject = ui.CreateStaticPage("NetworkingScreen", parent, out Transform content);
+            RootObject = ui.CreateScrollPage("NetworkingScreen", parent, out Transform content);
             _rootRect = RootObject.GetComponent<RectTransform>();
             ui.CreateSectionHeading("NetworkingHeading", content, "Networking");
-            _toggleButton = ui.CreateButton("NetworkToggleButton", content, "Turn off network",
+
+            Transform modeCard = ui.CreateCard("NetworkModeCard", content, DevToolsTheme.Surface);
+            ui.CreateSectionHeading("NetworkModeHeading", modeCard, "FORCED OFFLINE");
+            ui.CreateBodyText(
+                "NetworkModeDescription",
+                modeCard,
+                "Тот же переключатель offline режима, что и в editor Testing Tool. Состояние сохраняется между перезапусками.");
+            _toggleButton = ui.CreateButton("NetworkToggleButton", modeCard, "Turn off network",
                 DevToolsTheme.Primary, ToggleNetwork, DevToolsTheme.PrimaryButtonHeight);
             _buttonText = _toggleButton.GetComponentInChildren<Text>();
             Transform statusCard = ui.CreateCard("NetworkStatusCard", content, DevToolsTheme.StatusCard);
+            ui.CreateSectionHeading("NetworkStatusHeading", statusCard, "STATUS");
             _statusText = ui.CreateBodyText("NetworkStatus", statusCard, string.Empty);
-            ui.CreateBodyText("NetworkPersistence", content, "Режим сохраняется после перезапуска");
             RootObject.SetActive(false);
         }
 

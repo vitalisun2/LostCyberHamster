@@ -119,6 +119,7 @@
     <Compile Include="Assets\Scripts\Tutorial\SharedUI\TutorialFocusShape.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveRoofExit\PassiveRoofExitSimulator.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyRecordPreview.cs" />
+    <Compile Include="Assets\Scripts\DevTools\UiToolkit\DevToolsUiToolkitPages.cs" />
     <Compile Include="Assets\Scripts\UI\Notifications\FirstSessionNotificationHost.cs" />
     <Compile Include="Assets\Scripts\UI\Common\ScreenController.cs" />
     <Compile Include="Assets\Scripts\System\Resources\AddressableLocationsLease.cs" />
@@ -522,6 +523,7 @@
     <Compile Include="Assets\Scripts\Entry Points\GameSceneEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\PassiveCollect\PassiveCollectExecutor.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOver\JumpOverSimulator.cs" />
+    <Compile Include="Assets\Scripts\DevTools\UiToolkit\DevToolsUiToolkitHost.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleSpawner.cs" />
     <Compile Include="Assets\Scripts\UI\Screens\QuestsScreenController.cs" />
     <Compile Include="Assets\Scripts\DevTools\ExperienceProgressTesting\ExperienceProgressTestingView.cs" />
@@ -672,6 +674,7 @@
     <Compile Include="Assets\Scripts\UI\Components\QuestItem.cs" />
     <Compile Include="Assets\Scripts\Tutorial\Runtime\TutorialConstants.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Mechanics\TakeDamageMechanics.cs" />
+    <Compile Include="Assets\Scripts\DevTools\UiToolkit\DevToolsUiToolkitOverlayShell.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Catalog\QuestCatalog.cs" />
     <Compile Include="Assets\Scripts\System\ObstacleFactory.cs" />
     <Compile Include="Assets\Scripts\UI\NextGoals\NextGoalText.cs" />

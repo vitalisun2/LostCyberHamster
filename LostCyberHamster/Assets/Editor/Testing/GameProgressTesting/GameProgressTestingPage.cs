@@ -1,5 +1,6 @@
 using System;
 using Assets.Scripts.DevTools.GameProgressTesting;
+using LostCyberHamster.Editor.Testing;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,14 +9,12 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
     /// <summary>Рисует Game Progress Testing внутри общего окна Tools/Testing.</summary>
     internal sealed class GameProgressTestingPage : IDisposable
     {
-        private const float CommandButtonWidth = 180f;
-        private const float CommandRowHeight = 42f;
-        private const int OutputFontSize = 16;
-        private const int OutputHeadingFontSize = 20;
+        private const float CommandRowHeight = 68f;
+        private const int OutputFontSize = 28;
+        private const int OutputHeadingFontSize = 24;
 
         private readonly Action _repaint;
         private readonly GameProgressTestRunner _runner;
-        private GUIStyle _commandDescriptionStyle;
         private GUIStyle _outputTextStyle;
         private GUIStyle _outputHeadingStyle;
 
@@ -30,17 +29,21 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
         /// <summary>Рисует страницу, команды, текущий уровень, статус и последнее действие.</summary>
         public void Draw(Action navigateBack)
         {
-            DrawHeader(navigateBack);
-
-            if (!EditorApplication.isPlaying)
+            using (TestingWindowLayout.BeginCenteredColumn())
             {
-                EditorGUILayout.HelpBox(
-                    "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
-                    MessageType.Info);
-            }
+                DrawHeader(navigateBack);
 
-            DrawCommands();
-            DrawStatus();
+                if (!EditorApplication.isPlaying)
+                {
+                    EditorGUILayout.LabelField(
+                        "Тест доступен только в Play Mode. Запустите игру через Bootstrap.",
+                        TestingWindowLayout.BodyStyle);
+                    TestingWindowLayout.SpaceSection();
+                }
+
+                DrawCommands();
+                DrawStatus();
+            }
         }
 
         /// <summary>Передаёт shared runner вход и выход из Play Mode.</summary>
@@ -70,14 +73,19 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
             {
                 using (new EditorGUI.DisabledScope(_runner.IsBusy))
                 {
-                    if (GUILayout.Button("Back", GUILayout.Width(70f)))
+                    if (GUILayout.Button(
+                            "Back",
+                            TestingWindowLayout.ButtonStyle,
+                            GUILayout.Width(140f),
+                            GUILayout.Height(60f)))
                         navigateBack?.Invoke();
                 }
 
-                EditorGUILayout.LabelField("Game Progress Testing", EditorStyles.boldLabel);
+                GUILayout.Space(12f);
+                EditorGUILayout.LabelField("Game Progress Testing", TestingWindowLayout.PageTitleStyle);
             }
 
-            EditorGUILayout.Space(6f);
+            TestingWindowLayout.SpaceSection();
         }
 
         private void DrawCommands()
@@ -116,31 +124,28 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
             bool isEnabled,
             Action action)
         {
-            using (new EditorGUILayout.HorizontalScope())
+            using (TestingWindowLayout.BeginCard())
             {
+                EditorGUILayout.LabelField(buttonTitle, TestingWindowLayout.SectionTitleStyle);
+                EditorGUILayout.LabelField(description, TestingWindowLayout.BodyStyle);
+                EditorGUILayout.Space(8f);
                 using (new EditorGUI.DisabledScope(!isEnabled))
                 {
                     if (GUILayout.Button(
                             buttonTitle,
-                            GUILayout.Width(CommandButtonWidth),
+                            TestingWindowLayout.ButtonStyle,
                             GUILayout.Height(CommandRowHeight)))
                     {
                         action?.Invoke();
                     }
                 }
-
-                EditorGUILayout.LabelField(
-                    description,
-                    CommandDescriptionStyle,
-                    GUILayout.Height(CommandRowHeight));
             }
 
-            EditorGUILayout.Space(4f);
+            TestingWindowLayout.SpaceSection();
         }
 
         private void DrawStatus()
         {
-            EditorGUILayout.Space(8f);
             DrawOutputSection(
                 "Current Level",
                 FormatCurrentTarget(_runner.CurrentPoint));
@@ -199,14 +204,14 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
 
         private void DrawOutputSection(string heading, string value)
         {
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            using (TestingWindowLayout.BeginCard())
             {
                 EditorGUILayout.LabelField(heading, OutputHeadingStyle);
                 EditorGUILayout.Space(2f);
                 EditorGUILayout.LabelField(value, OutputTextStyle);
             }
 
-            EditorGUILayout.Space(4f);
+            TestingWindowLayout.SpaceSection();
         }
 
         private GUIStyle OutputTextStyle =>
@@ -221,13 +226,6 @@ namespace LostCyberHamster.Editor.Testing.GameProgress
             {
                 fontSize = OutputHeadingFontSize,
                 fontStyle = FontStyle.Bold
-            };
-
-        private GUIStyle CommandDescriptionStyle =>
-            _commandDescriptionStyle ??= new GUIStyle(EditorStyles.wordWrappedLabel)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                wordWrap = true
             };
     }
 }

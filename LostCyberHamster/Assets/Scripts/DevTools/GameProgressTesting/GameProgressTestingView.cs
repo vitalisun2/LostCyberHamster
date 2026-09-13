@@ -9,8 +9,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
     /// <summary>Создаёт runtime DEV-представление ручного теста игрового прогресса.</summary>
     internal sealed class GameProgressTestingView
     {
-        private const float CommandButtonWidth = 180f;
-        private const int OutputFontSize = 18;
+        private const int OutputFontSize = DevToolsTheme.HeadingFontSize + 6;
 
         private readonly Button _prepareLevelUpButton;
         private readonly Button _resetProgressButton;
@@ -32,8 +31,12 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "GameProgressTestingHeading",
                 content,
                 "GAME PROGRESS TESTING");
+            uiFactory.CreateBodyText(
+                "GameProgressTestingDescription",
+                content,
+                "Те же production-flow команды, что и в Tools/Testing, но сгруппированы по карточкам с крупными CTA.");
 
-            _prepareLevelUpButton = CreateCommandRow(
+            _prepareLevelUpButton = CreateCommandCard(
                 uiFactory,
                 content,
                 "PrepareLevelUp",
@@ -41,7 +44,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Sets XP to 239/240. The next XP reward shows the Level Up modal.",
                 DevToolsTheme.Button,
                 () => PrepareLevelUpRequested?.Invoke());
-            _resetProgressButton = CreateCommandRow(
+            _resetProgressButton = CreateCommandCard(
                 uiFactory,
                 content,
                 "ResetProgress",
@@ -49,7 +52,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Resets all local player progress.",
                 DevToolsTheme.Danger,
                 () => ResetProgressRequested?.Invoke());
-            _winCurrentLevelButton = CreateCommandRow(
+            _winCurrentLevelButton = CreateCommandCard(
                 uiFactory,
                 content,
                 "WinCurrentLevel",
@@ -57,7 +60,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Uses the running level, or opens PlayerData.CurrentLevel. Finishes with 3 stars and a random score.",
                 DevToolsTheme.Primary,
                 () => WinCurrentLevelRequested?.Invoke());
-            _winCurrentPartOfDayButton = CreateCommandRow(
+            _winCurrentPartOfDayButton = CreateCommandCard(
                 uiFactory,
                 content,
                 "WinCurrentPartOfDay",
@@ -65,7 +68,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 "Wins every remaining level in the current part of day through the real result flow. Uses a 0.3 s modal delay.",
                 DevToolsTheme.Primary,
                 () => WinCurrentPartOfDayRequested?.Invoke());
-            _winCurrentLocationButton = CreateCommandRow(
+            _winCurrentLocationButton = CreateCommandCard(
                 uiFactory,
                 content,
                 "WinCurrentLocation",
@@ -113,8 +116,8 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             _currentActionText.text = runner.CurrentAction;
         }
 
-        /// <summary>Создаёт строку с фиксированной кнопкой и кратким описанием.</summary>
-        private static Button CreateCommandRow(
+        /// <summary>Создаёт карточку команды с описанием и крупной CTA-кнопкой.</summary>
+        private static Button CreateCommandCard(
             DevToolsUiFactory uiFactory,
             Transform parent,
             string name,
@@ -123,49 +126,27 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             Color buttonColor,
             Action action)
         {
-            GameObject rowObject = new GameObject(
-                $"{name}Row",
-                typeof(RectTransform),
-                typeof(HorizontalLayoutGroup),
-                typeof(ContentSizeFitter));
-            rowObject.transform.SetParent(parent, false);
-
-            HorizontalLayoutGroup rowLayout =
-                rowObject.GetComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = DevToolsTheme.ContentSpacing;
-            rowLayout.childAlignment = TextAnchor.MiddleLeft;
-            rowLayout.childControlWidth = true;
-            rowLayout.childControlHeight = true;
-            rowLayout.childForceExpandWidth = false;
-            rowLayout.childForceExpandHeight = false;
-
-            ContentSizeFitter rowFitter = rowObject.GetComponent<ContentSizeFitter>();
-            rowFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            rowFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            Transform card = uiFactory.CreateCard(
+                $"{name}Card",
+                parent,
+                DevToolsTheme.Surface);
+            uiFactory.CreateSectionHeading($"{name}Heading", card, buttonLabel);
+            Text descriptionText = uiFactory.CreateBodyText(
+                $"{name}Description",
+                card,
+                description);
+            descriptionText.alignment = TextAnchor.UpperLeft;
 
             Button button = uiFactory.CreateButton(
                 $"{name}Button",
-                rowObject.transform,
+                card,
                 buttonLabel,
                 buttonColor,
                 () => action?.Invoke());
-            LayoutElement buttonLayout = button.GetComponent<LayoutElement>();
-            buttonLayout.minWidth = CommandButtonWidth;
-            buttonLayout.preferredWidth = CommandButtonWidth;
-            buttonLayout.flexibleWidth = 0f;
             Text buttonText = button.GetComponentInChildren<Text>();
             buttonText.resizeTextForBestFit = true;
-            buttonText.resizeTextMinSize = 11;
-            buttonText.resizeTextMaxSize = DevToolsTheme.ButtonFontSize;
-
-            Text descriptionText = uiFactory.CreateBodyText(
-                $"{name}Description",
-                rowObject.transform,
-                description);
-            descriptionText.alignment = TextAnchor.MiddleLeft;
-            LayoutElement descriptionLayout =
-                descriptionText.gameObject.AddComponent<LayoutElement>();
-            descriptionLayout.flexibleWidth = 1f;
+            buttonText.resizeTextMinSize = DevToolsTheme.ScaleFont(18);
+            buttonText.resizeTextMaxSize = DevToolsTheme.ScaleFont(DevToolsTheme.ButtonFontSize);
             return button;
         }
 
@@ -184,13 +165,13 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
                 card,
                 heading);
             headingText.fontStyle = FontStyle.Bold;
-            headingText.fontSize = OutputFontSize;
+            headingText.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
 
             Text valueText = uiFactory.CreateBodyText(
                 $"{name}Text",
                 card,
                 string.Empty);
-            valueText.fontSize = OutputFontSize;
+            valueText.fontSize = DevToolsTheme.ScaleFont(OutputFontSize);
             return valueText;
         }
     }
