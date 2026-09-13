@@ -13,6 +13,38 @@
     left: 0;
 }
 
+.game-screen__resume-countdown {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-screen__resume-countdown--visible {
+    display: flex;
+}
+
+.game-screen__resume-countdown-label {
+    width: 240px;
+    height: 140px;
+    rotate: 1deg;
+}
+
+#gamescreen .game-screen__resume-countdown-label .illustrated-alphabet__word {
+    scale: 0.82 0.82;
+}
+
+#gamescreen .game-screen__resume-countdown-label .illustrated-alphabet__fallback {
+    color: rgb(255, 245, 214);
+    font-size: 84px;
+    -unity-text-outline-width: 4px;
+    -unity-text-outline-color: rgb(9, 28, 45);
+}
+
 .game-screen__top-row {
     position: absolute;
     top: 12px;

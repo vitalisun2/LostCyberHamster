@@ -17,6 +17,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
     {
         private readonly UIManager _uiManager;
         private readonly GameManager _gameManager;
+        private readonly GameScreenController _gameScreenController;
         private readonly Hamster _character;
         private readonly LoseModalController _loseModalController;
         private readonly string _runId = Guid.NewGuid().ToString("N");
@@ -34,6 +35,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _uiManager = uiManager;
             _navigation = navigation;
             _gameManager = gameManager;
+            _gameScreenController = _uiManager.GetController<GameScreenController>();
             _character = character;
             _sceneHandle = character.gameObject.scene.handle;
             _loseModalController = _uiManager.GetController<LoseModalController>();
@@ -136,6 +138,18 @@ namespace Assets.Scripts.GameEngine.Mechanics
             FirstSessionTelemetry.Record("attempt_revived", Vues.GameCore.QuestManager.CurrentAttemptPreview.AttemptId);
             _character.Lives.Value = 1;
             _uiManager.CloseModal(ScreenEnum.LoseModal);
+            _gameScreenController.StartResumeCountdown(ResumeRevivedAttempt);
+        }
+
+        private void ResumeRevivedAttempt()
+        {
+            if (_runEnded || _profile != GameDataManager.ProfileId || _generation != GameDataManager.Generation ||
+                _character == null || _gameManager == null || _character.gameObject.scene.handle != _sceneHandle ||
+                _character.Lives.Value <= 0)
+            {
+                return;
+            }
+
             _gameManager.Resume();
         }
     }

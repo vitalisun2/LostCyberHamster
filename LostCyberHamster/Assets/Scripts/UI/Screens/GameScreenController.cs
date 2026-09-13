@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using Assets.Scripts.GameEngine.Mechanics;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,6 +15,7 @@ namespace LostCyberHamster.UI
         private const float RunCounterIconInset = 44f;
         private const float RunCounterPlatePadding = 56f;
         private const float RunCounterDigitWidth = 28f;
+        private const int ResumeCountdownDefaultSeconds = 3;
 
         private Button _buttonPause;
         private Energybar _energyBar;
@@ -32,6 +35,8 @@ namespace LostCyberHamster.UI
         private Label _ultraRefillPrice;
         private string _energyRefillPriceText = string.Empty;
         private string _ultraRefillPriceText = string.Empty;
+        private VisualElement _resumeCountdownOverlay;
+        private VisualElement _resumeCountdownLabel;
         private Button _ultraButton;
         private Label _ultraChargeValue;
         private AbilityActivityIndicator _activity;
@@ -39,6 +44,11 @@ namespace LostCyberHamster.UI
         private bool _canBuyEnergy;
         private bool _canBuyUltra;
         private int _lastUltraCharge;
+        private int _resumeCountdownVersion;
+        private int _resumeCountdownValue;
+        private bool _resumeCountdownVisible;
+        private CancellationTokenSource _resumeCountdownCancellation;
+        private IDisposable _resumeCountdownInputBlock;
 
         private Action _jumpInputAction;
         private Action _ultraAction;
@@ -134,6 +144,7 @@ namespace LostCyberHamster.UI
             _buyUltraButton?.UnregisterCallback<PointerDownEvent>(OnClickBuyUltra, TrickleDown.TrickleDown);
             _tapArea?.UnregisterCallback<PointerDownEvent>(OnClickTap, TrickleDown.TrickleDown);
             _hudSafeArea?.UnregisterCallback<GeometryChangedEvent>(OnHudGeometryChanged);
+            CancelResumeCountdown();
         }
 
         protected override void BindView()
@@ -154,6 +165,8 @@ namespace LostCyberHamster.UI
             _energyRefillPrice = _contentRoot.Q<Label>("energy-refill-price");
             _ultraRefillPrice = _contentRoot.Q<Label>("ultra-refill-price");
             RefreshRefillPrices();
+            _resumeCountdownOverlay = _contentRoot.Q<VisualElement>("resume-countdown");
+            _resumeCountdownLabel = _contentRoot.Q<VisualElement>("resume-countdown-label");
             _ultraButton = _contentRoot.Q<Button>("btn_ultra");
             _ultraChargeValue = _contentRoot.Q<Label>("ulta-charge-value");
             _activity?.RemoveFromHierarchy();
@@ -171,6 +184,7 @@ namespace LostCyberHamster.UI
             SetRunResources(_runCoinsValue, _runCrystalsValue);
             SetRefillAvailability(_canBuyEnergy, _canBuyUltra);
             UpdateCounterLayout(_hudSafeArea?.resolvedStyle.width ?? 0);
+            ApplyResumeCountdownState();
         }
 
         private void ClearBackground()
@@ -293,6 +307,25 @@ namespace LostCyberHamster.UI
             _buyUltraButton?.SetEnabled(visible && _canBuyUltra);
         }
 
+        public void StartResumeCountdown(Action onCompleted, int seconds = ResumeCountdownDefaultSeconds)
+        {
+            if (onCompleted == null)
+            {
+                throw new ArgumentNullException(nameof(onCompleted));
+            }
+
+            int countdownSeconds = Math.Max(1, seconds);
+            int version = NextResumeCountdownVersion();
+            StopResumeCountdown();
+
+            _resumeCountdownValue = countdownSeconds;
+            _resumeCountdownVisible = true;
+            _resumeCountdownInputBlock = UiInputBlock.Acquire();
+            _resumeCountdownCancellation = new CancellationTokenSource();
+            ApplyResumeCountdownState();
+            _ = RunResumeCountdownAsync(version, countdownSeconds, onCompleted, _resumeCountdownCancellation.Token);
+        }
+
         /// <summary>Принимает фактические цены механики и сохраняет их для пересоздания дерева HUD.</summary>
         public void SetRefillPrices(int energy, int ultra)
         {
@@ -363,6 +396,80 @@ namespace LostCyberHamster.UI
 
             _ultraAction.Invoke();
             return true;
+        }
+
+        private async Task RunResumeCountdownAsync(int version, int seconds, Action onCompleted, CancellationToken token)
+        {
+            try
+            {
+                for (int current = seconds; current >= 1; current--)
+                {
+                    if (version != _resumeCountdownVersion)
+                    {
+                        return;
+                    }
+
+                    _resumeCountdownValue = current;
+                    _resumeCountdownVisible = true;
+                    ApplyResumeCountdownState();
+                    await Task.Delay(1000, token);
+                }
+
+                if (version != _resumeCountdownVersion)
+                {
+                    return;
+                }
+
+                StopResumeCountdown();
+                onCompleted.Invoke();
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+            }
+        }
+
+        private void CancelResumeCountdown()
+        {
+            NextResumeCountdownVersion();
+            StopResumeCountdown();
+        }
+
+        private void StopResumeCountdown()
+        {
+            _resumeCountdownCancellation?.Cancel();
+            _resumeCountdownCancellation?.Dispose();
+            _resumeCountdownCancellation = null;
+            _resumeCountdownInputBlock?.Dispose();
+            _resumeCountdownInputBlock = null;
+            _resumeCountdownVisible = false;
+            _resumeCountdownValue = 0;
+            ApplyResumeCountdownState();
+        }
+
+        private void ApplyResumeCountdownState()
+        {
+            if (_resumeCountdownOverlay == null)
+            {
+                return;
+            }
+
+            _resumeCountdownOverlay.EnableInClassList("game-screen__resume-countdown--visible", _resumeCountdownVisible);
+            _resumeCountdownOverlay.style.display = _resumeCountdownVisible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (_resumeCountdownVisible && _resumeCountdownLabel != null)
+            {
+                IllustratedAlphabetText.Render(_resumeCountdownLabel,
+                    _resumeCountdownValue.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        private int NextResumeCountdownVersion()
+        {
+            unchecked
+            {
+                _resumeCountdownVersion++;
+            }
+
+            return _resumeCountdownVersion;
         }
 
         private static void SetElementVisible(VisualElement element, bool visible)

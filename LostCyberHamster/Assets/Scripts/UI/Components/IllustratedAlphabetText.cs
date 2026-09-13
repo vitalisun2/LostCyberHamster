@@ -78,6 +78,7 @@ namespace LostCyberHamster.UI
         {
             return character switch
             {
+                '1' => 0.4609f, '2' => 0.7227f, '3' => 0.7773f,
                 'A' => 0.8242f, 'B' => 0.7930f, 'C' => 0.7695f, 'D' => 0.7891f,
                 'E' => 0.6680f, 'F' => 0.6602f, 'G' => 0.8320f, 'H' => 0.7734f,
                 'I' => 0.4609f, 'J' => 0.7266f, 'K' => 0.7852f, 'L' => 0.6602f,
@@ -100,6 +101,11 @@ namespace LostCyberHamster.UI
 
         private static bool IsSupported(char character)
         {
+            if (character >= '1' && character <= '3')
+            {
+                return true;
+            }
+
             return character >= 'A' && character <= 'Z' ||
                    character >= 'А' && character <= 'Я' ||
                    character == 'Ё';

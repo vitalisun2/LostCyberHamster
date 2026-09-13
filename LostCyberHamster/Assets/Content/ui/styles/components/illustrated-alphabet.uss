@@ -67,6 +67,10 @@
 .illustrated-alphabet__glyph--u0059 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0059.png"); }
 .illustrated-alphabet__glyph--u005a { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u005a.png"); }
 
+.illustrated-alphabet__glyph--u0031 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u0049.png"); }
+.illustrated-alphabet__glyph--u0032 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/latin/u005a.png"); }
+.illustrated-alphabet__glyph--u0033 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0417.png"); }
+
 .illustrated-alphabet__glyph--u0410 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0410.png"); }
 .illustrated-alphabet__glyph--u0411 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0411.png"); }
 .illustrated-alphabet__glyph--u0412 { background-image: url("/Assets/Content/ui/sprites/home/illustrated_alphabet/cyrillic/u0412.png"); }
