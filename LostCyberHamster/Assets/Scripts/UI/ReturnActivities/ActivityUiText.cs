@@ -10,8 +10,7 @@ namespace LostCyberHamster.UI
     {
         public static string Get(string key, params object[] args)
         {
-            string text = LocalizationManager.GetLocalizedString("return_" + key);
-            return args.Length == 0 ? text : string.Format(CultureInfo.CurrentCulture, text, args);
+            return UiLocalizedText.Format("return_" + key, args);
         }
 
         public static string Amount(int coins, int gems) => gems > 0
@@ -48,6 +47,42 @@ namespace LostCyberHamster.UI
             if (ReturnActivityConfig.Current?.Enabled != true) return Get("paused");
             return UnityEngine.Application.internetReachability == UnityEngine.NetworkReachability.NotReachable
                 ? Get("offline") : Get("local_saved");
+        }
+    }
+
+    internal static class UiLocalizedText
+    {
+        public static bool TryResolve(string key, out string localized)
+        {
+            localized = Resolve(key);
+            return !string.IsNullOrWhiteSpace(localized);
+        }
+
+        public static string Resolve(string key, string fallback = null)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return fallback ?? string.Empty;
+            }
+
+            string localized = LocalizationManager.GetLocalizedString(key);
+            return string.IsNullOrWhiteSpace(localized) ||
+                   string.Equals(localized, key, StringComparison.Ordinal)
+                ? fallback ?? string.Empty
+                : localized;
+        }
+
+        public static string Format(string key, params object[] args)
+        {
+            string template = Resolve(key);
+            if (string.IsNullOrEmpty(template))
+            {
+                return string.Empty;
+            }
+
+            return args.Length == 0
+                ? template
+                : string.Format(CultureInfo.CurrentCulture, template, args);
         }
     }
 }
