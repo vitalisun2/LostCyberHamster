@@ -21,8 +21,6 @@ namespace LostCyberHamster.UI
             _root = root; _open = open;
             _cycle = root.Q<Button>("home-activity-cycle");
             _week = root.Q<Button>("home-activity-week");
-            root.Q<Label>("home-cycle-title").text = ActivityUiText.Get("cycle");
-            root.Q<Label>("home-week-title").text = ActivityUiText.Get("week");
             _cycle.clicked += OpenCycle; _week.clicked += OpenWeek;
 
             // Подписки принадлежат текущему экранному дереву.
@@ -45,6 +43,8 @@ namespace LostCyberHamster.UI
         private void Refresh()
         {
             // Постоянное место и краткие отдельные счётчики сохраняют читаемость Home.
+            _root.Q<Label>("home-cycle-title").text = ActivityUiText.Get("cycle");
+            _root.Q<Label>("home-week-title").text = ActivityUiText.Get("week");
             var state = ReturnActivityService.GetSnapshot();
             string dayPolicyVersion = ReturnActivityService.DayPolicyVersion;
             _cycle.SetEnabled(state != null); _week.SetEnabled(state != null);
@@ -74,7 +74,7 @@ namespace LostCyberHamster.UI
         }
 
         private static string Text(string key, params object[] values) =>
-            string.Format(LocalizationManager.GetLocalizedString(key), values);
+            UiLocalizedText.Format(key, values);
 
         public void Dispose()
         {

@@ -30,6 +30,7 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("home__xp-fill");
         private Label _experienceLabel =>
             _contentRoot.Q<Label>("home__xp-label");
+        private IVisualElementScheduledItem _localizedLabelRetry;
 
         protected override ScreenEnum _screenAssetName => ScreenEnum.HomeScreen;
 
@@ -98,6 +99,8 @@ namespace LostCyberHamster.UI
         {
             _activities?.Dispose();
             _activities = null;
+            _localizedLabelRetry?.Pause();
+            _localizedLabelRetry = null;
             // Отключаем действия всех кнопок Home.
             _buttonStart?.UnregisterCallback<ClickEvent>(OnClickBtnStart);
             _buttonSelectLevel?.UnregisterCallback<ClickEvent>(OnClickBtnSelectLevel);
@@ -118,14 +121,48 @@ namespace LostCyberHamster.UI
 
         protected override void BindView()
         {
-            // Локализуем подписи и уменьшаем длинные варианты внутри художественных рамок.
-            string playText = LocalizationManager.GetLocalizedString("retention_play");
-            string selectLevelText = LocalizationManager.GetLocalizedString("retention_select_level");
-            _buttonStartLabel.EnableInClassList("home-play-button__label--long", playText.Length > 4);
-            _buttonSelectLevelLabel.EnableInClassList("home-select-level-button__label--long", selectLevelText.Length > 12);
-            IllustratedAlphabetText.Render(_buttonStartLabel, playText);
-            IllustratedAlphabetText.Render(_buttonSelectLevelLabel, selectLevelText);
+            RefreshLocalizedButtons();
             RefreshExperiencePanel();
+        }
+
+        private void RefreshLocalizedButtons()
+        {
+            bool playResolved = RenderLocalizedIllustratedLabel(
+                _buttonStartLabel,
+                "retention_play",
+                "home-play-button__label--long",
+                4);
+            bool selectLevelResolved = RenderLocalizedIllustratedLabel(
+                _buttonSelectLevelLabel,
+                "retention_select_level",
+                "home-select-level-button__label--long",
+                12);
+
+            if (playResolved && selectLevelResolved)
+            {
+                _localizedLabelRetry?.Pause();
+                return;
+            }
+
+            _localizedLabelRetry ??= _contentRoot.schedule.Execute(RefreshLocalizedButtons).Every(100);
+            _localizedLabelRetry.Resume();
+        }
+
+        private static bool RenderLocalizedIllustratedLabel(
+            VisualElement host,
+            string key,
+            string longClassName,
+            int compactThreshold)
+        {
+            if (host == null)
+            {
+                return true;
+            }
+
+            bool resolved = UiLocalizedText.TryResolve(key, out string text);
+            host.EnableInClassList(longClassName, resolved && text.Length > compactThreshold);
+            IllustratedAlphabetText.Render(host, text);
+            return resolved;
         }
 
         private void RefreshExperiencePanel()

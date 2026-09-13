@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using System.Linq;
 using System.Threading.Tasks;
+using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using GameManagement;
