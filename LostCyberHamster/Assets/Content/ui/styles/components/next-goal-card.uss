@@ -8,7 +8,7 @@
     -unity-slice-right: 80;
     -unity-slice-top: 80;
     -unity-slice-bottom: 80;
-    -unity-slice-scale: 0.5;
+    -unity-slice-scale: 0.5px;
 }
 
 #next-goal-card .next-goal-card__header {
@@ -23,7 +23,7 @@
     -unity-slice-right: 200;
     -unity-slice-top: 220;
     -unity-slice-bottom: 240;
-    -unity-slice-scale: 0.07;
+    -unity-slice-scale: 0.07px;
 }
 
 #next-goal-card .next-goal-card__icon {
@@ -86,7 +86,7 @@
     -unity-slice-right: 14;
     -unity-slice-top: 12;
     -unity-slice-bottom: 12;
-    -unity-slice-scale: 0.5;
+    -unity-slice-scale: 0.5px;
 }
 
 #next-goal-card .next-goal-card__progress-fill {
@@ -97,7 +97,7 @@
     -unity-slice-right: 14;
     -unity-slice-top: 12;
     -unity-slice-bottom: 12;
-    -unity-slice-scale: 0.5;
+    -unity-slice-scale: 0.5px;
 }
 
 #next-goal-card .next-goal-card__action,
@@ -126,7 +126,7 @@
     -unity-slice-right: 30;
     -unity-slice-top: 24;
     -unity-slice-bottom: 24;
-    -unity-slice-scale: 0.7;
+    -unity-slice-scale: 0.7px;
     color: white;
     font-size: 22px;
     -unity-text-outline-width: 1px;
@@ -145,7 +145,7 @@
     -unity-slice-right: 30;
     -unity-slice-top: 24;
     -unity-slice-bottom: 24;
-    -unity-slice-scale: 0.6;
+    -unity-slice-scale: 0.6px;
     font-size: 64px;
     color: white;
     -unity-text-outline-width: 2px;
@@ -158,7 +158,7 @@
 #next-goal-card .next-goal-card__dismiss:active { opacity: 0.65; }
 
 
-#next-goal-card.next-goal-card--home { background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.4; }
+#next-goal-card.next-goal-card--home { background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.4px; }
 #next-goal-card.next-goal-card--home .next-goal-card__header { left: 46px; right: 90px; top: 26px; height: 45px; }
 #next-goal-card.next-goal-card--home .next-goal-card__heading { left: 48px; right: 6px; top: 2px; height: 40px; font-size: 24px; }
 #next-goal-card.next-goal-card--home .next-goal-card__icon { left: 24px; top: 20px; width: 76px; height: 76px; }

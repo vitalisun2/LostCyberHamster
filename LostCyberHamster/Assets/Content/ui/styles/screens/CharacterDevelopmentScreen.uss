@@ -100,10 +100,10 @@
 .development-panel {
     position: absolute;
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 30px;
-    -unity-slice-right: 30px;
-    -unity-slice-top: 30px;
-    -unity-slice-bottom: 30px;
+    -unity-slice-left: 30;
+    -unity-slice-right: 30;
+    -unity-slice-top: 30;
+    -unity-slice-bottom: 30;
 }
 
 .development-level-panel {
@@ -138,10 +138,10 @@
     height: 23px;
     background-image: url("/Assets/Content/ui/sprites/skills/track_progression.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 12px;
-    -unity-slice-right: 12px;
-    -unity-slice-top: 10px;
-    -unity-slice-bottom: 10px;
+    -unity-slice-left: 12;
+    -unity-slice-right: 12;
+    -unity-slice-top: 10;
+    -unity-slice-bottom: 10;
 }
 
 .development-skins-track {
@@ -461,10 +461,10 @@
     background-image: url("/Assets/Content/ui/sprites/skills/button_unlock_base.png");
     -unity-background-image-tint-color: rgb(255, 255, 255);
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 18px;
-    -unity-slice-right: 18px;
-    -unity-slice-top: 17px;
-    -unity-slice-bottom: 17px;
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 17;
+    -unity-slice-bottom: 17;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;

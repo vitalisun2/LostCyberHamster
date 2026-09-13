@@ -27,10 +27,10 @@
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/shared/progress_bar_empty.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 14px;
-    -unity-slice-right: 14px;
-    -unity-slice-top: 12px;
-    -unity-slice-bottom: 12px;
+    -unity-slice-left: 14;
+    -unity-slice-right: 14;
+    -unity-slice-top: 12;
+    -unity-slice-bottom: 12;
 }
 
 .shared-progress-bar .unity-progress-bar__background {
@@ -52,10 +52,10 @@
     background-color: rgba(0, 0, 0, 0);
     background-image: url("/Assets/Content/ui/sprites/shared/progress_bar_fill.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 14px;
-    -unity-slice-right: 14px;
-    -unity-slice-top: 12px;
-    -unity-slice-bottom: 12px;
+    -unity-slice-left: 14;
+    -unity-slice-right: 14;
+    -unity-slice-top: 12;
+    -unity-slice-bottom: 12;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;

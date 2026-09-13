@@ -101,10 +101,10 @@
     justify-content: center;
     background-image: url("/Assets/Content/ui/sprites/shared/hud_currency_plate.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 24px;
-    -unity-slice-right: 24px;
-    -unity-slice-top: 14px;
-    -unity-slice-bottom: 14px;
+    -unity-slice-left: 24;
+    -unity-slice-right: 24;
+    -unity-slice-top: 14;
+    -unity-slice-bottom: 14;
 }
 
 .shared-currency-button__label {

@@ -509,7 +509,7 @@
     -unity-slice-right: 80;
     -unity-slice-top: 80;
     -unity-slice-bottom: 80;
-    -unity-slice-scale: 0.5;
+    -unity-slice-scale: 0.5px;
 }
 
 .leaderboard-rules-text {

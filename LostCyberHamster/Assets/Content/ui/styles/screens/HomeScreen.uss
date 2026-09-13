@@ -91,10 +91,10 @@
     height: 58px;
     background-image: url("/Assets/Content/ui/sprites/home/hud_player_level_track.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 25px;
-    -unity-slice-right: 25px;
-    -unity-slice-top: 14px;
-    -unity-slice-bottom: 14px;
+    -unity-slice-left: 25;
+    -unity-slice-right: 25;
+    -unity-slice-top: 14;
+    -unity-slice-bottom: 14;
 }
 
 .home-xp-panel__fill-clip {
@@ -115,10 +115,10 @@
     height: 42px;
     background-image: url("/Assets/Content/ui/sprites/home/hud_player_level_fill.png");
     -unity-background-scale-mode: stretch-to-fill;
-    -unity-slice-left: 9px;
-    -unity-slice-right: 9px;
-    -unity-slice-top: 9px;
-    -unity-slice-bottom: 9px;
+    -unity-slice-left: 9;
+    -unity-slice-right: 9;
+    -unity-slice-top: 9;
+    -unity-slice-bottom: 9;
 }
 
 .home-xp-panel__badge {
@@ -190,7 +190,7 @@
 
 
 .return-home { position: absolute; left: 1190px; top: 279px; width: 520px; }
-#homescreen .return-home__row { position: relative; width: 520px; height: 137px; margin: 0 0 21px; padding: 0; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.24; }
+#homescreen .return-home__row { position: relative; width: 520px; height: 137px; margin: 0 0 21px; padding: 0; border-width: 0; background-color: transparent; background-image: url("/Assets/Content/ui/sprites/shared/retention/panel_parchment.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 120; -unity-slice-right: 120; -unity-slice-top: 110; -unity-slice-bottom: 110; -unity-slice-scale: 0.24px; }
 .return-home__icon { position: absolute; left: 15px; top: 4px; width: 122px; height: 122px; -unity-background-scale-mode: scale-to-fit; }
 .return-home__icon--cycle { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_victory_stamp.png"); }
 .return-home__icon--week { background-image: url("/Assets/Content/ui/sprites/shared/retention/icon_calendar.png"); }
@@ -210,5 +210,5 @@
 #homescreen .home-select-level-button__label .illustrated-alphabet__glyph { margin-right: -14px; }
 #homescreen .home-select-level-button__label--long .illustrated-alphabet__word { scale: 0.28 0.28; }
 #homescreen .return-home__title, #homescreen .return-home__progress { -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-font-style: bold; }
-#homescreen .return-home__arrow { width: 59px; height: 73px; right: 22px; top: 29px; margin: 0; padding: 0 0 8px; color: white; font-size: 73px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: black; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; -unity-slice-scale: 0.75; }
+#homescreen .return-home__arrow { width: 59px; height: 73px; right: 22px; top: 29px; margin: 0; padding: 0 0 8px; color: white; font-size: 73px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; -unity-text-outline-width: 2px; -unity-text-outline-color: black; background-image: url("/Assets/Content/ui/sprites/hero/button_select_base.png"); -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 30; -unity-slice-right: 30; -unity-slice-top: 24; -unity-slice-bottom: 24; -unity-slice-scale: 0.75px; }
 #homescreen .return-calendar-day { margin: 0; width: 122px; height: 122px; padding-top: 20px; color: rgb(13,32,48); font-size: 63px; -unity-font-definition: url("/Assets/Content/ui/fonts/Nunito-Bold.ttf"); -unity-text-align: middle-center; rotate: -8deg; }

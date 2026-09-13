@@ -1,4 +1,4 @@
-#reward-modal-design .reward-modal__panel { left: 120px; top: 110px; width: 1432px; height: 730px; -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60px; -unity-slice-right: 60px; -unity-slice-top: 60px; -unity-slice-bottom: 60px; }
+#reward-modal-design .reward-modal__panel { left: 120px; top: 110px; width: 1432px; height: 730px; -unity-background-scale-mode: stretch-to-fill; -unity-slice-left: 60; -unity-slice-right: 60; -unity-slice-top: 60; -unity-slice-bottom: 60; }
 .return-reward-title { position: absolute; left: 150px; right: 150px; top: 150px; height: 90px; font-size: 58px; white-space: normal; }
 .return-reward-marks { position: absolute; left: 170px; right: 170px; top: 245px; height: 80px; font-size: 52px; color: rgb(206, 146, 23); }
 .return-reward-origin { position: absolute; left: 160px; right: 160px; top: 340px; height: 65px; font-size: 32px; }

@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
   <PropertyGroup>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -54,13 +54,6 @@
     <UnityBuildTarget>Android:13</UnityBuildTarget>
     <UnityVersion>6000.2.6f2</UnityVersion>
   </PropertyGroup>
-  <ItemGroup>
-    <Analyzer Include="C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
-    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
-    <Analyzer Include="C:\Personal\crystal-wave\repos\LostCyberHamster_2025\LostCyberHamster\Library\PackageCache\com.unity.pipeline@9bb4172c603c\Runtime\Analyzers\IlInterpreterAnalyzer.dll" />
-  </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Entry Points\Interfaces\ILoadingTaskParallel.cs" />
     <Compile Include="Assets\Scripts\CloudSave\Models\CloudSyncStateEnum.cs" />
@@ -502,6 +495,7 @@
     <Compile Include="Assets\Scripts\CloudSave\ConflictService.cs" />
     <Compile Include="Assets\Scripts\Entry Points\GameEntryPoint.cs" />
     <Compile Include="Assets\Scripts\Common\CollisionUtils.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\UiInputCarryoverBlock.cs" />
     <Compile Include="Assets\Scripts\Infrastructure\FirstInstallPrefsWipe.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\PlanningGraphBuilder.cs" />
     <Compile Include="Assets\Scripts\GameEngine\Controllers\CollisionController.cs" />
