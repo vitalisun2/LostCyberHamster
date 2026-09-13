@@ -68,7 +68,7 @@ namespace LostCyberHamster.UI
             if (laterMessage == null)
             {
                 Hide();
-                UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
+                UIManager.RequestScreenFromInput(ScreenEnum.HomeScreen);
                 return;
             }
 
@@ -85,7 +85,7 @@ namespace LostCyberHamster.UI
             _messageRemoval = laterMessage.schedule
                 .Execute(RemoveTransientMessage)
                 .StartingIn(LaterMessageDurationMs);
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.HomeScreen);
         }
 
         private void RemoveTransientMessage()

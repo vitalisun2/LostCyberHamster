@@ -76,7 +76,7 @@ namespace LostCyberHamster.UI
         private void Back()
         {
             if (_busy || !AcceptReceipt()) return;
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.HomeScreen);
         }
 
         private void Act()

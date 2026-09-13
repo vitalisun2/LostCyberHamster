@@ -27,7 +27,7 @@ namespace LostCyberHamster.UI
 
         private static void OpenHome()
         {
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.HomeScreen);
         }
     }
 
@@ -161,7 +161,7 @@ namespace LostCyberHamster.UI
 
         private static void OpenShop()
         {
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.ShopScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.ShopScreen);
         }
     }
 

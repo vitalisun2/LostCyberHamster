@@ -74,7 +74,7 @@ namespace LostCyberHamster.UI
 
         private static void Block(EventBase evt)
         {
-            if (UiInputCarryoverBlock.TryConsume(evt) || UiInputBlock.IsBlocked)
+            if (UiInputBlock.IsBlocked)
                 evt.StopImmediatePropagation();
         }
     }

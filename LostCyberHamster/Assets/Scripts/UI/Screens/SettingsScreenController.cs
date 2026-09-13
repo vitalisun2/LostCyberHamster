@@ -91,7 +91,7 @@ namespace LostCyberHamster.UI
             _returnScreen = sourceScreen == ScreenEnum.SettingsScreen
                 ? ScreenEnum.HomeScreen
                 : sourceScreen;
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.SettingsScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.SettingsScreen);
         }
 
         /// <summary>Открывает конкретный сценарий восстановления с предупреждением о замене прогресса.</summary>
@@ -697,7 +697,7 @@ namespace LostCyberHamster.UI
             var returnScreen = _returnScreen;
             _returnScreen = ScreenEnum.HomeScreen;
             EndSession();
-            UIManager.OnScreenShow?.Invoke(returnScreen);
+            UIManager.RequestScreenFromInput(returnScreen);
         }
 
         private void SaveSettings()

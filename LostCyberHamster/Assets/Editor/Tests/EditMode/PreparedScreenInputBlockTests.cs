@@ -1,9 +1,12 @@
 using System;
+using System.Collections;
 using System.Reflection;
+using System.Threading.Tasks;
 using Assets.Scripts.System.Resources;
 using LostCyberHamster.UI;
 using NUnit.Framework;
 using UnityEngine.AddressableAssets;
+using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
 namespace Assets.Tests.UI
@@ -43,6 +46,36 @@ namespace Assets.Tests.UI
 
             InvokeSetInputBlocked(prepared, owner, false);
             Assert.AreEqual(0, GetOwnerCount(prepared));
+        }
+
+        [UnityTest]
+        public IEnumerator InputTransitionBoundary_BlocksOnlyUntilDeferredTransitionCompletes()
+        {
+            var transitionStarted = false;
+            var boundaryType = typeof(UIManager).Assembly.GetType(
+                "LostCyberHamster.UI.UiInputCarryoverBlock",
+                throwOnError: true);
+            var method = boundaryType.GetMethod(
+                "RunAfterCurrentEventAsync",
+                BindingFlags.Static | BindingFlags.Public);
+            var task = (Task)method.Invoke(null, new object[]
+            {
+                (Func<Task>)(() =>
+                {
+                    transitionStarted = true;
+                    return Task.CompletedTask;
+                })
+            });
+
+            Assert.IsTrue(UiInputBlock.IsBlocked);
+            Assert.IsFalse(transitionStarted);
+
+            while (!task.IsCompleted)
+                yield return null;
+
+            Assert.IsFalse(task.IsFaulted);
+            Assert.IsTrue(transitionStarted);
+            Assert.IsFalse(UiInputBlock.IsBlocked);
         }
 
         private static IDisposable CreatePreparedScreen()

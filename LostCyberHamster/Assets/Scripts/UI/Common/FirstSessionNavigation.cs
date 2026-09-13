@@ -60,7 +60,7 @@ namespace LostCyberHamster.UI
                 UiInputCarryoverBlock.LoadScene("Menu");
             }
             else
-                UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterDevelopmentScreen);
+                UIManager.RequestScreenFromInput(ScreenEnum.CharacterDevelopmentScreen);
         }
 
         public static void Resume(UIManager ui)
@@ -105,7 +105,7 @@ namespace LostCyberHamster.UI
                 if (screen == ScreenEnum.LeaderboardScreen &&
                     !string.IsNullOrEmpty(location) && !string.IsNullOrEmpty(part))
                     ui.GetController<LeaderboardScreenController>().SetInitialSelection(location, part);
-                UIManager.OnScreenShow?.Invoke(screen);
+                UIManager.RequestScreenFromInput(screen);
             };
         }
     }

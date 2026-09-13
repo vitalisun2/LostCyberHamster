@@ -12,6 +12,7 @@ namespace LostCyberHamster.UI
 
         public static Action<ScreenEnum> OnScreenShow;
         public static Action<ScreenEnum> OnModalShow;
+        private static Action<ScreenEnum> OnScreenShowFromInput;
 
         public static Action OnRepaintScreen;
         public static Action OnRepaintModal;
@@ -42,13 +43,36 @@ namespace LostCyberHamster.UI
             }
         }
 
+        public static void RequestScreenFromInput(ScreenEnum screen)
+        {
+            OnScreenShowFromInput?.Invoke(screen);
+        }
+
         private async void OnScreenShowHandlerAsync(ScreenEnum screen)
         {
-            UiInputCarryoverBlock.Arm();
             await LoadScreenAsync(
                 screen,
                 forceReload: false,
                 closeActiveModal: true);
+        }
+
+        private async void OnScreenShowFromInputHandlerAsync(ScreenEnum screen)
+        {
+            try
+            {
+                await UiInputCarryoverBlock.RunAfterCurrentEventAsync(() =>
+                    LoadScreenAsync(
+                        screen,
+                        forceReload: false,
+                        closeActiveModal: true));
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
         }
 
         private async void OnModalShowHandlerAsync(ScreenEnum modal)
@@ -161,6 +185,7 @@ namespace LostCyberHamster.UI
             }
 
             OnScreenShow += OnScreenShowHandlerAsync;
+            OnScreenShowFromInput += OnScreenShowFromInputHandlerAsync;
             OnModalShow += OnModalShowHandlerAsync;
             OnRepaintScreen += RepaintScreenAsync;
             OnRepaintModal += RepaintModalAsync;
@@ -199,6 +224,7 @@ namespace LostCyberHamster.UI
 
             // Снимаем глобальные маршруты UI.
             OnScreenShow -= OnScreenShowHandlerAsync;
+            OnScreenShowFromInput -= OnScreenShowFromInputHandlerAsync;
             OnModalShow -= OnModalShowHandlerAsync;
             OnRepaintScreen -= RepaintScreenAsync;
             OnRepaintModal -= RepaintModalAsync;

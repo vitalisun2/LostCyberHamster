@@ -38,7 +38,7 @@ namespace LostCyberHamster.UI
             {
                 FirstSessionNavigation.Begin(ui, returnLevel, ui.CurrentScreen);
                 if (ui.CurrentScreen != ScreenEnum.GameScreen && goal.Destination == ScreenEnum.CharacterScreen)
-                    UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterScreen);
+                    UIManager.RequestScreenFromInput(ScreenEnum.CharacterScreen);
                 return;
             }
             if ((goal.Destination == ScreenEnum.CharacterDevelopmentScreen || goal.Destination == ScreenEnum.CharacterScreen) &&
@@ -56,7 +56,7 @@ namespace LostCyberHamster.UI
             }
             else if (ui.CurrentScreen == ScreenEnum.SelectLevelScreen && goal.Destination == ScreenEnum.SelectLevelScreen)
                 ui.GetController<SelectLevelScreenController>().ShowNextGoalTarget();
-            else UIManager.OnScreenShow?.Invoke(goal.Destination);
+            else UIManager.RequestScreenFromInput(goal.Destination);
         }
 
         public static string GetStageAddress(NextGoalCandidate goal)

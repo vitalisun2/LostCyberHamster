@@ -73,7 +73,7 @@ namespace Assets.Scripts.Entry_Points
                 (locationId, partId) =>
                 {
                     selectLevelScreenController.SetInitialSelection(locationId, partId);
-                    UIManager.OnScreenShow?.Invoke(ScreenEnum.SelectLevelScreen);
+                    UIManager.RequestScreenFromInput(ScreenEnum.SelectLevelScreen);
                 },
                 () => _uiManager != null && _uiManager.CurrentScreen == ScreenEnum.LeaderboardScreen &&
                     !_uiManager.HasModalOrTransition && !_uiManager.HasPriorityPresentation);
@@ -199,7 +199,7 @@ namespace Assets.Scripts.Entry_Points
         {
             if (_uiManager.HasModalOrTransition || _uiManager.HasPriorityPresentation || PlayerLevelPresentation.HasPendingLevel) return;
             ReturnActivitiesScreenController.InitialKind = kind;
-            UIManager.OnScreenShow?.Invoke(ScreenEnum.ReturnActivitiesScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen);
         }
 
         private static void PlayContinueLevel()

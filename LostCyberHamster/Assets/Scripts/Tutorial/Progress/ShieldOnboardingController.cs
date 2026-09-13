@@ -119,7 +119,7 @@ namespace Assets.Scripts.Tutorial
                 return;
             }
             ShowGuide("first_session_shield_equipment", null, "first_session_hero",
-                () => UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterScreen));
+                () => UIManager.RequestScreenFromInput(ScreenEnum.CharacterScreen));
         }
 
         private void ShowGuide(string titleKey, string detailKey, string actionKey, Action action,
@@ -134,7 +134,7 @@ namespace Assets.Scripts.Tutorial
             TrackPresentation("lesson:" + titleKey, "shield_step_shown", titleKey);
         }
 
-        private void OpenSkills() => UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterDevelopmentScreen);
+        private void OpenSkills() => UIManager.RequestScreenFromInput(ScreenEnum.CharacterDevelopmentScreen);
 
         private void Later()
         {
@@ -151,7 +151,7 @@ namespace Assets.Scripts.Tutorial
             {
                 // Сначала фиксируем возвращение; при ошибке записи подсказка остаётся доступной.
                 if (FirstSessionNavigation.HasReturnRoute) FirstSessionNavigation.Resume(_ui);
-                else UIManager.OnScreenShow?.Invoke(ScreenEnum.HomeScreen);
+                else UIManager.RequestScreenFromInput(ScreenEnum.HomeScreen);
                 _deferred = true;
                 Hide();
                 return true;

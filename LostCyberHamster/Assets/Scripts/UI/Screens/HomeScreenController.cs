@@ -38,7 +38,7 @@ namespace LostCyberHamster.UI
             _openActivities = openActivities ?? (kind =>
             {
                 ReturnActivitiesScreenController.InitialKind = kind;
-                UIManager.OnScreenShow?.Invoke(ScreenEnum.ReturnActivitiesScreen);
+                UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen);
             });
         }
 
@@ -52,12 +52,12 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnSelectLevel(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.SelectLevelScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.SelectLevelScreen);
         }
 
         private void OnClickBtnLeaderboard(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.LeaderboardScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.LeaderboardScreen);
         }
 
         protected override void OnSubscribeToEvents()
@@ -76,22 +76,22 @@ namespace LostCyberHamster.UI
 
         private void OnClickBtnDevelopment(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.CharacterDevelopmentScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.CharacterDevelopmentScreen);
         }
 
         private void OnClickBtnShop(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.ShopScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.ShopScreen);
         }
 
         private void OnClickBtnQuests(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.QuestsScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.QuestsScreen);
         }
 
         private void OnClickBtnCharacter(ClickEvent evt)
         {
-            UIManager.OnScreenShow(ScreenEnum.CharacterScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.CharacterScreen);
         }
 
         protected override void OnUnsubscribeFromEvents()

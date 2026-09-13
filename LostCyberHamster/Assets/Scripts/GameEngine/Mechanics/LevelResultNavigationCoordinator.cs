@@ -54,8 +54,11 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 try
                 {
                     if (!IsCurrent()) return;
-                    UiInputCarryoverBlock.Arm();
-                    continuation();
+                    await UiInputCarryoverBlock.RunAfterCurrentEventAsync(() =>
+                    {
+                        continuation();
+                        return Task.CompletedTask;
+                    });
                 }
                 catch (Exception exception)
                 {

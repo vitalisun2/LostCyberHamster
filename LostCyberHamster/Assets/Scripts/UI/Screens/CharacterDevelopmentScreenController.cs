@@ -677,7 +677,7 @@ namespace LostCyberHamster.UI
 
         private void OnEquipmentClicked(ClickEvent clickEvent)
         {
-            UIManager.OnScreenShow(ScreenEnum.CharacterScreen);
+            UIManager.RequestScreenFromInput(ScreenEnum.CharacterScreen);
         }
 
         private void OnSkinPreviousClicked(ClickEvent clickEvent)

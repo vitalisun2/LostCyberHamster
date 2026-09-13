@@ -1,64 +1,43 @@
 using System;
+using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
 
 namespace LostCyberHamster.UI
 {
-    /// <summary>Коротко удерживает ввод после UI-навигации, чтобы следующий экран не получил тот же tap/click.</summary>
+    /// <summary>Завершает текущую обработку ввода до смены UI или сцены.</summary>
     internal static class UiInputCarryoverBlock
     {
-        private const int DefaultDurationMs = 1000;
-
-        private static IDisposable _block;
-        private static long _expiresAt;
-
-        public static void Arm(int durationMs = DefaultDurationMs)
+        public static async Task RunAfterCurrentEventAsync(Func<Task> transition)
         {
-            if (durationMs <= 0)
-                throw new ArgumentOutOfRangeException(nameof(durationMs));
+            if (transition == null)
+                throw new ArgumentNullException(nameof(transition));
 
-            _block?.Dispose();
-            _block = UiInputBlock.Acquire();
-            _expiresAt = Environment.TickCount64 + durationMs;
+            using (UiInputBlock.Acquire())
+            {
+                // Не меняем дерево UI внутри dispatch исходного pointer/click события.
+                await Task.Yield();
+                await transition();
+            }
         }
 
-        public static void LoadScene(string sceneName, int durationMs = DefaultDurationMs)
+        public static async void LoadScene(string sceneName)
         {
             if (string.IsNullOrWhiteSpace(sceneName))
                 throw new ArgumentException("Scene name must be provided.", nameof(sceneName));
 
-            Arm(durationMs);
-            SceneManager.LoadScene(sceneName);
-        }
-
-        public static bool TryConsume(EventBase evt)
-        {
-            if (_block == null)
-                return false;
-
-            if (Environment.TickCount64 >= _expiresAt)
+            try
             {
-                Release();
-                return false;
+                await RunAfterCurrentEventAsync(() =>
+                {
+                    SceneManager.LoadScene(sceneName);
+                    return Task.CompletedTask;
+                });
             }
-
-            if (evt is PointerUpEvent ||
-                evt is ClickEvent ||
-                evt is KeyUpEvent ||
-                evt is NavigationSubmitEvent ||
-                evt is NavigationCancelEvent)
+            catch (Exception exception)
             {
-                Release();
+                Debug.LogException(exception);
             }
-
-            return true;
-        }
-
-        private static void Release()
-        {
-            _block?.Dispose();
-            _block = null;
-            _expiresAt = 0;
         }
     }
 }
