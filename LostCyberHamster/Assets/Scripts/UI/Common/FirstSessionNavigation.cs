@@ -57,7 +57,7 @@ namespace LostCyberHamster.UI
             if (ui.CurrentScreen == ScreenEnum.GameScreen)
             {
                 MenuNavigationRequest.OpenCharacterDevelopment();
-                SceneManager.LoadScene("Menu");
+                UiInputCarryoverBlock.LoadScene("Menu");
             }
             else
                 UIManager.OnScreenShow?.Invoke(ScreenEnum.CharacterDevelopmentScreen);
@@ -91,7 +91,7 @@ namespace LostCyberHamster.UI
             {
                 if (!string.IsNullOrEmpty(level))
                 {
-                    SceneManager.LoadScene("Game");
+                    UiInputCarryoverBlock.LoadScene("Game");
                     return;
                 }
                 if (ui.CurrentScreen == ScreenEnum.GameScreen)
@@ -99,7 +99,7 @@ namespace LostCyberHamster.UI
                     if (screen == ScreenEnum.LeaderboardScreen && !string.IsNullOrEmpty(location) && !string.IsNullOrEmpty(part))
                         MenuNavigationRequest.OpenLeaderboard(location, part);
                     else MenuNavigationRequest.OpenScreen(screen);
-                    SceneManager.LoadScene("Menu");
+                    UiInputCarryoverBlock.LoadScene("Menu");
                     return;
                 }
                 if (screen == ScreenEnum.LeaderboardScreen &&

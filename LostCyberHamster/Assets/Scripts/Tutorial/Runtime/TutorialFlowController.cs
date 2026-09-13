@@ -1,6 +1,7 @@
 using System;
 using Assets.Scripts.GameManagerLogic;
 using Assets.Scripts.Gameplay;
+using LostCyberHamster.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -52,7 +53,7 @@ namespace Assets.Scripts.Tutorial
             _exitRequested = true;
             _session.Rollback();
             FirstSessionTelemetry.Record("tutorial_left", "menu");
-            SceneManager.LoadScene("Menu");
+            UiInputCarryoverBlock.LoadScene("Menu");
 
             // SceneLoaded уже отсоединяет старый мир; host освободит свои guards.
             DisposeGameplay(resumeGame: false);
@@ -216,7 +217,7 @@ namespace Assets.Scripts.Tutorial
             _phase = TutorialPhase.Completed;
             try
             {
-                SceneManager.LoadScene(TutorialConstants.GameSceneName);
+                UiInputCarryoverBlock.LoadScene(TutorialConstants.GameSceneName);
             }
             catch
             {

@@ -47,7 +47,7 @@ namespace LostCyberHamster.UI
             // Play продолжает сохранённый путь; Replay и явный выбор уровня имеют свои маршруты.
             if (LevelManager.TryGetContinueLevelKey(out string levelKey))
                 LevelController.Instance.SetCurrentLevel(levelKey);
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         private void OnClickBtnSelectLevel(ClickEvent evt)

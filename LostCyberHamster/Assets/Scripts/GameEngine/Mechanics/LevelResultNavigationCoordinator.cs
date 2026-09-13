@@ -51,7 +51,12 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     await GameAds.InterstitialAdService.Instance.ShowSelectedAfterResultsAsync(IsCurrent);
                 }
                 catch (Exception exception) { Debug.LogException(exception); }
-                try { if (IsCurrent()) continuation(); }
+                try
+                {
+                    if (!IsCurrent()) return;
+                    UiInputCarryoverBlock.Arm();
+                    continuation();
+                }
                 catch (Exception exception)
                 {
                     Debug.LogException(exception);

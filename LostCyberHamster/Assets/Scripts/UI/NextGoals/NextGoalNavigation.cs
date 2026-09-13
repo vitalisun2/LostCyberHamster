@@ -52,7 +52,7 @@ namespace LostCyberHamster.UI
             if (ui.CurrentScreen == ScreenEnum.GameScreen)
             {
                 MenuNavigationRequest.OpenScreen(goal.Destination);
-                SceneManager.LoadScene("Menu");
+                UiInputCarryoverBlock.LoadScene("Menu");
             }
             else if (ui.CurrentScreen == ScreenEnum.SelectLevelScreen && goal.Destination == ScreenEnum.SelectLevelScreen)
                 ui.GetController<SelectLevelScreenController>().ShowNextGoalTarget();

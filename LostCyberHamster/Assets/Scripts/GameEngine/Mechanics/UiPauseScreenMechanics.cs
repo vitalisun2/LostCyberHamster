@@ -132,7 +132,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
                     }
                     Assets.Scripts.Diagnostics.EconomyTelemetry.FinishRun("exit", 0, -1, "discarded");
                     RunLootBuffer.Discard();
-                    SceneManager.LoadScene("Menu");
+                    UiInputCarryoverBlock.LoadScene("Menu");
                 }
             }
             catch (Exception exception)

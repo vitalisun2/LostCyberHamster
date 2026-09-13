@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Assets.Scripts.System.Resources;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,7 +12,7 @@ namespace LostCyberHamster.UI
         private readonly AddressableLease<VisualTreeAsset> _asset;
         private AddressableLease<Sprite> _background;
         private bool _disposed;
-        private bool _inputBlocked;
+        private readonly HashSet<object> _inputBlockOwners = new();
 
         public VisualElement Root { get; }
         public VisualElement Content { get; }
@@ -80,12 +81,24 @@ namespace LostCyberHamster.UI
             }
         }
 
-        public void SetInputBlocked(bool blocked)
+        public void SetInputBlocked(object owner, bool blocked)
         {
-            if (_inputBlocked == blocked || _disposed)
+            if (owner == null)
+                throw new ArgumentNullException(nameof(owner));
+            if (_disposed)
                 return;
-            _inputBlocked = blocked;
+
+            bool wasBlocked = _inputBlockOwners.Count > 0;
             if (blocked)
+                _inputBlockOwners.Add(owner);
+            else
+                _inputBlockOwners.Remove(owner);
+
+            bool isBlocked = _inputBlockOwners.Count > 0;
+            if (wasBlocked == isBlocked)
+                return;
+
+            if (isBlocked)
             {
                 Root.RegisterCallback<PointerDownEvent>(BlockInput, TrickleDown.TrickleDown);
                 Root.RegisterCallback<PointerUpEvent>(BlockInput, TrickleDown.TrickleDown);

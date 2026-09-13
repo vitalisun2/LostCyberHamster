@@ -665,7 +665,7 @@ namespace LostCyberHamster.UI
         {
             EndSession();
             TutorialLaunchService.StartReplayFromMenu();
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         private void RefreshLocalizedText()

@@ -1,4 +1,5 @@
 using Assets.Scripts.GameManagerLogic;
+using LostCyberHamster.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -26,7 +27,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void OnButtonClick(ClickEvent e)
         {
-            SceneManager.LoadScene(_sceneName);
+            UiInputCarryoverBlock.LoadScene(_sceneName);
         }
     }
 }

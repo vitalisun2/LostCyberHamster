@@ -465,7 +465,7 @@ namespace LostCyberHamster.UI
         {
             evt.StopPropagation();
             LevelController.Instance.SetCurrentLevel(levelName);
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         private void OnPreviousLocationClicked(ClickEvent evt)

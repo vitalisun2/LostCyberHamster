@@ -207,7 +207,7 @@ namespace Assets.Scripts.Entry_Points
             if (LevelManager.TryGetContinueLevelKey(out string levelKey))
                 LevelController.Instance.SetCurrentLevel(levelKey);
 
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         private async void ShowReturnActivityReward(ActivityRewardSnapshot reward)

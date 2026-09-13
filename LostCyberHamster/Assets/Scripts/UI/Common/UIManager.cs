@@ -44,6 +44,7 @@ namespace LostCyberHamster.UI
 
         private async void OnScreenShowHandlerAsync(ScreenEnum screen)
         {
+            UiInputCarryoverBlock.Arm();
             await LoadScreenAsync(
                 screen,
                 forceReload: false,
@@ -229,6 +230,7 @@ namespace LostCyberHamster.UI
         {
             int transitionVersion = BeginModalTransition(modal);
             await _transitionGate.WaitAsync();
+            bool releaseScreenInputBlock = false;
             try
             {
                 if (!IsCurrentModalTransition(
@@ -240,10 +242,14 @@ namespace LostCyberHamster.UI
 
                 if (!_screenControllers.TryGetValue(
                         modal,
-                        out var modalController))
+                        out var modalController) ||
+                    modalController is not ModalController modalScreenController)
                 {
                     return;
                 }
+
+                SetCurrentScreenModalInputBlocked(true);
+                releaseScreenInputBlock = true;
 
                 if (_currentModal.HasValue &&
                     _activeModalEventsSubscribed &&
@@ -256,17 +262,18 @@ namespace LostCyberHamster.UI
                 }
 
                 _currentModal = null;
-                await (modalController as ModalController).ShowAsync();
+                await modalScreenController.ShowAsync();
                 if (!IsCurrentModalTransition(
                         modal,
                         transitionVersion))
                 {
                     modalController.UnsubscribeFromEvents();
-                    (modalController as ModalController).Close();
+                    modalScreenController.Close();
                     return;
                 }
 
                 _currentModal = modal;
+                releaseScreenInputBlock = false;
                 _activeModalEventsSubscribed =
                     !_lifecycleStarted || _eventsSubscribed;
                 if (!_activeModalEventsSubscribed)
@@ -276,6 +283,8 @@ namespace LostCyberHamster.UI
             }
             finally
             {
+                if (releaseScreenInputBlock)
+                    SetCurrentScreenModalInputBlocked(false);
                 _transitionGate.Release();
             }
         }
@@ -296,6 +305,7 @@ namespace LostCyberHamster.UI
                 {
                     (modalController as ModalController).Hide();
                     _currentModal = null;
+                    SetCurrentScreenModalInputBlocked(false);
                 }
             }
         }
@@ -317,6 +327,7 @@ namespace LostCyberHamster.UI
                 {
                     (modalController as ModalController).Close();
                     _currentModal = null;
+                    SetCurrentScreenModalInputBlocked(false);
                 }
             }
         }
@@ -344,6 +355,18 @@ namespace LostCyberHamster.UI
         private void AddScreenController(IScreenController screenController)
         {
             _screenControllers.Add(screenController.Type, screenController);
+        }
+
+        private void SetCurrentScreenModalInputBlocked(bool blocked)
+        {
+            if (!_hasCurrentScreen ||
+                !_screenControllers.TryGetValue(_currentScreen, out var screenController) ||
+                screenController is not ScreenController currentScreen)
+            {
+                return;
+            }
+
+            currentScreen.SetModalInputBlocked(blocked);
         }
 
         internal async void RepaintModalAsync()

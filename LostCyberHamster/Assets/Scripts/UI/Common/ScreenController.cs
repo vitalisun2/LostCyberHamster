@@ -17,9 +17,13 @@ namespace LostCyberHamster.UI
 
         private readonly VisualElement _container;
         private readonly VisualElement _backgroundHost;
+        private readonly object _transitionInputBlockOwner = new();
+        private readonly object _modalInputBlockOwner = new();
         private PreparedScreen _screen;
         private bool _eventsSubscribed;
         private bool _initializing;
+        private bool _transitionInputBlocked;
+        private bool _modalInputBlocked;
 
         public ScreenEnum Type => _screenAssetName;
         internal PreparedScreen CurrentScreen => _screen;
@@ -94,6 +98,8 @@ namespace LostCyberHamster.UI
             _screen = prepared;
             _background = _backgroundHost;
             _contentRoot = prepared.Content;
+            prepared.SetInputBlocked(_transitionInputBlockOwner, _transitionInputBlocked);
+            prepared.SetInputBlocked(_modalInputBlockOwner, _modalInputBlocked);
             prepared.Detached += () =>
             {
                 if (_screen == prepared)
@@ -129,7 +135,14 @@ namespace LostCyberHamster.UI
 
         internal void SetTransitionInputBlocked(bool blocked)
         {
-            _screen?.SetInputBlocked(blocked);
+            _transitionInputBlocked = blocked;
+            _screen?.SetInputBlocked(_transitionInputBlockOwner, blocked);
+        }
+
+        internal void SetModalInputBlocked(bool blocked)
+        {
+            _modalInputBlocked = blocked;
+            _screen?.SetInputBlocked(_modalInputBlockOwner, blocked);
         }
 
         public void SubscribeToEvents()

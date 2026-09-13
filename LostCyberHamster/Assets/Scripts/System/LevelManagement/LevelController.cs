@@ -166,7 +166,7 @@ namespace Assets.Scripts.System
         [Button]
         public void Replay()
         {
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         [Button]
@@ -198,7 +198,7 @@ namespace Assets.Scripts.System
 
             SetCurrentLevel(nextLevelKey);
 
-            SceneManager.LoadScene("Game");
+            UiInputCarryoverBlock.LoadScene("Game");
         }
 
         [Button]
