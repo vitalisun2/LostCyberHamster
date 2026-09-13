@@ -1681,6 +1681,144 @@
       ]
     },
     {
+      "id": "dev-overlay",
+      "title": "dev-overlay",
+      "source": "LostCyberHamster/Assets/Scripts/DevTools/UiToolkit/DevToolsUiToolkitOverlayShell.cs",
+      "folder": "99_DEV_Overlay",
+      "states": [
+        {
+          "id": "root",
+          "title": "root",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "root"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "gameplay",
+          "title": "gameplay",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "gameplay"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "account",
+          "title": "account",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "account"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "resources",
+          "title": "resources",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "resources"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "networking",
+          "title": "networking",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "networking"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "game-progress",
+          "title": "game-progress",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "game-progress"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "experience-progress",
+          "title": "experience-progress",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "experience-progress"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "quests",
+          "title": "quests",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "quests"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "skateboard",
+          "title": "skateboard",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "skateboard"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        },
+        {
+          "id": "skin",
+          "title": "skin",
+          "fixture": "extra",
+          "data": {
+            "kind": "dev-overlay",
+            "mode": "skin"
+          },
+          "expected": [
+            "dev-overlay-panel"
+          ],
+          "settleMs": 900
+        }
+      ]
+    },
+    {
       "id": "win-details",
       "title": "win-details",
       "source": "LostCyberHamster/Assets/Scripts/UI",

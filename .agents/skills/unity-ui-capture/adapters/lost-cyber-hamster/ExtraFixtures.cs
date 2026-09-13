@@ -18,6 +18,7 @@ namespace UiGallery
     using Vues.GameCore.ReturnActivities;
     using Assets.Scripts.Tutorial;
     using Assets.Scripts.GameEngine.Mechanics;
+    using Assets.Scripts.DevTools;
 
     public static class ExtraFixtures
     {
@@ -26,6 +27,62 @@ namespace UiGallery
         static void CallEnum(object o,string n,string value) {var m=o.GetType().GetMethod(n,BindingFlags.Instance|BindingFlags.NonPublic);m.Invoke(o,new[]{Enum.Parse(m.GetParameters()[0].ParameterType,value)});}
         static void Show(Context c,string name,bool show) {var e=c.Root.Q(name);if(e==null)throw new Exception("Missing "+name);e.style.display=show?DisplayStyle.Flex:DisplayStyle.None;}
         static async Task Game(Context c) => await (Task)Static(typeof(Fixtures),"Game",c);
+        static object DevShell()
+        {
+            var overlay = UnityEngine.Object.FindFirstObjectByType<DevToolsMenuOverlay>();
+            if (overlay == null) throw new Exception("DevToolsMenuOverlay not found");
+            var shell = Context.Field(overlay, "_shell");
+            if (shell == null) throw new Exception("DevTools shell not initialized");
+            return shell;
+        }
+        static void CallShell(object shell,string name)
+        {
+            var method = shell.GetType().GetMethod(name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);
+            if (method == null) throw new Exception("Missing DEV shell method: " + name);
+            method.Invoke(shell,null);
+        }
+        static string ReadDevVisibleText(Context c)
+        {
+            var panel = c.Root.Q<VisualElement>("dev-overlay-panel");
+            if (panel == null) return string.Empty;
+            return string.Join("\n", panel.Query<TextElement>().ToList()
+                .Where(c.Visible)
+                .Select(text => text.text?.Trim())
+                .Where(text => !string.IsNullOrWhiteSpace(text)));
+        }
+        static Task<Evidence[]> ProbeDevOverlay(Context c)
+        {
+            var panel = c.Root.Q<VisualElement>("dev-overlay-panel");
+            if (panel == null || !c.Visible(panel)) throw new Exception("DEV panel is not active");
+            return Task.FromResult(new[]
+            {
+                new Evidence
+                {
+                    name = panel.name,
+                    x = panel.worldBound.x,
+                    y = panel.worldBound.y,
+                    width = panel.worldBound.width,
+                    height = panel.worldBound.height
+                }
+            });
+        }
+        static void FocusDevOverlay(Context c)
+        {
+            var overlayRoot = c.Root.Q<VisualElement>("devtools-uitk-root");
+            if (overlayRoot == null) throw new Exception("DEV overlay root not found");
+            var hidden = new List<(VisualElement Element, DisplayStyle Display)>();
+            foreach (var child in c.Root.Children().ToList())
+            {
+                if (child == overlayRoot) continue;
+                hidden.Add((child, child.resolvedStyle.display));
+                child.style.display = DisplayStyle.None;
+            }
+            c.Defer(() =>
+            {
+                foreach (var entry in hidden)
+                    entry.Element.style.display = entry.Display;
+            });
+        }
         static void CompleteDevelopment()
         {
             var p=GameDataManager.PlayerData;p.PlayerLevel=100;p.UnlockedSkinIds=SkinManager.AvailableSkins.Select(x=>x.Id).ToList();
@@ -60,6 +117,29 @@ namespace UiGallery
                 c.Root.Add(root);c.Defer(root.RemoveFromHierarchy);
                 int progress=mode=="empty"?0:mode=="full"?100:50;root.Q<ProgressBar>("loading_task__progress").value=progress;
                 root.Q<Label>("loading_task__progress-label").text=progress+" %";return;
+            }
+            if(kind=="dev-overlay")
+            {
+                UnityEngine.Screen.SetResolution(2436,1125,false);
+                var shell = DevShell();
+                c.Probe = _ => ProbeDevOverlay(c);
+                c.TextProbe = () => ReadDevVisibleText(c);
+                c.Defer(() => { c.Probe = null; c.TextProbe = null; });
+                CallShell(shell,"OpenPanel");
+                if(mode=="gameplay") CallShell(shell,"ShowGameplayScreen");
+                else if(mode=="account") CallShell(shell,"ShowAccountScreen");
+                else if(mode=="resources") CallShell(shell,"ShowResourcesScreen");
+                else if(mode=="networking") CallShell(shell,"ShowNetworkingScreen");
+                else if(mode=="game-progress") CallShell(shell,"ShowGameProgressTestingScreen");
+                else if(mode=="experience-progress") CallShell(shell,"ShowExperienceProgressTestingScreen");
+                else if(mode=="quests") CallShell(shell,"ShowQuestTestingScreen");
+                else if(mode=="skateboard") CallShell(shell,"ShowSkateboardTestingScreen");
+                else if(mode=="skin") CallShell(shell,"ShowSkinTestingScreen");
+                else if(mode!="root") throw new Exception("Unknown dev-overlay mode " + mode);
+                CallShell(shell,"Tick");
+                await Task.Delay(700);
+                FocusDevOverlay(c);
+                return;
             }
             if(kind=="development-all")
             {

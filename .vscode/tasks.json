@@ -286,6 +286,32 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Assembly-CSharp-Editor Build Temp",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/LostCyberHamster/Assembly-CSharp-Editor.csproj",
+				"--no-restore"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Capture DEV Overlay States Temp",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/Temp/capture_dev_overlay_states.ps1"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
