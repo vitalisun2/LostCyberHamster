@@ -1,65 +1,291 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "Codebase Compact Watcher",
-            "type": "shell",
-            "command": "pwsh",
-            "args": [
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "${workspaceFolder}/tools/codebase_compact.ps1"
-            ],
-            "isBackground": true,
-            "problemMatcher": [],
-            "presentation": {
-                "reveal": "silent",
-                "panel": "dedicated",
-                "close": false
-            },
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
-        },
-        {
-            "label": "Cleanup Old Logs",
-            "type": "shell",
-            "command": "pwsh",
-            "args": [
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "${workspaceFolder}/tools/cleanup_old_logs.ps1"
-            ],
-            "presentation": {
-                "reveal": "silent",
-                "panel": "shared"
-            },
-            "problemMatcher": [],
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
-        },
-        {
-            "label": "Recompile And Sync",
-            "type": "shell",
-            "command": "pwsh",
-            "args": [
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                "${workspaceFolder}/tools/invoke_recompile_and_sync.ps1"
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "focus": true
-            },
-            "problemMatcher": []
-        }
-    ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Codebase Compact Watcher",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/tools/codebase_compact.ps1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated",
+				"close": false
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "Cleanup Old Logs",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/tools/cleanup_old_logs.ps1"
+			],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "shared"
+			},
+			"problemMatcher": [],
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "Recompile And Sync",
+			"type": "shell",
+			"command": "pwsh",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/tools/invoke_recompile_and_sync.ps1"
+			],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared",
+				"focus": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Recompile And Sync (powershell)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/tools/invoke_recompile_and_sync.ps1"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Editor Status (CLI)",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"lch_editor_status",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"60",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Eval Help",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"eval",
+				"--help"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Eval Detail",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--query",
+				"eval",
+				"--detail",
+				"full",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Recompile (CLI)",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"recompile",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"120",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Recompile Status (CLI)",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"recompile_status",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"120",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Recompile Status (CLI) 2",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"recompile_status",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"120",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Eval Smoke",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"eval",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"60",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive",
+				"--",
+				"--code",
+				"return 123;",
+				"--timeout",
+				"5000"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Regenerate Project Files (eval)",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"eval",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"120",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive",
+				"--",
+				"--code",
+				"var type = System.Type.GetType(\"LostCyberHamster.Editor.LostCyberHamsterCliCommands, Assembly-CSharp-Editor\"); if (type == null) throw new System.Exception(\"LostCyberHamsterCliCommands type not found\"); var method = type.GetMethod(\"RegenerateProjectFiles\", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static); if (method == null) throw new System.Exception(\"RegenerateProjectFiles method not found\"); var result = method.Invoke(null, null); var rt = result.GetType(); return rt.GetProperty(\"Success\").GetValue(result).ToString() + \"|\" + rt.GetProperty(\"Message\").GetValue(result).ToString();",
+				"--timeout",
+				"30000"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Unity Regenerate Project Files (eval_file)",
+			"type": "shell",
+			"command": "unity",
+			"args": [
+				"command",
+				"eval_file",
+				"--project-path",
+				"${workspaceFolder}/LostCyberHamster",
+				"--timeout",
+				"120",
+				"--format",
+				"json",
+				"--no-banner",
+				"--non-interactive",
+				"--",
+				"--file",
+				"${workspaceFolder}/Temp/unity_regenerate_project_files_eval.cs",
+				"--timeout",
+				"30000"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Assembly-CSharp Build",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"${workspaceFolder}/LostCyberHamster/Assembly-CSharp.csproj",
+				"--no-restore"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Git Status Touched Files",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short",
+				"--",
+				"LostCyberHamster/Assets/Scripts/UI/Components/Energybar.cs",
+				"LostCyberHamster/Assets/Scripts/UI/Common/UiInputCarryoverBlock.cs",
+				"LostCyberHamster/Assets/Scripts/UI/Common/UiInputCarryoverBlock.cs.meta",
+				"LostCyberHamster/Assets/Scripts/System/LevelManagement/LevelController.cs",
+				"LostCyberHamster/Assets/Editor/Tests/EditMode/PreparedScreenInputBlockTests.cs.meta",
+				"LostCyberHamster/Assembly-CSharp.csproj",
+				"LostCyberHamster/Assembly-CSharp-Editor.csproj",
+				"LostCyberHamster/LostCyberHamster.sln"
+			],
+			"isBackground": false,
+			"group": "build"
+		}
+	]
 }
