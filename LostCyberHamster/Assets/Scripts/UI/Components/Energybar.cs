@@ -10,7 +10,7 @@ namespace LostCyberHamster.UI
     {
         private const float MinValue = 0f;
         private const float MaxValue = 100f;
-        private const float LowEnergyThreshold = MaxValue * 0.1f;
+        private const float LowEnergyThreshold = MaxValue * 0.2f;
         private const float LowEnergyMinOpacity = 0.35f;
         private const float LowEnergyPulseSpeed = 3f;
         private const int LowEnergyPulseIntervalMs = 60;
