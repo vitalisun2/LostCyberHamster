@@ -30,7 +30,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
         private readonly AtomicVariable<int> _energy;
         private readonly AtomicVariable<bool> _isOnBottomLine;
         private readonly AtomicVariable<HamsterStateEnum> _hamsterState;
-        private readonly AtomicVariable<bool> _isDamaged;
         private readonly TransformAnimatorController _transformAnimatorController;
         private readonly SpriteAnimatorController _spriteAnimatorController;
         private readonly HamsterActorSwitcher _actorSwitcher;
@@ -50,7 +49,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             AtomicVariable<int> energy,
             AtomicVariable<bool> isOnBottomLine,
             AtomicVariable<HamsterStateEnum> hamsterState,
-            AtomicVariable<bool> isDamaged,
             TransformAnimatorController transformAnimatorController,
             SpriteAnimatorController spriteAnimatorController,
             HamsterActorSwitcher actorSwitcher,
@@ -64,7 +62,6 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _energy = energy;
             _isOnBottomLine = isOnBottomLine;
             _hamsterState = hamsterState;
-            _isDamaged = isDamaged;
             _transformAnimatorController = transformAnimatorController;
             _spriteAnimatorController = spriteAnimatorController;
             _characterTransform = characterTransform;
@@ -122,8 +119,7 @@ namespace Assets.Scripts.GameEngine.Mechanics
         /// </summary>
         private JumpResult CalculateSuperJumpState()
         {
-            if (_isDamaged.Value) return _noHit;
-
+            // Damage immunity blocks contact damage, not jump-on obstacle destruction.
             var obstacles = CollisionUtils.GetValidObstaclesAhead(_characterTransform, _isOnBottomLine.Value);
             _superJumpObstacleBuffer.Clear();
 
