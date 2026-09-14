@@ -43,8 +43,6 @@ namespace Vues.GameCore
         private float _remaining;
         private float _stateTimeLeft;
         private int _jumpsRemaining;
-        private bool _isJumpQueued;
-        private bool _isQueuedJumpSuper;
         private bool _isCurrentJumpSuper;
         private bool _isWaitingForFirstJump;
         private bool _isActive;
@@ -188,8 +186,6 @@ namespace Vues.GameCore
             _remaining = _duration;
             _isWaitingForFirstJump = true;
             _jumpsRemaining = _jumpBudget;
-            _isJumpQueued = false;
-            _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
             _currentJumpSnapshot = default;
 
@@ -210,7 +206,7 @@ namespace Vues.GameCore
         }
 
         /// <summary>
-        /// Запускает первый или буферизует следующий normal jump-cycle.
+        /// Запускает normal jump-cycle только из Ride.
         /// </summary>
         private bool TryStartJump()
         {
@@ -225,13 +221,6 @@ namespace Vues.GameCore
             if (_state == SkateboardState.Ride)
             {
                 StartJump(isSuper: false);
-                return true;
-            }
-
-            if (_state == SkateboardState.Landing && !_isJumpQueued)
-            {
-                _isJumpQueued = true;
-                _isQueuedJumpSuper = false;
                 return true;
             }
 
@@ -270,12 +259,6 @@ namespace Vues.GameCore
                 _visualSequence.PlayJump(
                     isSuper: true,
                     _currentJumpSnapshot.ActionId);
-                return true;
-            }
-
-            if (_state == SkateboardState.Landing && _isJumpQueued)
-            {
-                _isQueuedJumpSuper = true;
                 return true;
             }
 
@@ -338,8 +321,6 @@ namespace Vues.GameCore
             _remaining = Mathf.Max(0, _remaining - Time.deltaTime);
             if (_remaining <= 0)
             {
-                _isJumpQueued = false;
-                _isQueuedJumpSuper = false;
                 if (_state == SkateboardState.Ride)
                 {
                     Deactivate();
@@ -464,8 +445,6 @@ namespace Vues.GameCore
         private void StartJump(bool isSuper)
         {
             _jumpsRemaining--;
-            _isJumpQueued = false;
-            _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = isSuper;
             _isWaitingForFirstJump = false;
 
@@ -549,12 +528,6 @@ namespace Vues.GameCore
                 return;
             }
 
-            if (_isJumpQueued)
-            {
-                StartJump(_isQueuedJumpSuper);
-                return;
-            }
-
             EnterRide();
         }
 
@@ -562,8 +535,6 @@ namespace Vues.GameCore
         {
             _state = SkateboardState.Ride;
             _stateTimeLeft = 0f;
-            _isJumpQueued = false;
-            _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
             _currentJumpSnapshot = default;
             SyncHamsterSurfaceState();
@@ -627,8 +598,6 @@ namespace Vues.GameCore
             _remaining = 0f;
             _stateTimeLeft = 0f;
             _jumpsRemaining = 0;
-            _isJumpQueued = false;
-            _isQueuedJumpSuper = false;
             _isCurrentJumpSuper = false;
             _currentJumpSnapshot = default;
             _state = SkateboardState.Inactive;
