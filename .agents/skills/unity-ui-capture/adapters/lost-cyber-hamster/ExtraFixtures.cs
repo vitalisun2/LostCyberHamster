@@ -239,12 +239,28 @@ namespace UiGallery
             if(kind=="levels")
             {
                 await c.Screen(ScreenEnum.SelectLevelScreen);var ctrl=c.Controller<SelectLevelScreenController>();
+                var loc=Get(ctrl,"_selectedLocationView");
+                var parts=((System.Collections.IEnumerable)loc.GetType().GetProperty("Parts").GetValue(loc)).Cast<object>().ToList();
+                if(mode=="normal")
+                {
+                    string[] keys={"Morning","Afternoon","Evening","Night"};int i=0;
+                    foreach(var card in c.Root.Query<LevelItem>().ToList())
+                    {
+                        string key=keys[i];bool unlocked=i<3;
+                        card.ConfigureForPart(key,LocalizationManager.GetLocalizedString(key).ToUpperInvariant(),unlocked,unlocked?null:"12 / 15");
+                        i++;
+                    }
+                }
                 if(mode=="next")Context.Call(ctrl,"ChangeLocation",1);
                 if(mode=="levels")
                 {
-                    var loc=Get(ctrl,"_selectedLocationView");var parts=(System.Collections.IEnumerable)loc.GetType().GetProperty("Parts").GetValue(loc);
-                    var part=parts.Cast<object>().First();
+                    var part=parts[2];
                     using(var ev=ClickEvent.GetPooled())Context.Call(ctrl,"OnDayPartClicked",ev,loc,part);
+                    var firstCard=c.Root.Q<VisualElement>("level-cards-container").Query<LevelItem>().ToList().First();
+                    var firstLevel=(LevelProgress)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(LevelProgress));
+                    Context.Set(firstLevel,"<IsUnlocked>k__BackingField",true);Context.Set(firstLevel,"<Stars>k__BackingField",0);Context.Set(firstLevel,"<LevelKey>k__BackingField","capture-evening-1");
+                    firstCard.ConfigureForLevel(firstLevel,1);
+                    c.Root.Q<Label>("select-level-unlock-progress-label").text="3 / 12  до открытия НОЧИ";
                 }
                 return;
             }

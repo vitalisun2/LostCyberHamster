@@ -2,7 +2,7 @@
 
 Dev-only HTTP collector для логов Android-сборок LostCyberHamster.
 
-Основной сценарий описан в `docs/android_ngrok_device_logging.md`: установленный Android APK сам отправляет snapshots `diagnostic_log.txt` через ngrok на collector основного ноутбука, а collector пишет uploads в Dropbox Exchange.
+Основной сценарий описан в `docs/android_ngrok_device_logging.md`: установленный Android APK сам отправляет snapshots `diagnostic_log.txt` через ngrok на collector основного ноутбука, а collector пишет uploads в Google Drive.
 
 ## Основной запуск
 
@@ -15,7 +15,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\device-log-colle
 Скрипт сам:
 
 - запускает Docker Desktop при необходимости;
-- находит/создает `C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`;
+- находит/создает `G:\My Drive\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android`;
 - создает локальный `.env.local` с ngrok token;
 - останавливает старый non-Docker stack, если он занимает порт;
 - поднимает Docker Compose;
@@ -55,7 +55,7 @@ tools/device-log-collector/ngrok-watchdog.sh
 
 Ngrok контейнер собран как wrapper над официальным `ngrok/ngrok:3-alpine`: он сам проверяет публичный `/health` и перезапускается через Docker restart policy, если tunnel перестал отвечать.
 
-Ngrok должен быть активен только на receiver-ноутбуке. Второй ноутбук не поднимает ngrok/collector и читает уже синхронизированные файлы из Dropbox.
+Ngrok должен быть активен только на receiver-ноутбуке. Второй ноутбук не поднимает ngrok/collector и читает уже синхронизированные файлы из Google Drive.
 
 ## Retention
 
@@ -69,7 +69,7 @@ Collector сам выполняет Writer-side retention после успеш�
 - не трогать текущую только что записанную upload-папку и internal files `_requests.log`, `_probes.log`, `_retention.log`, `_retention_state.json`;
 - писать результат в Docker logs и `_retention.log`.
 
-Reader-ноутбуки только читают синхронизированные Dropbox logs и ничего не удаляют.
+Reader-ноутбуки только читают синхронизированные Google Drive logs и ничего не удаляют.
 
 ## Unity config
 
@@ -94,7 +94,7 @@ Collector слушает:
 `POST /upload` сохраняет payload в Docker mount `/workspace/DeviceLogs/android`, который на host указывает на:
 
 ```text
-C:\Dropbox\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
+G:\My Drive\exchange\crystal_wave\LostCyberHamster_DeviceLogs\android
 ```
 
 Upload проверяет header:

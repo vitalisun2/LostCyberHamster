@@ -9,6 +9,13 @@
             <engine:VisualElement name="star2" class="level-card__star" picking-mode="Ignore" />
             <engine:VisualElement name="star3" class="level-card__star" picking-mode="Ignore" />
         </engine:VisualElement>
-        <engine:Label name="level-item__progress" class="level-card__progress" picking-mode="Ignore" />
+        <engine:VisualElement name="level-item__unlock-info" class="level-card__unlock-info" picking-mode="Ignore">
+            <engine:Label name="level-item__unlock-prefix" class="level-card__unlock-line level-card__unlock-prefix" picking-mode="Ignore" />
+            <engine:VisualElement class="level-card__unlock-ratio-row" picking-mode="Ignore">
+                <engine:Label name="level-item__progress" class="level-card__progress" picking-mode="Ignore" />
+                <engine:VisualElement class="level-card__unlock-star" picking-mode="Ignore" />
+            </engine:VisualElement>
+            <engine:Label name="level-item__unlock-suffix" class="level-card__unlock-line level-card__unlock-suffix" picking-mode="Ignore" />
+        </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Extensions;
 using GameManagement.Progress;
 using UnityEngine.UIElements;
+using Vues.GameCore;
 
 namespace LostCyberHamster.UI
 {
@@ -27,6 +28,12 @@ namespace LostCyberHamster.UI
             this.Q<Label>("level-item__name");
         private Label ProgressLabel =>
             this.Q<Label>("level-item__progress");
+        private VisualElement UnlockInfo =>
+            this.Q<VisualElement>("level-item__unlock-info");
+        private Label UnlockPrefixLabel =>
+            this.Q<Label>("level-item__unlock-prefix");
+        private Label UnlockSuffixLabel =>
+            this.Q<Label>("level-item__unlock-suffix");
         private VisualElement StarsContainer =>
             this.Q<VisualElement>("level-item__stars-container");
 
@@ -71,9 +78,27 @@ namespace LostCyberHamster.UI
             if (ProgressLabel != null)
             {
                 ProgressLabel.text = progressText ?? string.Empty;
-                ProgressLabel.style.display = string.IsNullOrWhiteSpace(progressText)
-                    ? DisplayStyle.None
-                    : DisplayStyle.Flex;
+            }
+
+            bool showUnlockInfo = !isUnlocked &&
+                !string.IsNullOrWhiteSpace(progressText);
+            if (UnlockInfo != null)
+            {
+                UnlockInfo.style.display = showUnlockInfo
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
+            }
+
+            if (UnlockPrefixLabel != null)
+            {
+                UnlockPrefixLabel.text = LocalizationManager.GetLocalizedString(
+                    "select_level_part_unlock_prefix");
+            }
+
+            if (UnlockSuffixLabel != null)
+            {
+                UnlockSuffixLabel.text = LocalizationManager.GetLocalizedString(
+                    "select_level_part_unlock_suffix");
             }
 
             LevelName = partKey ?? string.Empty;
@@ -174,7 +199,11 @@ namespace LostCyberHamster.UI
             if (ProgressLabel != null)
             {
                 ProgressLabel.text = string.Empty;
-                ProgressLabel.style.display = DisplayStyle.None;
+            }
+
+            if (UnlockInfo != null)
+            {
+                UnlockInfo.style.display = DisplayStyle.None;
             }
 
             foreach (VisualElement star in _starElements)

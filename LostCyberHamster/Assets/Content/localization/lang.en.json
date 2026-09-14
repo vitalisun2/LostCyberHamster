@@ -924,7 +924,35 @@
         },
         {
             "key": "select_level_part_unlock_progress",
-            "value": "{0}/{1} stars"
+            "value": "{0} / {1}"
+        },
+        {
+            "key": "select_level_part_unlock_prefix",
+            "value": "Need"
+        },
+        {
+            "key": "select_level_part_unlock_suffix",
+            "value": "to unlock"
+        },
+        {
+            "key": "select_level_next_part_progress",
+            "value": "{0} / {1}  to unlock {2}"
+        },
+        {
+            "key": "select_level_unlock_target_Morning",
+            "value": "morning"
+        },
+        {
+            "key": "select_level_unlock_target_Afternoon",
+            "value": "day"
+        },
+        {
+            "key": "select_level_unlock_target_Evening",
+            "value": "evening"
+        },
+        {
+            "key": "select_level_unlock_target_Night",
+            "value": "night"
         },
         {
             "key": "energy shield",

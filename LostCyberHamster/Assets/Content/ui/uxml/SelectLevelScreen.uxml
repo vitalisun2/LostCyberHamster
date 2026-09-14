@@ -39,6 +39,10 @@
                             </engine:VisualElement>
 
                             <engine:VisualElement name="level-cards-container" class="select-level-cards" />
+                            <engine:VisualElement name="select-level-unlock-progress" class="select-level-unlock-progress" picking-mode="Ignore">
+                                <engine:VisualElement name="select-level-unlock-star" class="select-level-unlock-progress__star" picking-mode="Ignore" />
+                                <engine:Label name="select-level-unlock-progress-label" class="select-level-unlock-progress__label" picking-mode="Ignore" />
+                            </engine:VisualElement>
                         </engine:VisualElement>
                         <engine:Button name="btn_select-level-back" class="select-level-image-button select-level-back" />
                     </engine:VisualElement>

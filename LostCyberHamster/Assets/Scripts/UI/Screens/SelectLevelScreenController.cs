@@ -50,6 +50,10 @@ namespace LostCyberHamster.UI
             _contentRoot.Q<VisualElement>("select-time-location-next");
         private Label LevelHeaderLabel =>
             _contentRoot.Q<Label>("select-level-header-label");
+        private VisualElement LevelUnlockProgress =>
+            _contentRoot.Q<VisualElement>("select-level-unlock-progress");
+        private Label LevelUnlockProgressLabel =>
+            _contentRoot.Q<Label>("select-level-unlock-progress-label");
         private Button BackButton =>
             _contentRoot.Q<Button>("btn_select-level-back");
         private Button NextLocationButton =>
@@ -339,6 +343,55 @@ namespace LostCyberHamster.UI
             LevelHeaderLabel.EnableInClassList(
                 "select-level-header__label--compact",
                 LevelHeaderLabel.text.Length > 22);
+            RenderLevelUnlockProgress();
+        }
+
+        private void RenderLevelUnlockProgress()
+        {
+            if (LevelUnlockProgress == null || LevelUnlockProgressLabel == null)
+            {
+                return;
+            }
+
+            PartView nextPart = _selectedLocationView.Parts.FirstOrDefault(
+                part => part.Index == _selectedPartView.Index + 1);
+            if (nextPart == null || nextPart.IsUnlocked)
+            {
+                LevelUnlockProgress.style.display = DisplayStyle.None;
+                return;
+            }
+
+            int requiredStars = DefaultUnlockPolicy.GetRequiredStarsForNextPart(
+                _selectedPartView.TotalLevels);
+            if (requiredStars <= 0)
+            {
+                LevelUnlockProgress.style.display = DisplayStyle.None;
+                return;
+            }
+
+            string template = LocalizationManager.GetLocalizedString(
+                "select_level_next_part_progress");
+            if (string.IsNullOrWhiteSpace(template) ||
+                string.Equals(template, "select_level_next_part_progress", StringComparison.Ordinal))
+            {
+                template = "{0}/{1} до открытия {2}";
+            }
+
+            LevelUnlockProgressLabel.text = string.Format(
+                template,
+                Math.Max(_selectedPartView.TotalStars, 0),
+                requiredStars,
+                ResolveUnlockTargetTitle(nextPart));
+            LevelUnlockProgress.style.display = DisplayStyle.Flex;
+        }
+
+        private static string ResolveUnlockTargetTitle(PartView part)
+        {
+            string fallback = ResolveDayPartTitle(part.Key, part.DisplayName)
+                .ToUpperInvariant();
+            return ResolveLocalizedTitle(
+                $"select_level_unlock_target_{part.Key}",
+                fallback).ToUpperInvariant();
         }
 
         private void UpdateLocationSelector()
@@ -664,7 +717,6 @@ namespace LostCyberHamster.UI
                 return string.Empty;
             }
 
-            int collectedStars = Math.Max(previousPart.TotalStars, 0);
             int maximumStars = previousPart.TotalLevels * LevelProgressEntry.MaxStars;
             string template = LocalizationManager.GetLocalizedString("select_level_part_unlock_progress");
             if (string.IsNullOrWhiteSpace(template) ||
@@ -675,7 +727,7 @@ namespace LostCyberHamster.UI
 
             return string.Format(
                 template,
-                collectedStars,
+                requiredStars,
                 maximumStars);
         }
 

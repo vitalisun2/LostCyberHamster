@@ -20,8 +20,8 @@ $collectorImage = 'lostcyberhamster/device-log-collector:local'
 $ngrokImage = 'lostcyberhamster/device-log-ngrok:local'
 $localHealthUrl = "http://127.0.0.1:$Port/health"
 $publicHealthUrl = "https://$NgrokDomain/health"
-$dropboxProjectRoot = 'crystal_wave'
-$dropboxOutputRelativePath = 'LostCyberHamster_DeviceLogs\android'
+$googleDriveRoot = 'G:\My Drive\exchange\crystal_wave'
+$googleDriveOutputRelativePath = 'LostCyberHamster_DeviceLogs\android'
 $logRoot = $null
 
 function Write-Step {
@@ -150,19 +150,13 @@ function ConvertTo-ComposePath {
     return $Path.Replace('\', '/')
 }
 
-function Get-DropboxOutputRootCandidates {
-    $candidates = @(
-        (Join-Path 'C:\Dropbox\exchange' (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath))
+function Get-GoogleDriveOutputRootCandidates {
+    @(
+        (Join-Path $googleDriveRoot $googleDriveOutputRelativePath)
     )
-
-    if (-not [string]::IsNullOrWhiteSpace($env:USERPROFILE)) {
-        $candidates += Join-Path (Join-Path $env:USERPROFILE 'Dropbox\exchange') (Join-Path $dropboxProjectRoot $dropboxOutputRelativePath)
-    }
-
-    $candidates | Select-Object -Unique
 }
 
-function Test-DropboxCandidateAnchorExists {
+function Test-GoogleDriveCandidateAnchorExists {
     param([string]$Candidate)
 
     $deviceLogRoot = Split-Path -Parent $Candidate
@@ -185,8 +179,8 @@ function Resolve-DeviceLogOutputRootHost {
         return ConvertTo-HostPath -Path $env:DEVICE_LOG_OUTPUT_ROOT_HOST.Trim()
     }
 
-    foreach ($candidate in Get-DropboxOutputRootCandidates) {
-        if (Test-DropboxCandidateAnchorExists -Candidate $candidate) {
+    foreach ($candidate in Get-GoogleDriveOutputRootCandidates) {
+        if (Test-GoogleDriveCandidateAnchorExists -Candidate $candidate) {
             return ConvertTo-HostPath -Path $candidate
         }
     }
@@ -199,7 +193,7 @@ function Resolve-DeviceLogOutputRootHost {
         }
     }
 
-    throw "Dropbox Exchange folder was not found. Install/start Dropbox or pass -DeviceLogOutputRootHost '<path>' explicitly. Expected default: C:\Dropbox\exchange\$dropboxProjectRoot\$dropboxOutputRelativePath"
+    throw "Google Drive folder was not found. Start Google Drive or pass -DeviceLogOutputRootHost '<path>' explicitly. Expected default: $googleDriveRoot\$googleDriveOutputRelativePath"
 }
 
 function Get-NgrokAuthtoken {

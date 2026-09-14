@@ -317,6 +317,44 @@
     height: 603px;
 }
 
+.select-level-unlock-progress {
+    position: absolute;
+    left: 54px;
+    top: 513px;
+    width: 640px;
+    height: 76px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_time_card_base.png");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 28;
+    -unity-slice-right: 28;
+    -unity-slice-top: 32;
+    -unity-slice-bottom: 32;
+}
+
+.select-level-unlock-progress__star {
+    width: 50px;
+    height: 50px;
+    margin-right: 16px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_star_earned.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.select-level-unlock-progress__label {
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    color: rgb(21, 20, 18);
+    font-size: 30px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
 .select-level-card-host {
     position: absolute;
     flex-grow: 0;
@@ -415,14 +453,60 @@
 
 .level-card__progress {
     display: none;
-    position: absolute;
+    position: relative;
     margin: 0;
     padding: 0;
-    color: rgb(90, 84, 71);
+    color: rgb(21, 20, 18);
     white-space: nowrap;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
     -unity-text-outline-width: 0;
+}
+
+.level-card__unlock-info {
+    display: none;
+    position: absolute;
+    left: 8px;
+    top: 207px;
+    width: 159px;
+    height: 62px;
+    align-items: center;
+}
+
+.level-card__unlock-line {
+    width: 159px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    color: rgb(21, 20, 18);
+    font-size: 15px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: 0;
+}
+
+.level-card__unlock-ratio-row {
+    width: 159px;
+    height: 26px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.level-card__unlock-ratio-row .level-card__progress {
+    display: flex;
+    width: auto;
+    height: 26px;
+    font-size: 20px;
+}
+
+.level-card__unlock-star {
+    width: 22px;
+    height: 22px;
+    margin-left: 5px;
+    background-image: url("/Assets/Content/ui/sprites/select_level/select_level_star_earned.png");
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 .level-card__image,
@@ -468,19 +552,11 @@
     font-size: 25px;
 }
 
-.level-card--day-part .level-card__progress {
-    left: 8px;
-    top: 249px;
-    width: 159px;
-    height: 24px;
-    font-size: 18px;
-}
-
 .level-card--day-part .level-card__lock {
-    left: 68px;
-    top: 204px;
-    width: 39px;
-    height: 50px;
+    left: 73px;
+    top: 166px;
+    width: 29px;
+    height: 37px;
     background-image: url("/Assets/Content/ui/sprites/shared/icon_lock.png");
 }
 
@@ -489,35 +565,33 @@
 }
 
 .level-card--morning .level-card__image {
-    left: 28px;
-    top: 88px;
-    width: 118px;
-    height: 78px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_morning.png");
 }
 
 .level-card--day .level-card__image {
-    left: 30px;
-    top: 70px;
-    width: 114px;
-    height: 115px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_day.png");
 }
 
 .level-card--evening .level-card__image {
-    left: 15px;
-    top: 63px;
-    width: 145px;
-    height: 135px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_evening.png");
 }
 
 .level-card--night .level-card__image {
-    left: 26px;
-    top: 66px;
-    width: 124px;
-    height: 129px;
     background-image: url("/Assets/Content/ui/sprites/select_level/select_time_icon_night.png");
+}
+
+.level-card--day-part.level-card--unlocked .level-card__image {
+    left: 16px;
+    top: 73px;
+    width: 143px;
+    height: 143px;
+}
+
+.level-card--day-part.level-card--locked .level-card__image {
+    left: 32px;
+    top: 58px;
+    width: 111px;
+    height: 111px;
 }
 
 .level-card--level-open {

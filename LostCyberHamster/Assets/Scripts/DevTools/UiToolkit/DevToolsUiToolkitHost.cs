@@ -493,7 +493,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             if (_showLauncher)
             {
                 _launcherButton.style.left = rect.xMin + 18f;
-                _launcherButton.style.top = rect.yMin + 18f + 88f + 11f;
+                _launcherButton.style.top = rect.yMin + 18f;
             }
         }
     }

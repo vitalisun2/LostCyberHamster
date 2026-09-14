@@ -924,7 +924,35 @@
         },
         {
             "key": "select_level_part_unlock_progress",
-            "value": "{0}/{1} звёзд"
+            "value": "{0} / {1}"
+        },
+        {
+            "key": "select_level_part_unlock_prefix",
+            "value": "Нужно"
+        },
+        {
+            "key": "select_level_part_unlock_suffix",
+            "value": "для открытия"
+        },
+        {
+            "key": "select_level_next_part_progress",
+            "value": "{0} / {1}  до открытия {2}"
+        },
+        {
+            "key": "select_level_unlock_target_Morning",
+            "value": "утра"
+        },
+        {
+            "key": "select_level_unlock_target_Afternoon",
+            "value": "дня"
+        },
+        {
+            "key": "select_level_unlock_target_Evening",
+            "value": "вечера"
+        },
+        {
+            "key": "select_level_unlock_target_Night",
+            "value": "ночи"
         },
         {
             "key": "energy shield",
