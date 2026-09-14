@@ -12,7 +12,7 @@ namespace LostCyberHamster.UI
 
         public static Action<ScreenEnum> OnScreenShow;
         public static Action<ScreenEnum> OnModalShow;
-        private static Action<ScreenEnum> OnScreenShowFromInput;
+        private static Action<ScreenEnum, bool> OnScreenShowFromInput;
 
         public static Action OnRepaintScreen;
         public static Action OnRepaintModal;
@@ -48,9 +48,9 @@ namespace LostCyberHamster.UI
             OnScreenShow?.Invoke(screen);
         }
 
-        public static void RequestScreenFromInput(ScreenEnum screen)
+        public static void RequestScreenFromInput(ScreenEnum screen, bool forceReload = false)
         {
-            OnScreenShowFromInput?.Invoke(screen);
+            OnScreenShowFromInput?.Invoke(screen, forceReload);
         }
 
         private async void OnScreenShowHandlerAsync(ScreenEnum screen)
@@ -61,14 +61,14 @@ namespace LostCyberHamster.UI
                 closeActiveModal: true);
         }
 
-        private async void OnScreenShowFromInputHandlerAsync(ScreenEnum screen)
+        private async void OnScreenShowFromInputHandlerAsync(ScreenEnum screen, bool forceReload)
         {
             try
             {
                 await UiInputCarryoverBlock.RunAfterCurrentEventAsync(() =>
                     LoadScreenAsync(
                         screen,
-                        forceReload: false,
+                        forceReload,
                         closeActiveModal: true));
             }
             catch (OperationCanceledException)

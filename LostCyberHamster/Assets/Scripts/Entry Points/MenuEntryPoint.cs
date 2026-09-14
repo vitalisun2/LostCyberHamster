@@ -199,7 +199,9 @@ namespace Assets.Scripts.Entry_Points
         {
             if (_uiManager.HasModalOrTransition || _uiManager.HasPriorityPresentation || PlayerLevelPresentation.HasPendingLevel) return;
             ReturnActivitiesScreenController.InitialKind = kind;
-            UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen);
+            // Activity kind is selected immediately before navigation. Rebind even when
+            // the same screen is already active so a stale/partial tree cannot survive.
+            UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen, forceReload: true);
         }
 
         private static void PlayContinueLevel()

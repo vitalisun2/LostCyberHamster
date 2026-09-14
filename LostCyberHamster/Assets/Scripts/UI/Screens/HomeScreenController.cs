@@ -39,7 +39,7 @@ namespace LostCyberHamster.UI
             _openActivities = openActivities ?? (kind =>
             {
                 ReturnActivitiesScreenController.InitialKind = kind;
-                UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen);
+                UIManager.RequestScreenFromInput(ScreenEnum.ReturnActivitiesScreen, forceReload: true);
             });
         }
 
