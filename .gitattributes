@@ -68,3 +68,4 @@
 *.apk               binary
 *.unitypackage      binary
 *.pdf               binary
+graphify-out/graph.json merge=graphify
