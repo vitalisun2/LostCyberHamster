@@ -30,10 +30,10 @@
     "semantic_hash": "6ecf963cc4c6787d37d685a30331c2a8"
   },
   "LostCyberHamster/Assembly-CSharp.csproj": {
-    "mtime": 1789383001.5617526,
-    "seen": 1789468117.936763,
-    "ast_hash": "0f8a59e06b081ad577f4de1bed4060ec",
-    "semantic_hash": "0f8a59e06b081ad577f4de1bed4060ec"
+    "mtime": 1789468687.854929,
+    "seen": 1789478501.179519,
+    "ast_hash": "a242baa8db40aa40fdbc3c993c56ed0b",
+    "semantic_hash": ""
   },
   "LostCyberHamster/Assets/AssetBundles/Windows/catalog.json": {
     "mtime": 1780665550.386258,
@@ -3084,10 +3084,10 @@
     "semantic_hash": "8728e30a9647f1d4496bfca6246867a6"
   },
   "LostCyberHamster/Assets/Scripts/DevTools/UiToolkit/DevToolsUiToolkitHost.cs": {
-    "mtime": 1789385857.3754466,
-    "seen": 1789468117.9373875,
-    "ast_hash": "2011288d373ecb682971bbcd4ddcdda4",
-    "semantic_hash": "2011288d373ecb682971bbcd4ddcdda4"
+    "mtime": 1789468600.632662,
+    "seen": 1789478501.1802113,
+    "ast_hash": "a4e27915caf0f505d538a50757b7d150",
+    "semantic_hash": ""
   },
   "LostCyberHamster/Assets/Scripts/DevTools/UiToolkit/DevToolsUiToolkitOverlayShell.cs": {
     "mtime": 1789382974.5428765,
@@ -3336,10 +3336,10 @@
     "semantic_hash": "04e26c14848bfcf8899a78c77d8b05af"
   },
   "LostCyberHamster/Assets/Scripts/Entry Points/MenuEntryPoint.cs": {
-    "mtime": 1789382974.5460224,
-    "seen": 1789468117.9374352,
-    "ast_hash": "d6d8fc4f25e724512beeaae4e58c2d9f",
-    "semantic_hash": "d6d8fc4f25e724512beeaae4e58c2d9f"
+    "mtime": 1789468600.6336594,
+    "seen": 1789478501.1802676,
+    "ast_hash": "f7261323b0101c7a670b2f211826259a",
+    "semantic_hash": ""
   },
   "LostCyberHamster/Assets/Scripts/GameEngine/Actors/HamsterActorSwitcher.cs": {
     "mtime": 1787832376.1580415,
@@ -5514,10 +5514,10 @@
     "semantic_hash": "2d5525fc5bff38c896810f84dd729203"
   },
   "LostCyberHamster/Assets/Scripts/UI/Common/UIManager.cs": {
-    "mtime": 1789382974.5654273,
-    "seen": 1789468117.9378788,
-    "ast_hash": "3f44f3855063cff1ddc919285fdd6300",
-    "semantic_hash": "3f44f3855063cff1ddc919285fdd6300"
+    "mtime": 1789468600.6346586,
+    "seen": 1789478501.1807408,
+    "ast_hash": "49993a3d0f2afe1f96258609d164044e",
+    "semantic_hash": ""
   },
   "LostCyberHamster/Assets/Scripts/UI/Common/UiDocumentInputGuard.cs": {
     "mtime": 1788808296.7957406,
@@ -5892,10 +5892,10 @@
     "semantic_hash": "25d394c463f9ebb830db7de12b6842da"
   },
   "LostCyberHamster/Assets/Scripts/UI/Screens/HomeScreenController.cs": {
-    "mtime": 1789382974.575204,
-    "seen": 1789468117.9379528,
-    "ast_hash": "ba05351dec5f900393c06d09db8a4ce6",
-    "semantic_hash": "ba05351dec5f900393c06d09db8a4ce6"
+    "mtime": 1789468600.6356602,
+    "seen": 1789478501.1808248,
+    "ast_hash": "09da1837bf924282fa7468e056b58916",
+    "semantic_hash": ""
   },
   "LostCyberHamster/Assets/Scripts/UI/Screens/IntroScreenController.cs": {
     "mtime": 1788609099.8509364,
@@ -6126,8 +6126,8 @@
     "semantic_hash": "f40a38cfeef3e695e3a4278df47bccb5"
   },
   "tools/setup_graphify.ps1": {
-    "mtime": 1789468061.4972625,
-    "seen": 1789468117.937998,
+    "mtime": 1789468600.9581683,
+    "seen": 1789478501.1808796,
     "ast_hash": "52656b8cd752b4ca1d4c31c6627054d0",
     "semantic_hash": "52656b8cd752b4ca1d4c31c6627054d0"
   },
@@ -6216,9 +6216,9 @@
     "semantic_hash": ""
   },
   ".github/copilot-instructions.md": {
-    "mtime": 1781802721.752422,
-    "seen": 1789468231.030831,
-    "ast_hash": "0844680126f2546b021a0548efca39f5",
+    "mtime": 1789478393.6400974,
+    "seen": 1789478501.1808999,
+    "ast_hash": "48e11f8f04c7e3a6e757e55d5aeeec63",
     "semantic_hash": ""
   },
   ".github/prompts/September 2026/feature-development-unity-live.prompt.md": {
@@ -6372,9 +6372,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1789468009.9342146,
-    "seen": 1789468231.0308547,
-    "ast_hash": "8ab01972d9ec5debe9e1ca421f52a590",
+    "mtime": 1789468600.8067997,
+    "seen": 1789478501.1809392,
+    "ast_hash": "4ab6808723210066817fc064ceef7236",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -7206,8 +7206,8 @@
     "semantic_hash": ""
   },
   "docs/rules/AGENTS.md": {
-    "mtime": 1789468061.4972625,
-    "seen": 1789468231.0309844,
+    "mtime": 1789468600.8083107,
+    "seen": 1789478501.1811225,
     "ast_hash": "d589a02f07dd7abe676b79bff2fae634",
     "semantic_hash": ""
   },
@@ -7275,6 +7275,12 @@
     "mtime": 1741191181.9972124,
     "seen": 1789468231.0309947,
     "ast_hash": "759813ae240dad9e64adaebae5662228",
+    "semantic_hash": ""
+  },
+  ".github/prompts/September 2026/preparation-analysis.prompt.md": {
+    "mtime": 1789468600.6293738,
+    "seen": 1789478501.1809034,
+    "ast_hash": "051778db007615af6a185fc92627d457",
     "semantic_hash": ""
   }
 }
