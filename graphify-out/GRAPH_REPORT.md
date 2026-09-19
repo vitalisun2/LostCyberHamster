@@ -1,17 +1,17 @@
-# Graph Report - LostCyberHamster_2025  (2026-09-16)
+# Graph Report - LostCyberHamster_2025  (2026-09-19)
 
 ## Corpus Check
-- 1212 files · ~536,066 words
+- 1208 files · ~529,496 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 2547 file(s) not represented in the graph (top: .meta 2153, .asset 111, .anim 81)
+- Unclassified: 235 file(s) not represented in the graph (top: .anim 81, .uss 45, .uxml 39)
 
 ## Summary
-- 13005 nodes · 29364 edges · 565 communities (502 shown, 39 thin omitted)
+- 12984 nodes · 29291 edges · 542 communities (477 shown, 40 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 1375 edges (avg confidence: 0.82)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `596d219b`
+- Built from commit: `3da498db`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,7 +24,7 @@
 - JumpObstacleData
 - Assets.Scripts.System
 - HamsterStateEnum
-- ScreenEnum
+- .Awake
 - Obstacle
 - LevelTilemapEditor
 - PlanningState
@@ -32,28 +32,28 @@
 - Hamster
 - CloudSyncService
 - GameNetworkFacade
-- WorldSnapshot
+- PlanningStrategyResult
 - SkateboardTestingRunner
 - GameDataManager
 - CloudSaveE2ERunner
 - QuestManager
 - LevelTilemapUi
-- LevelProgressKey
+- ArgumentNullException
 - LeaderboardScreenController
 - Action
-- SpriteAnimatorController
+- SuperRoofJumpMechanics
 - PlanningBranch
 - SelectLevelScreenController
 - HierarchicalLevelCatalog
-- .Project
+- WorldSnapshot
 - RuntimeBotController
 - CharacterDevelopmentScreenController
 - LevelData
 - CloudSaveConflictModalController
 - QuestTestRunner
 - .Log
-- JumpOnFromRoofTravel
-- DecorationSpawner
+- ObstacleChain
+- ScrollingEnvironment
 - ExperienceProgressTestRunner
 - GameProgressTestRunner
 - LevelDataManager
@@ -64,7 +64,7 @@
 - ObstacleAnimationImporter
 - LevelInfoRef
 - LevelDataProvider
-- GameResultModalPresentation
+- JourneyCompleteModalController
 - Assets.Scripts.Common.Models
 - ILoadingTask
 - RewardedAdService
@@ -73,7 +73,7 @@
 - server.js
 - PurchaseService
 - LevelManager
-- .Validate
+- PlayerData
 - ObstacleChainElement
 - PlanningGraphNode
 - EconomyTelemetry
@@ -82,19 +82,19 @@
 - FakeAccountAuthenticationGateway
 - TutorialGameplayController
 - TransformAnimatorController
-- ArgumentException
-- IDisposable
+- .InstallBindings
+- ScreenLayout
 - HomeScreenController
 - NextGoalCandidate
 - .Configure
-- .GetObstacleXInterval
+- ScreenEnum
 - ObstacleSpawner
 - ShopScreenController
 - ObstacleTypeEnum
 - GameplayDevToolsActionResult
-- RoofJumpOverStrategy
-- SwitchLaneFireWindowCalculator
-- ActionGenerator
+- IRoofJumpOverPolicy
+- PassiveRoofExitStrategy
+- CloudSaveSnapshot
 - .WinLevelWithRandomValuesAsync
 - ScreenController
 - PlanningBranchMetrics
@@ -107,8 +107,8 @@
 - TutorialGameplayView
 - SettingsScreenController
 - Quests — Research
-- .BuildPlan
-- CloudSaveE2EScenario
+- SkinAssetTransaction
+- CloudSaveTestingUiPage
 - ResourceType
 - WinModalController
 - TestLevelAutomationBridge
@@ -127,11 +127,11 @@
 - SkinVisual
 - SkateboardAttack
 - UserSettings
-- UnityRewardedAdProvider
+- GameAds
 - GameUi
 - LostCyberHamster.Editor
 - DeviceLogUploader
-- Agent Tools
+- Статистика Android-плейтестов — минимальный план
 - CloudSaveTestingWindow
 - AnimatedPngDecoder
 - PartOfDayScoreMechanics
@@ -149,16 +149,16 @@
 - AddressableLeaseTests
 - Монетизация — задачи
 - ReturnActivityState
-- SkinCandidateImporterParityTool
-- DevToolsUiToolkitHost
+- ArgumentException
+- DevToolsUiToolkitOverlayShell
 - UiGameScreenMechanics
-- AddressableLease
+- EnergyShieldAttack
 - TutorialRuntimeHost
 - AnimatedPngSpriteSheetConverter
 - economics/README.md
 - PreparedScreenInputBlockTests
 - RuntimePerformanceDiagnostics
-- SkinVisualAction
+- Assets.Scripts.GameEngine.Skins
 - LevelUpModalController
 - LostCyberHamsterCliCommands
 - PreloadedObstacle
@@ -170,7 +170,7 @@
 - summarize.py
 - LevelAssetsAddressableSync
 - LocationTheme
-- QuestTimeFacade
+- IGameClock
 - .Resolve
 - GameEventSystemController
 - BotDiagnosticCategory
@@ -178,15 +178,15 @@
 - ActivityRewardModalController
 - LostCyberHamsterBuildAutomation
 - RoofPlatformGapSnapRule
-- .BeginCard
+- .SpaceSection
 - IJumpFromRoofPolicy
 - DevToolsUiToolkitFactory
 - AnalyticsManager
-- InterstitialAdService
+- UnityInterstitialAdProvider
 - LeaderboardReadStatus
 - New York daypart pattern draft
-- DevToolsUiToolkitOverlayShell
-- AddCoinsOrBonusMechanics
+- SpriteAnimatorController
+- JumpResolveContext
 - telegram_build_worker.ps1
 - Блок 2 — план прогрессии и способностей
 - EnvironmentRoot
@@ -194,12 +194,12 @@
 - LevelItem
 - PartView
 - ObstacleFactory
-- .CreateButton
+- DevToolsUiFactory
 - Суперудар «Скейтборд»
 - .SyncPrefab
 - RunLootBuffer
-- .TryGetType
-- SkinManager
+- .CreateCommandCard
+- .CreateSkinAsync
 - QuestAttemptPreview
 - ShieldOnboardingController
 - ReturnActivitiesScreenController
@@ -233,40 +233,40 @@
 - DevToolsPointerDragHandle
 - Лидерборд: доступ, сценарии и реализация
 - Термин: «препятствие»
-- ISuperAttackRuntime
+- IJumpFromRoofOnRoofPolicy
 - ObstacleAnimationPreviewer
 - Экономика LostCyberHamster
 - 05 — Экономика, удержание и монетизация: выжимка общего брейншторма
 - ITilePlacementRule
-- SkinCatalogAuthoring
+- .BuildPlan
 - QuestTestingPage
 - SkinTestingRunner
 - TestLevelPickerWindow
 - PlayerExperienceService
 - SaveArea
 - TutorialAction
-- EnvironmentTexturePostprocessor
+- Assets.EditorTools
 - Android Ngrok Device Logging
 - Использование инструментов
 - .CreateSceneWithTilemap
 - TestLevelLauncher
-- GameEntryPoint
+- TutorialGameplayWorldAdapter
 - AccountDevToolsScreen
 - ElectricStrikeAttack
 - Сборка игры и публикация в Telegram
 - EconomyJournal
 - Consts
 - RewardedAdLifecycle
-- UnityInterstitialAdProvider
+- PlanBuildResult
 - PlayerJumpInputSequencer
-- .DiagStability
-- SuperAttackService
-- SpritePhysicsShapeColliderSync
-- SkateboardCollisionDiagnostic
-- SkinVisualRuntime
+- DeviceLogReporter
 - SuperAttackData
+- SpritePhysicsShapeColliderSync
+- .SetStatus
+- SkinVisualHost
+- .Day
 - ElectricStrikeUlta
-- CameraShakeController
+- .Create
 - AccountPromptModalController
 - DiagnosticsSummary
 - Первая сессия: задачи и реализация
@@ -284,8 +284,8 @@
 - TextureImportSettings
 - JsonToTilemapEditor
 - VerticalResizeManipulator
-- RoofPlatformPlacementGhostRenderer
-- GameProgressTestingPage
+- SpriteLoader
+- DecorationSpawner
 - ExistingAccountRestoreResult
 - SnapshotBuilder
 - ObstacleBonusDropKind
@@ -297,10 +297,10 @@
 - Roof Run Exit Gap Strategies
 - ObstacleLaneResolver
 - OverlapAvoidanceOnRoadRule
-- SwitchLaneStrategy
+- IDisposable
 - TestCollectablesScriptedLifeLossHook
 - .LogAndStopGame
-- ActivityAttemptContext
+- .IsTestLevelAutomationRun
 - InitBackground2LoadingTask
 - InitBackgroundLoadingTask
 - InitCharacterLoadingTask
@@ -308,7 +308,7 @@
 - InitSkyLoadingTask
 - MonoBehaviour
 - ListenersInstaller
-- EnergyShieldAttack
+- ExperienceProgressTestingView
 - .DecideRouting
 - HomeActivityPresenter
 - invoke_codex_build.ps1
@@ -320,32 +320,32 @@
 - Product Content Delivery — целевая концепция
 - Правила для AI-агентов
 - EditorWindow
-- HorizontalScope
-- AesCryptoService
+- EnvironmentTexturePostprocessor
+- .Commit_PersistsCurrentPlayerDataSnapshot
 - .GetExactTileWorldPosition
 - .SetBlocked
 - IRewardedAdProvider
 - RewardedAdState
-- SuperAttackDropBudget
+- Agent Tools
 - DeviceLogStartupProbe
 - NextGoalAction
 - .RenderCheckbox
 - Telegram Build Worker
-- Networking: реализация и ручная проверка
+- Реализация работы без интернета — 5 сентября 2026
 - Игровая валюта LostCyberHamster
 - Cloud Save: план упрощения
 - Research 01 — ежедневные рекламные показы
 - Текущее состояние
 - Android-плейтест: вечер 10–11.09.2026
 - SkinAddWindow
-- TestingPage
-- .EnqueueReward
+- LeaderboardService
+- UiLoseModalMechanics
 - BootstrapEntryPoint
 - HamsterActorSwitcher
 - AccountPromptCoordinator
 - IntroScreenController
-- .GetAwaiter
-- SkateboardTestingUiPage
+- GameResultModalPresentation
+- AsyncPlanBuildRequest
 - CollisionUtilsTests.cs
 - LevelInfo
 - .ResolveCurrentSlugs
@@ -359,46 +359,46 @@
 - .TrySnapObjectToRoof
 - SuperJumpOnRoofPolicy
 - CloudSyncStatusEnum
-- UltaMechanics
-- .ApplyVerified
+- ClickEvent
+- .RunOperationAsync
 - LocalSaveFeedback
 - .Render
 - unity_cli_test_level.ps1
-- Диагностика ошибок
+- ReturnActivityRecovery
 - Level Tilemap Editor — UI Refactor: Техническое задание
 - План рефакторинга загрузки спрайтов
 - Research 02 — удержание и прибыльное привлечение
 - 14 — Активности на Home
 - UnityPlayerAccountGateway
+- AdShowListener
 - .DiscoverTestLevels
 - AccountState
-- SuperJumpOnPolicy
-- SuperJumpOverPolicy
+- SuperJumpFromRoofPolicy
+- Блок 4: соревнование и перепрохождение
 - LaneCheckStage
-- InitGameUiLoadingTask
+- .HandlePlayModeStateChanged
 - UiPauseMechanics
-- ExperienceGrantResult
-- .DeserializeSnapshot
+- LevelEnum
 - WeeklyRunStatus
-- RunLootSnapshot
-- .CreateAsync
-- LevelDescriptor
+- DecodedAnimation
+- PlayerDataValidationStatus
+- .BuildLevelLookups
 - AddressableSetLease
-- TutorialFocusOverlay
+- 21 — Мягкий запуск монетизации
 - start_device_log_stack.ps1
 - Skin Candidate Pipeline
 - FeatureFlagToggle
-- Assets.Scripts.Diagnostics
+- LocalizedDropdown
 - Android dev signing
 - Содержательные имена
 - База опыта агентов
-- Реализация работы без интернета — 5 сентября 2026
+- .WriteChunk
 - Retention UI — интеграция принятых макетов
 - Четыре зоны UI — реализация 05.09.2026
 - Задача 7: Последовательная отрисовка всех паттернов уровня
 - Unity-интеграция UI-ассетов
 - Блок 1: отчёт реализации
-- Карточки ближайших целей: ограниченный объём
+- PlayerProgressLifecycleCheckpoint
 - Research 04 — дополнительные подцели монетизации
 - Блок 3: регулярное возвращение
 - 16 — Игровой день, неделя и Claim
@@ -412,18 +412,18 @@
 - BatchRenameWindow
 - CreateLevelPromptWindow
 - GameState
-- DevToolsNavigationLink
+- .TryGetCurrentValue
 - GameScreenStatusFormatter
 - UiResumeMechanics
-- .CreateMockResults
+- LocalizedToggle
 - SkateboardLandingImpactTimeline
 - .ApplySpriteWithDefaultMaterial
-- ShieldTutorialProgress
-- TutorialLevelRoutingLoadingTask
+- .GetResourceImage
+- Assets.EditorTools.AnimatedPng
 - Lost Cyber Hamster Documentation
 - Device Log Collector
-- AndroidDiagnosticsHelper
-- Booking
+- ValueExtensions.cs
+- DailyCommonRewardDefinition.cs
 - Чистый код: профессиональная позиция
 - Функции: одна операция и один уровень абстракции
 - Аргументы функций
@@ -454,18 +454,9 @@
 - 19 — Монетизация: история решений и актуальное состояние
 - Блок 3 — реализованные активности возвращения
 - Super Attacks — Research
-- .GetCurrent
-- DiagnosticLogViewer
-- BotReplanReason
+- post-commit
 - CloudSyncStateEnum
-- DevToolsNavigation
-- RunnerMode
-- LoadAddressablesLoadingTask
-- StartAccountLoadingTask
-- InitCameraLoadingTask
-- InitCurrentLevelAssetsLoadingTask
-- InitDecorationsLoadingTask
-- RootTask
+- Assets.Scripts.DevTools.Core
 - ReturnActivityConfig
 - EnergyShieldUlta
 - SkateboardJumpCycleSnapshot
@@ -485,13 +476,9 @@
 - Architecting and Coding Principles
 - Caveman Mode Soft
 - Caveman Mode Strict
-- QuestTestingUiPage
 - HealthBarMechanics
-- LeaderboardPersonalStatus
 - LeaderboardSubmissionResult
-- RunLootSpendResult
 - SkateboardState
-- .Create
 - SkateboardLandingImpactRequest
 - TutorialGameplayState
 - invoke_open_unity_test_level.ps1
@@ -505,12 +492,9 @@
 - Product Parallel Development
 - Daily Unity Live Android Build
 - voice-chat-workflow.prompt.md
-- .GetScreenScale
 - ShopItemType
-- .TryCreateDrop
 - Outcome
 - .GetLocalRect
-- .LoadAsync
 - Задача 8: Zoom к выбранному паттерну (Level mode)
 - Порядок реализации
 - daily_generation.md
@@ -523,10 +507,8 @@
 - .TryApplyRule
 - .TryApplyRule
 - .Configure
-- DevelopmentConsolePolicy.cs
 - Config
 - TutorialInputCapture
-- DevelopmentCardState
 - codebase_compact.ps1
 - ngrok-watchdog.sh
 - Codex — инструкции проекта
@@ -536,7 +518,6 @@
 - Задача 6: Reorderable Level Sequence (drag-and-drop)
 - Задача 9: Override в контексте полной отрисовки
 - Подходы рефакторинга
-- HotelBooking.Api.csproj
 - GitHub Copilot Instructions
 - Useful Ideas
 - learning-review.prompt.md
@@ -545,17 +526,12 @@
 - unity-live-workflow.prompt.md
 - BlendOperation
 - BotActionKindRules.cs
-- .LoadAsync
-- .LoadAsync
-- HeroTab
-- Hotel Booking demo
 - CLAUDE.md
 - cloud-sync.md
 - leaderboard-retry-analysis-2026-09-07.md
 - implementation-plan.md
 - Description.md
 - Признаки рефакторинга.md
-- Guard.cs
 - LostCyberHamster/.github/copilot-instructions.md
 
 ## God Nodes (most connected - your core abstractions)
@@ -573,27 +549,27 @@
 ## Surprising Connections (you probably didn't know these)
 - `CharacterDevelopmentScreenController` --references--> `Address`  [EXTRACTED]
   LostCyberHamster/Assets/Scripts/UI/Screens/CharacterDevelopmentScreenController.cs → LostCyberHamster/Assets/Scripts/GameManagement/PlayerProgress/LevelProgress.cs
-- `CharacterDevelopmentScreenController` --references--> `Icon`  [EXTRACTED]
-  LostCyberHamster/Assets/Scripts/UI/Screens/CharacterDevelopmentScreenController.cs → LostCyberHamster/Assets/Scripts/UI/NextGoals/NextGoalCandidate.cs
 - `LevelTilemapEditor` --references--> `LevelFileDescriptor`  [EXTRACTED]
   LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapEditor.cs → LostCyberHamster/Assets/Editor/LevelEditor/LevelFileDescriptor.cs
 - `LevelTilemapEditor` --references--> `LevelTilemapUi`  [EXTRACTED]
   LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapEditor.cs → LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapUi.cs
 - `LevelTilemapEditor` --references--> `PatternSequencePanel`  [EXTRACTED]
   LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapEditor.cs → LostCyberHamster/Assets/Editor/LevelEditor/PatternSequencePanel.cs
+- `LevelTilemapEditor` --references--> `RoofPlatformPlacementGhostRenderer`  [EXTRACTED]
+  LostCyberHamster/Assets/Editor/LevelEditor/LevelTilemapEditor.cs → LostCyberHamster/Assets/Editor/LevelEditor/RoofPlatformPlacementGhostRenderer.cs
 
 ## Import Cycles
 - None detected.
 
-## Communities (565 total, 39 thin omitted)
+## Communities (542 total, 40 thin omitted)
 
 ### Community 0 - "Assets.Scripts.Bot.PlanState"
 Cohesion: 0.04
-Nodes (46): Assets.Scripts.Bot.Strategies.Shared.Execution, Assets.Scripts.Bot.Strategies.Shared.JumpPlanning, Assets.Scripts.Bot.Planning.DecisionPoints, Assets.Scripts.Bot.Strategies.Shared, Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof, Assets.Scripts.Bot.Strategies.SuperRoofJumpOver, Assets.Scripts.Bot.Strategies.SuperJumpOn, Assets.Scripts.Bot.Strategies.Shared.Models (+38 more)
+Nodes (38): Assets.Scripts.Bot.Strategies.Shared.Execution, Assets.Scripts.Bot.Strategies.Shared.JumpPlanning, Assets.Scripts.Bot.Planning.DecisionPoints, Assets.Scripts.Bot.Strategies.SuperJumpOnFromRoof, Assets.Scripts.Bot.Strategies.SuperRoofJumpOver, Assets.Scripts.Bot.Strategies.SuperJumpOn, Assets.Scripts.Bot.Strategies.Shared.Models, Assets.Scripts.Bot.Strategies.Shared.JumpOn (+30 more)
 
 ### Community 1 - "Vues.GameCore"
-Cohesion: 0.02
-Nodes (54): LostCyberHamster.Editor.Testing.Resources, GameManagement.Leaderboard, Assets.Scripts.DevTools.QuestTesting, Assets.Scripts.Tutorial, Assets.Scripts.Account, LostCyberHamster.UI, LostCyberHamster.Editor.Testing, LostCyberHamster.Editor.Testing.GameProgress (+46 more)
+Cohesion: 0.03
+Nodes (45): LostCyberHamster.Editor.Testing.Resources, GameManagement.Leaderboard, Assets.Scripts.DevTools.QuestTesting, Assets.Scripts.Tutorial, Assets.Scripts.Account, LostCyberHamster.UI, LostCyberHamster.Editor.Testing, LostCyberHamster.Editor.Testing.GameProgress (+37 more)
 
 ### Community 2 - "PlannedAction"
 Cohesion: 0.03
@@ -601,95 +577,95 @@ Nodes (83): HamsterActionLogger, ActionTriggerWindow, EarliestTriggerX, IsValid,
 
 ### Community 3 - "BotActionKind"
 Cohesion: 0.02
-Nodes (127): ActionFallbackKey, IEquatable, ActionFallbackKey, OrdinaryActionKind, TargetObstacleInstanceId, SuperFallbackActionDeduplicator, SuperFallbackActionPair, OrdinaryActionKind (+119 more)
+Nodes (133): ActionFallbackKey, IEquatable, ActionFallbackKey, OrdinaryActionKind, TargetObstacleInstanceId, SuperFallbackActionDeduplicator, SuperFallbackActionPair, OrdinaryActionKind (+125 more)
 
 ### Community 4 - "ObstacleSnapshot"
 Cohesion: 0.03
-Nodes (66): HamsterSnapshot, CenterX, Energy, HamsterBottomY, HamsterLeftX, HamsterRightX, HamsterState, HamsterTopY (+58 more)
+Nodes (67): Assets.Scripts.Bot.Strategies.Shared.Timing, HamsterSnapshot, CenterX, Energy, HamsterBottomY, HamsterLeftX, HamsterRightX, HamsterState (+59 more)
 
 ### Community 5 - "JumpObstacleData"
-Cohesion: 0.06
-Nodes (36): IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList (+28 more)
+Cohesion: 0.07
+Nodes (28): IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList, IReadOnlyList (+20 more)
 
 ### Community 6 - "Assets.Scripts.System"
-Cohesion: 0.04
-Nodes (17): Assets.Scripts.GameEngine.Actors, Assets.Scripts.Installers, LoadingTasks, Assets.Scripts.GameManagerLogic, Assets.Scripts.GameEngine.Mechanics, Assets.Scripts.Gameplay, Assets.Scripts.System.Rendering, Assets.Scripts.Bot (+9 more)
+Cohesion: 0.05
+Nodes (14): Assets.Scripts.Installers, LoadingTasks, Assets.Scripts.GameManagerLogic, Assets.Scripts.Gameplay, Assets.Scripts.System.Rendering, Assets.Scripts.Bot, Assets.Scripts.Entry_Points.BootstrapLoadingTasks, Assets.Scripts.System (+6 more)
 
 ### Community 7 - "HamsterStateEnum"
 Cohesion: 0.02
-Nodes (99): JumpFromRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix, EnergyCost, ExpectedSuccessState, JumpFromRoofTravel, JumpFromRoofOnRoofPolicy (+91 more)
+Nodes (110): JumpFromRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix, EnergyCost, ExpectedSuccessState, JumpFromRoofTravel, JumpFromRoofOnRoofPolicy (+102 more)
 
-### Community 8 - "ScreenEnum"
-Cohesion: 0.03
-Nodes (52): GameSceneEntryPoint, Task, UIDocument, MenuEntryPoint, Task, UIDocument, VisualElement, LevelResultNavigationCoordinator (+44 more)
+### Community 8 - ".Awake"
+Cohesion: 0.06
+Nodes (14): MenuEntryPoint, Task, UIDocument, VisualElement, UiJourneyCompleteModalMechanics, FirstSessionNavigation, HasReturnRoute, MenuNavigationRequest (+6 more)
 
 ### Community 9 - "Obstacle"
-Cohesion: 0.04
-Nodes (48): SkateboardLandingSurfacePlan, Support, SkateboardSurfaceController, CurrentRoof, State, SurfaceState, DroppingToRoad, Road (+40 more)
+Cohesion: 0.03
+Nodes (57): CollisionUtilsOverlapTests, Test, CollisionUtils, BoxCollider2D, Hamster, IEnumerable, IReadOnlyList, List (+49 more)
 
 ### Community 10 - "LevelTilemapEditor"
 Cohesion: 0.05
-Nodes (31): GridBrush, Bounds, Button, Color, Dictionary, GameObject, LevelInfo, List (+23 more)
+Nodes (29): Bounds, Color, Dictionary, GameObject, LevelInfo, List, MenuItem, Pattern (+21 more)
 
 ### Community 11 - "PlanningState"
-Cohesion: 0.06
-Nodes (24): BotStrategyDiagnostics, IReadOnlyCollection, CollectibleDecisionPointDetector, DecisionPoint, Chain, Kind, MovingBoundaryKind, DecisionPointKind (+16 more)
+Cohesion: 0.05
+Nodes (38): IReadOnlyList, BotStrategyDiagnostics, IReadOnlyCollection, ActionGenerationResult, Actions, DeadEndReasons, HasDeadEndReasons, HasUnresolvedPlanningSituation (+30 more)
 
 ### Community 12 - "CharacterScreenController"
 Cohesion: 0.05
-Nodes (41): HeroTab, Button, CancellationToken, CancellationTokenSource, ClickEvent, Dictionary, EventCallback, GeometryChangedEvent (+33 more)
+Nodes (40): HeroTab, Button, CancellationTokenSource, ClickEvent, Dictionary, EventCallback, GeometryChangedEvent, IVisualElementScheduledItem (+32 more)
 
 ### Community 13 - "Hamster"
 Cohesion: 0.03
-Nodes (49): ShieldJumpDamageTests, Test, AddOneCoinMechanics, AtomicEvent, DeathMechanics, AtomicVariable, HamsterAnimationEventsMechanics, AtomicEvent (+41 more)
+Nodes (57): IGameFinishListener, IGameResumeListener, ShiftTransformAnimatorController, AddCoinsOrBonusMechanics, AtomicEvent, IEnumerator, MonoBehaviour, Obstacle (+49 more)
 
 ### Community 14 - "CloudSyncService"
-Cohesion: 0.05
-Nodes (38): CheckpointReason, Task, CloudSyncService, HasUnresolvedConflict, IsConflictDeferred, IsInitialReconciliationComplete, LastError, Status (+30 more)
+Cohesion: 0.07
+Nodes (20): List, ExistingAccountRestoreCoordinator, Task, Task, CloudSyncService, HasUnresolvedConflict, IsConflictDeferred, IsInitialReconciliationComplete (+12 more)
 
 ### Community 15 - "GameNetworkFacade"
-Cohesion: 0.04
-Nodes (45): AccountLinkResult, Cancelled, Conflict, Failed, Linked, IAccountProfileGateway, Profile, IAccountSessionStatus (+37 more)
+Cohesion: 0.05
+Nodes (39): AccountLinkResult, Cancelled, Conflict, Failed, Linked, IAccountProfileGateway, Profile, IAccountSessionStatus (+31 more)
 
-### Community 16 - "WorldSnapshot"
-Cohesion: 0.07
-Nodes (17): WorldSnapshot, Hamster, Obstacles, ScreenLeftEdgeX, ScreenRightEdgeX, SnapshotTime, IReadOnlyList, PlanningStrategyResult (+9 more)
+### Community 16 - "PlanningStrategyResult"
+Cohesion: 0.08
+Nodes (10): PlanningStrategyResult, Actions, DeadEndReason, HasActions, HasDeadEndReason, IsApplicable, IReadOnlyList, JumpObstacleProjection (+2 more)
 
 ### Community 17 - "SkateboardTestingRunner"
-Cohesion: 0.06
-Nodes (34): ChecklistItem, LaneCheckStage, PlayModeStateChange, ChecklistItem, Details, State, ChecklistState, Fail (+26 more)
+Cohesion: 0.05
+Nodes (41): ChecklistItem, LaneCheckStage, PlayModeStateChange, ChecklistItem, Details, State, ChecklistState, Fail (+33 more)
 
 ### Community 18 - "GameDataManager"
 Cohesion: 0.06
-Nodes (35): ArgumentNullException, GameDataManagerBackupTests, Test, PlayerDataSerializationTests, Test, Action, Exception, Task (+27 more)
+Nodes (26): GameDataManagerBackupTests, Test, Action, Exception, Task, GameDataManager, ActiveConflictOwner, BaseCloudRevision (+18 more)
 
 ### Community 19 - "CloudSaveE2ERunner"
-Cohesion: 0.10
-Nodes (24): LegacyButton, LegacyText, Button, CancellationToken, CancellationTokenSource, Func, Label, Task (+16 more)
+Cohesion: 0.11
+Nodes (21): LegacyButton, LegacyText, Button, CancellationToken, CancellationTokenSource, Func, Label, Task (+13 more)
 
 ### Community 20 - "QuestManager"
 Cohesion: 0.05
-Nodes (33): Dictionary, IReadOnlyList, QuestAttemptBuffer, AttemptId, IsActive, IReadOnlyList, QuestAttemptPreviewSnapshot, AttemptId (+25 more)
+Nodes (38): Dictionary, IReadOnlyList, QuestAttemptBuffer, AttemptId, IsActive, IReadOnlyList, QuestAttemptPreviewSnapshot, AttemptId (+30 more)
 
 ### Community 21 - "LevelTilemapUi"
-Cohesion: 0.04
-Nodes (28): FocusOutEvent, IReadOnlyList, Button, ClickEvent, DropdownField, IEnumerable, KeyDownEvent, Label (+20 more)
+Cohesion: 0.05
+Nodes (21): FocusOutEvent, IReadOnlyList, Button, ClickEvent, DropdownField, IEnumerable, KeyDownEvent, Label (+13 more)
 
-### Community 22 - "LevelProgressKey"
-Cohesion: 0.07
-Nodes (24): ProgressServiceTests, Test, DevToolsRuntimeState, UnlockAllLevels, PartOfDayEntry, DefaultUnlockPolicy, IUnlockPolicy, LevelProgressEntry (+16 more)
+### Community 22 - "ArgumentNullException"
+Cohesion: 0.06
+Nodes (23): ArgumentNullException, DevToolsRuntimeState, UnlockAllLevels, PartOfDayEntry, DefaultUnlockPolicy, IUnlockPolicy, LevelProgressEntry, IsCompleted (+15 more)
 
 ### Community 23 - "LeaderboardScreenController"
 Cohesion: 0.04
 Nodes (44): Button, ClickEvent, Func, IDisposable, IVisualElementScheduledItem, KeyDownEvent, Label, ScrollView (+36 more)
 
 ### Community 24 - "Action"
-Cohesion: 0.05
-Nodes (21): Keyboard, KeyboardMechanics, Hamster, Label, AbilityActivityIndicator, VisualTreeAsset, Healthbar, value (+13 more)
+Cohesion: 0.06
+Nodes (19): SuperAttackRuntimeSnapshot, Label, AbilityActivityIndicator, VisualTreeAsset, Healthbar, value, Action, Button (+11 more)
 
-### Community 25 - "SpriteAnimatorController"
-Cohesion: 0.05
-Nodes (31): SpriteAnimatorController, Hamster, JumpMechanics, AtomicEvent, AtomicVariable, List, ProfilerMarker, Transform (+23 more)
+### Community 25 - "SuperRoofJumpMechanics"
+Cohesion: 0.04
+Nodes (29): AddOneCoinMechanics, AtomicEvent, DeathMechanics, AtomicVariable, JumpMechanics, AtomicEvent, AtomicVariable, List (+21 more)
 
 ### Community 26 - "PlanningBranch"
 Cohesion: 0.09
@@ -700,55 +676,55 @@ Cohesion: 0.06
 Nodes (31): Button, ClickEvent, IReadOnlyList, Label, PointerCaptureOutEvent, PointerDownEvent, PointerMoveEvent, PointerUpEvent (+23 more)
 
 ### Community 28 - "HierarchicalLevelCatalog"
-Cohesion: 0.07
-Nodes (34): ByAddress, ByKey, LevelDefinition, LevelEntry, LocationDefinition, PartOfDayEntry, Factory, HierarchicalLevelCatalog (+26 more)
+Cohesion: 0.10
+Nodes (26): LevelDefinition, LevelEntry, LocationDefinition, ProgressServiceTests, Test, PartOfDayEntry, Factory, HierarchicalLevelCatalog (+18 more)
 
-### Community 29 - ".Project"
-Cohesion: 0.06
-Nodes (20): PassiveAdvanceSimulator, ActionKind, PassiveCollectSimulator, ActionKind, PassiveRoofExitSimulator, ActionKind, RoofSwitchLaneSimulator, ActionKind (+12 more)
+### Community 29 - "WorldSnapshot"
+Cohesion: 0.05
+Nodes (29): WorldSnapshot, Hamster, Obstacles, ScreenLeftEdgeX, ScreenRightEdgeX, SnapshotTime, IReadOnlyList, CollectibleDecisionPointDetector (+21 more)
 
 ### Community 30 - "RuntimeBotController"
 Cohesion: 0.06
-Nodes (12): BotReplanReason, IGameLateUpdateListener, RuntimeBotController, CurrentPlan, IsEnabled, IsInitialized, LastSnapshot, GameManager (+4 more)
+Nodes (19): BotReplanReason, IGameLateUpdateListener, BotReplanReason, ActionCancelled, ActionCompleted, BotEnabled, LevelStart, None (+11 more)
 
 ### Community 31 - "CharacterDevelopmentScreenController"
-Cohesion: 0.06
-Nodes (34): DevelopmentCardState, Grayscale, Button, DevelopmentReturnButton, Button, CancellationToken, CancellationTokenSource, ClickEvent (+26 more)
+Cohesion: 0.05
+Nodes (39): DevelopmentCardState, Grayscale, Button, DevelopmentReturnButton, Icon, Button, CancellationToken, CancellationTokenSource (+31 more)
 
 ### Community 32 - "LevelData"
 Cohesion: 0.04
-Nodes (51): IAtomicAction, Animator, TransformAnimatorEventsDispatcher, BoomEffectAction, AtomicVariable, GameManager, Vector3, BaseEffect (+43 more)
+Nodes (51): IAtomicAction, IGamePauseListener, TransformAnimatorEventsDispatcher, BoomEffectAction, AtomicVariable, GameManager, Vector3, BaseEffect (+43 more)
 
 ### Community 33 - "CloudSaveConflictModalController"
 Cohesion: 0.06
 Nodes (24): Label, BindingId, LocalizedLabel, DateTime, CloudSaveConflictCardDto, CompletedLevels, Crystals, Money (+16 more)
 
 ### Community 34 - "QuestTestRunner"
-Cohesion: 0.06
-Nodes (27): QuestTestRunner, ActiveQuest, AfterState, AvailableQuests, BeforeState, CanAdvance, CanClaimReward, CanComplete (+19 more)
+Cohesion: 0.04
+Nodes (32): QuestTestRunner, ActiveQuest, AfterState, AvailableQuests, BeforeState, CanAdvance, CanClaimReward, CanComplete (+24 more)
 
 ### Community 35 - ".Log"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (14): BotExecutionDiagnostics, Hamster, BotReplanDiagnostics, IReadOnlyList, StringBuilder, BotRuntimeEventDiagnostics, GameManager, Hamster (+6 more)
 
-### Community 36 - "JumpOnFromRoofTravel"
-Cohesion: 0.06
-Nodes (38): IJumpOnPolicy, ActionKind, DescriptionPrefix, EnergyCost, ExpectedJumpOnState, LogTag, JumpOnFireWindowFinder, IReadOnlyList (+30 more)
+### Community 36 - "ObstacleChain"
+Cohesion: 0.08
+Nodes (27): ObstacleChain, JumpOnFireWindowFinder, IReadOnlyList, List, JumpOnTravel, ActionTravel, ResolveFireShiftOffset, ResolveTravel (+19 more)
 
-### Community 37 - "DecorationSpawner"
-Cohesion: 0.05
-Nodes (26): AtomicObject, DecorationInstance, IGameFinishListener, IGamePauseListener, IGameResumeListener, IGameStartListener, IGameUpdateListener, ShiftTransformAnimatorController (+18 more)
+### Community 37 - "ScrollingEnvironment"
+Cohesion: 0.13
+Nodes (9): AtomicObject, IGameStartListener, IGameUpdateListener, ScrollLeftMechanics, Transform, ScrollRepeatMechanic, SpriteRenderer, Transform (+1 more)
 
 ### Community 38 - "ExperienceProgressTestRunner"
-Cohesion: 0.06
-Nodes (33): BeforeCompletion, Generation, Level, Action, GUIStyle, PlayModeStateChange, ExperienceProgressTestingPage, OutputHeadingStyle (+25 more)
+Cohesion: 0.07
+Nodes (28): BeforeCompletion, Generation, Level, PlayModeStateChange, ExperienceProgressTestRunner, CanCompleteNextLevel, CanGrantTutorialBonus, CanInspectFirstSession (+20 more)
 
 ### Community 39 - "GameProgressTestRunner"
-Cohesion: 0.05
-Nodes (28): ActiveOperationKind, PlayModeStateChange, ActiveOperationKind, LevelCompletion, None, SelectionNavigation, GameProgressTestRunner, CanCancel (+20 more)
+Cohesion: 0.07
+Nodes (27): ActiveOperationKind, LevelCompletion, None, SelectionNavigation, GameProgressTestRunner, CanCancel, CanPrepareLevelUp, CanResetProgress (+19 more)
 
 ### Community 40 - "LevelDataManager"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (18): IEnumerable, IReadOnlyDictionary, IReadOnlyList, LevelInfo, List, Regex, LevelDataManager, LevelFileDescriptor (+10 more)
 
 ### Community 41 - "WeeklyLeaderboardCoordinator"
@@ -760,11 +736,11 @@ Cohesion: 0.05
 Nodes (36): IQuestStrategy, Type, List, ResourceType, Quest, ActionId, CanClaimReward, Category (+28 more)
 
 ### Community 43 - "AccountService"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (24): AccountService, CanReauthenticateLinkedOwner, CanStartFreshGuestForTesting, HasKnownLinkedIdentity, IsAuthorized, IsGuestRecoveryUnavailable, LastRecoveryErrorKey, PlayerName (+16 more)
 
 ### Community 44 - "LeaderboardReadService"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (19): LeaderboardEntry, LeaderboardCachedEntry, List, LeaderboardReadCache, Dictionary, Exception, HashSet, LeaderboardEntry (+11 more)
 
 ### Community 45 - "ObstacleAnimationImporter"
@@ -772,35 +748,35 @@ Cohesion: 0.08
 Nodes (25): DeduplicationResult, FrameInfo, LoadedFrame, DeduplicationResult, FrameSequence, UniqueFrames, FrameInfo, BaseName (+17 more)
 
 ### Community 46 - "LevelInfoRef"
-Cohesion: 0.06
-Nodes (22): SpriteOverridePanel, Button, Label, ScrollView, VisualElement, LevelLoadingIntegrationTests, Test, DecorationPattern (+14 more)
+Cohesion: 0.08
+Nodes (18): SpriteOverridePanel, Button, Label, ScrollView, VisualElement, LevelLoadingIntegrationTests, Test, LevelInfoRef (+10 more)
 
 ### Community 47 - "LevelDataProvider"
 Cohesion: 0.12
-Nodes (11): LevelDescriptor, LevelData, LevelDataProvider, AnimationClip, AsyncOperationHandle, GameObject, List, Sprite (+3 more)
+Nodes (10): LevelData, LevelDataProvider, AnimationClip, AsyncOperationHandle, GameObject, List, Sprite, Task (+2 more)
 
-### Community 48 - "GameResultModalPresentation"
-Cohesion: 0.05
-Nodes (32): Align, ConditionalWeakTable, Justify, GeometryChangedEvent, IVisualElementScheduledItem, Rect, StyleBackground, StyleColor (+24 more)
+### Community 48 - "JourneyCompleteModalController"
+Cohesion: 0.09
+Nodes (15): Button, ClickEvent, GeometryChangedEvent, IVisualElementScheduledItem, Task, Vector2, VisualElement, JourneyCompleteModalController (+7 more)
 
 ### Community 49 - "Assets.Scripts.Common.Models"
-Cohesion: 0.05
-Nodes (17): Assets.Scripts.System.LevelManagement, Assets.Editor.LevelEditor.ObstacleSpriteTypeMappingManagement, Assets.Scripts, Assets.Editor.LevelEditor, Assets.Scripts.Common.Models, JumpPlanningConstants, SuperJumpOnFromRoofTiming, AnimationType (+9 more)
+Cohesion: 0.04
+Nodes (27): Assets.Scripts.GameEngine.Actors, Assets.Scripts.Bot.Strategies.Shared, Assets.Scripts.System.LevelManagement, Assets.Scripts.GameEngine.Controllers, Assets.Scripts.Bot.Strategies.Shared.JumpOnRoof, Assets.Scripts.Gameplay.Enums, Assets.Scripts.GameEngine.Mechanics.Models, Assets.Scripts.GameEngine.Mechanics (+19 more)
 
 ### Community 50 - "ILoadingTask"
-Cohesion: 0.05
-Nodes (49): InitAnalyticsManagerLoadingTask, Children, Name, List, InitAudioManagerLoadingTask, Children, Name, List (+41 more)
+Cohesion: 0.02
+Nodes (106): AudioClip, InitAnalyticsManagerLoadingTask, Children, Name, List, InitAudioManagerLoadingTask, Children, Name (+98 more)
 
 ### Community 51 - "RewardedAdService"
-Cohesion: 0.08
-Nodes (26): RewardedAdIntent, Action, Func, IDisposable, RewardedAdRequest, IsFinished, IsNativePending, RequestId (+18 more)
+Cohesion: 0.07
+Nodes (29): RewardedAdIntent, Action, Func, IDisposable, RewardedAdRequest, IsFinished, IsNativePending, RequestId (+21 more)
 
 ### Community 52 - ".TryGetPositiveValue"
-Cohesion: 0.07
-Nodes (31): CollectibleValuePolicy, CollectibleObjectiveValue, CollectibleObjectiveValue, EffectiveGain, HasValue, Kind, None, PassiveCollectModel (+23 more)
+Cohesion: 0.06
+Nodes (32): CollectibleValuePolicy, CollectibleObjectiveValue, ObstacleClassifier, CollectibleObjectiveValue, EffectiveGain, HasValue, Kind, None (+24 more)
 
 ### Community 53 - "QuestDefinition"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (20): IReadOnlyDictionary, IReadOnlyList, LevelProgressOverview, Empty, Levels, Locations, ResourceType, QuestDefinition (+12 more)
 
 ### Community 54 - "server.js"
@@ -808,75 +784,75 @@ Cohesion: 0.07
 Nodes (49): assert, { createCollectorContext, createHttpServer, cleanupOldDeviceLogs }, crypto, fs, http, os, path, test (+41 more)
 
 ### Community 55 - "PurchaseService"
-Cohesion: 0.06
-Nodes (26): DeferredOrder, FailedOrder, Task, IPurchaseFulfillment, PurchaseProof, Dictionary, HashSet, IDisposable (+18 more)
+Cohesion: 0.05
+Nodes (29): DeferredOrder, FailedOrder, Task, IPurchaseFulfillment, List, PurchaseCatalog, PurchaseProof, Dictionary (+21 more)
 
 ### Community 56 - "LevelManager"
-Cohesion: 0.07
-Nodes (19): LocationInfoList, Dictionary, Task, LevelManager, Catalog, HasCatalog, LastCompletionExperience, LocationInfoList (+11 more)
+Cohesion: 0.06
+Nodes (20): LocationInfoList, Dictionary, Task, Action, LevelManager, Catalog, HasCatalog, LastCompletionExperience (+12 more)
 
-### Community 57 - ".Validate"
-Cohesion: 0.09
-Nodes (17): PlayerDataValidatorTests, List, SetUp, Skin, Test, TestCase, PlayerDataValidationResult, Reason (+9 more)
+### Community 57 - "PlayerData"
+Cohesion: 0.08
+Nodes (21): PlayerDataValidatorTests, List, SetUp, Skin, Test, TestCase, PlayerDataValidationResult, Reason (+13 more)
 
 ### Community 58 - "ObstacleChainElement"
 Cohesion: 0.06
-Nodes (34): ObstacleChain, Count, Elements, First, FirstIndex, FirstObstacle, LeftX, RightX (+26 more)
+Nodes (33): ObstacleChain, Count, Elements, First, FirstIndex, FirstObstacle, LeftX, RightX (+25 more)
 
 ### Community 59 - "PlanningGraphNode"
-Cohesion: 0.06
-Nodes (34): PlanningDeadEndReport, Depth, NextObstacleIndex, ProjectionWorldShift, Reasons, PlanningGraphBuilder, PlanningGraphBuildResult, Branches (+26 more)
+Cohesion: 0.08
+Nodes (25): PlanningGraphBuilder, Dictionary, List, PlanningGraphNode, Actions, Depth, IncomingAction, IsRoot (+17 more)
 
 ### Community 60 - "EconomyTelemetry"
 Cohesion: 0.12
 Nodes (14): EconomyEvent, EconomyFlow, EconomyRuntimeState, EconomySnapshot, TotalXp, EconomyTelemetry, Enabled, Action (+6 more)
 
 ### Community 61 - "QuestsScreenController"
-Cohesion: 0.06
-Nodes (31): Label, Quest, QuestItem, _buttonGet, _image, _progressFill, _progressLabel, _rewardAction (+23 more)
+Cohesion: 0.08
+Nodes (19): Button, ClickEvent, Func, IReadOnlyList, IVisualElementScheduledItem, Label, Quest, VisualElement (+11 more)
 
 ### Community 62 - ".BeginAllocationSample"
-Cohesion: 0.09
-Nodes (21): AsyncPlanBuildRequest, AsyncPlanBuildResult, AsyncPlanRebuilder, PlanBuildResult, DeadEndReport, DeadEndSelection, HasDeadEnd, Plan (+13 more)
+Cohesion: 0.15
+Nodes (6): AsyncPlanBuildRequest, AsyncPlanBuildResult, AsyncPlanRebuilder, AsyncPlanRebuilder, IReadOnlyList, GameObject
 
 ### Community 63 - "FakeAccountAuthenticationGateway"
-Cohesion: 0.08
-Nodes (28): AccountServiceTests, IEnumerator, Task, Test, TestCase, UnityTest, FakeAccountAuthenticationGateway, ClearCredentialsCallCount (+20 more)
+Cohesion: 0.07
+Nodes (30): AccountServiceTests, IEnumerator, Task, Test, TestCase, UnityTest, FakeAccountAuthenticationGateway, ClearCredentialsCallCount (+22 more)
 
 ### Community 64 - "TutorialGameplayController"
-Cohesion: 0.08
-Nodes (14): ITutorialGameplayWorldAdapter, HamsterState, State, IReadOnlyList, TutorialGameplayController, CanUserPause, CurrentExpectedAction, CurrentStep (+6 more)
+Cohesion: 0.09
+Nodes (10): TutorialGameplayController, CanUserPause, CurrentExpectedAction, CurrentStep, IsUserPaused, Action, IReadOnlyList, VisualElement (+2 more)
 
 ### Community 65 - "TransformAnimatorController"
 Cohesion: 0.08
-Nodes (10): AnimatorOverrideController, HelpMethods, AnimationClip, IEnumerable, RoofHeightTransitionCompensator, IsActive, Transform, TransformAnimatorController (+2 more)
+Nodes (10): AnimatorOverrideController, HelpMethods, AnimationClip, GameObject, Hamster, IEnumerable, TransformAnimatorController, Animator (+2 more)
 
-### Community 66 - "ArgumentException"
-Cohesion: 0.08
-Nodes (13): ArgumentException, List, CloudSaveVirtualDeviceState, ConfirmedRevision, PendingSnapshotJson, PlayerDataJson, CloudSaveVirtualDeviceStorage, SnapshotService (+5 more)
+### Community 66 - ".InstallBindings"
+Cohesion: 0.09
+Nodes (13): CloudSaveVirtualDeviceState, ConfirmedRevision, PendingSnapshotJson, PlayerDataJson, CloudSaveVirtualDeviceStorage, CloudSaveVersionStore, ICloudSaveVersionStore, DevToolsMenuOverlay (+5 more)
 
-### Community 67 - "IDisposable"
-Cohesion: 0.07
-Nodes (20): IDisposable, Action, ProfileReplacementLease, GeometryChangedEvent, IVisualElementScheduledItem, Task, TaskCompletionSource, Vector2 (+12 more)
+### Community 67 - "ScreenLayout"
+Cohesion: 0.14
+Nodes (9): GeometryChangedEvent, IVisualElementScheduledItem, Task, TaskCompletionSource, Vector2, VisualElement, ScreenLayout, Ready (+1 more)
 
 ### Community 68 - "HomeScreenController"
 Cohesion: 0.06
-Nodes (26): UiToMenuMechanics, ClickEvent, VisualElement, Func, Task, UiInputCarryoverBlock, Button, ClickEvent (+18 more)
+Nodes (25): UiToMenuMechanics, ClickEvent, VisualElement, UiInputCarryoverBlock, Label, Button, ClickEvent, IVisualElementScheduledItem (+17 more)
 
 ### Community 69 - "NextGoalCandidate"
 Cohesion: 0.05
-Nodes (38): DevelopmentNextGoalRule, Kind, List, INextGoalRule, Kind, Sprite, NextGoalCandidate, ActionText (+30 more)
+Nodes (37): DevelopmentNextGoalRule, Kind, List, INextGoalRule, Kind, Sprite, NextGoalCandidate, ActionText (+29 more)
 
 ### Community 70 - ".Configure"
-Cohesion: 0.05
-Nodes (22): AndroidJavaObject, SetUp, TearDown, TearDown, PlayerProgressCommitterTests, SetUp, TearDown, Test (+14 more)
+Cohesion: 0.06
+Nodes (19): AndroidJavaObject, SetUp, TearDown, TearDown, SetUp, PlayerProgressResetTests, SetUp, TearDown (+11 more)
 
-### Community 71 - ".GetObstacleXInterval"
-Cohesion: 0.09
-Nodes (15): CollisionUtilsOverlapTests, Test, CollisionUtils, BoxCollider2D, Hamster, IEnumerable, IReadOnlyList, List (+7 more)
+### Community 71 - "ScreenEnum"
+Cohesion: 0.04
+Nodes (38): GameSceneEntryPoint, Task, UIDocument, IScreenController, Type, ScreenEnum, AbilityUpgradeModal, AccountPromptModal (+30 more)
 
 ### Community 72 - "ObstacleSpawner"
-Cohesion: 0.05
+Cohesion: 0.06
 Nodes (25): InstantiatedObstacle, ObstacleScript, PatternIndex, SpawnPosition, SpriteName, Vector3, ObstacleSpawner, CurrPatternIndex (+17 more)
 
 ### Community 73 - "ShopScreenController"
@@ -884,28 +860,28 @@ Cohesion: 0.08
 Nodes (21): ShopItem, List, ShopItemList, List, Task, TextAsset, ShopManager, List (+13 more)
 
 ### Community 74 - "ObstacleTypeEnum"
-Cohesion: 0.07
-Nodes (24): ObstacleClassifier, ObstacleTypeEnum, bigAlive, bigNotAlive, collectableCoin, collectableCrystal, collectableEnergetic, collectableLife (+16 more)
+Cohesion: 0.04
+Nodes (38): Bounds, Color, SceneView, Tile, Tilemap, Vector2, RoofPlatformPlacementGhostRenderer, ObstacleTypeEnum (+30 more)
 
 ### Community 75 - "GameplayDevToolsActionResult"
 Cohesion: 0.06
 Nodes (27): GameplayDevToolsActionResult, ClosePanel, Message, Succeeded, GameplayDevToolsController, Action, Func, GameplayDevToolsPresentation (+19 more)
 
-### Community 76 - "RoofJumpOverStrategy"
-Cohesion: 0.07
-Nodes (37): RoofJumpOverPolicy, ActionKind, DescriptionPrefix, EnergyCost, ExpectedSuccessState, RoofJumpOverStrategy, ActionKind, Executor (+29 more)
-
-### Community 77 - "SwitchLaneFireWindowCalculator"
-Cohesion: 0.09
-Nodes (19): Assets.Scripts.Bot.Strategies.Shared.Timing, PassiveRoofExitPolicy, ActionKind, DescriptionPrefix, RoofSwitchLaneWindowFinder, SafeInterval, End, Start (+11 more)
-
-### Community 78 - "ActionGenerator"
+### Community 76 - "IRoofJumpOverPolicy"
 Cohesion: 0.10
-Nodes (19): IReadOnlyList, ActionGenerationResult, Actions, DeadEndReasons, HasDeadEndReasons, HasUnresolvedPlanningSituation, ActionGenerator, IReadOnlyCollection (+11 more)
+Nodes (21): IRoofJumpOverPolicy, ActionKind, DescriptionPrefix, EnergyCost, ExpectedSuccessState, RoofJumpOverChainCalculator, RoofJumpOverChainModel, FirstFireShift (+13 more)
+
+### Community 77 - "PassiveRoofExitStrategy"
+Cohesion: 0.13
+Nodes (15): PassiveRoofExitModel, CompletionWorldShift, ContextObstacle, ContextObstacleIndex, ExitStartShift, HasContextObstacle, LastRoof, PassiveRoofExitPlanner (+7 more)
+
+### Community 78 - "CloudSaveSnapshot"
+Cohesion: 0.08
+Nodes (21): CheckpointReason, CloudSaveReadResult, Snapshot, Version, Task, UnityCloudSaveGateway, CloudConflictRecord, CloudSaveConflict (+13 more)
 
 ### Community 79 - ".WinLevelWithRandomValuesAsync"
-Cohesion: 0.14
-Nodes (8): Button, CancellationToken, Hamster, IEnumerable, LogType, Task, UIDocument, VisualElement
+Cohesion: 0.25
+Nodes (4): Button, CancellationToken, Hamster, Task
 
 ### Community 80 - "ScreenController"
 Cohesion: 0.07
@@ -916,8 +892,8 @@ Cohesion: 0.08
 Nodes (21): PlanningBranchMetrics, ActionCount, CoinCollectibleValue, CrystalCollectibleValue, Empty, EnergyBeforeFirstMajor, EnergyCollectibleValue, EnergyCost (+13 more)
 
 ### Community 82 - "GameplayDevToolsScreen"
-Cohesion: 0.07
-Nodes (24): ExperienceProgressTestingScreen, RootObject, Action, GameObject, RectTransform, ExperienceProgressTestingView, RootObject, Button (+16 more)
+Cohesion: 0.08
+Nodes (15): ExperienceProgressTestingScreen, RootObject, Action, GameObject, RectTransform, GameplayDevToolsScreen, RootObject, Action (+7 more)
 
 ### Community 83 - "ModalController"
 Cohesion: 0.06
@@ -928,12 +904,12 @@ Cohesion: 0.11
 Nodes (40): discover_top_level(), file_sha256(), is_filesystem_root(), is_same_or_inside(), main(), move_pairs_atomically(), parse_args(), preflight_destinations() (+32 more)
 
 ### Community 85 - "BotPlan"
-Cohesion: 0.07
-Nodes (29): PlanExecutionTickResult, Cancelled, Completed, Fired, None, PlanExecutor, CurrentPlan, InProgressHeadRemainingReservedEnergyCost (+21 more)
+Cohesion: 0.09
+Nodes (18): PlanExecutionTickResult, Cancelled, Completed, Fired, None, PlanExecutor, CurrentPlan, InProgressHeadRemainingReservedEnergyCost (+10 more)
 
 ### Community 86 - "LevelProgress"
-Cohesion: 0.07
-Nodes (24): LocationInfo, LocationInfoList, IReadOnlyList, LevelProgress, Address, DisplayOrder, IsCompleted, IsMastered (+16 more)
+Cohesion: 0.08
+Nodes (22): IReadOnlyList, LevelProgress, Address, DisplayOrder, IsCompleted, IsMastered, IsUnlocked, Key (+14 more)
 
 ### Community 87 - "PartProgress"
 Cohesion: 0.05
@@ -951,20 +927,20 @@ Nodes (32): DropdownField, IDisposable, Label, TextField, Toggle, SettingsScreen
 Cohesion: 0.05
 Nodes (39): ActionCounter, LevelResult, PlayerState, Quests, Архитектура, Идея, Контракты базовых типов, Реализованные типы (+31 more)
 
-### Community 91 - ".BuildPlan"
-Cohesion: 0.10
-Nodes (13): AddressableAssetGroup, AddressableAssetSettings, IReadOnlyList, SkinAddressablesAuthoring, IReadOnlyList, SkinAddService, Action, AddressableAssetSettings (+5 more)
+### Community 91 - "SkinAssetTransaction"
+Cohesion: 0.13
+Nodes (10): AddressableAssetGroup, AddressableAssetSettings, IReadOnlyList, SkinAddressablesAuthoring, Action, AddressableAssetSettings, Dictionary, ICollection (+2 more)
 
-### Community 92 - "CloudSaveE2EScenario"
-Cohesion: 0.06
-Nodes (26): CloudSaveE2ERunState, Cancelled, Failed, Idle, Passed, Running, WaitingForUser, CloudSaveE2EScenario (+18 more)
+### Community 92 - "CloudSaveTestingUiPage"
+Cohesion: 0.10
+Nodes (14): CloudSaveE2ERunState, Cancelled, Failed, Idle, Passed, Running, WaitingForUser, Button (+6 more)
 
 ### Community 93 - "ResourceType"
 Cohesion: 0.14
 Nodes (10): ResourceManagerTests, TearDown, Test, TestCase, ResourceType, Advertisement, Coins, Crystals (+2 more)
 
 ### Community 94 - "WinModalController"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (20): Button, ClickEvent, IVisualElementScheduledItem, Label, Task, VisualElement, WinModalController, BonusButton (+12 more)
 
 ### Community 95 - "TestLevelAutomationBridge"
@@ -973,23 +949,23 @@ Nodes (6): BridgeRequest, PlayModeStateChange, BridgeRequest, BridgeResponse, Te
 
 ### Community 96 - "retention_ui_concepts_2026-09-10.md"
 Cohesion: 0.06
-Nodes (29): WorkOnScreens и редкие состояния, Аудит редизайна UI — 05.09.2026, Осталось за пределами выбранных зон, Остаток проверки, Четыре реализованные зоны, Ассеты, Блок 4: соревнование и перепрохождение, Владение (+21 more)
+Nodes (31): WorkOnScreens и редкие состояния, Аудит редизайна UI — 05.09.2026, Осталось за пределами выбранных зон, Остаток проверки, Четыре реализованные зоны, XP, Визуальные варианты, Задачи (+23 more)
 
 ### Community 97 - "TutorialSession"
-Cohesion: 0.10
-Nodes (13): TutorialSessionTests, Dictionary, HashSet, InvalidOperationException, SetUp, TearDown, Test, TutorialSession (+5 more)
+Cohesion: 0.09
+Nodes (15): PlayerDataSerializationTests, Test, TutorialSessionTests, Dictionary, HashSet, InvalidOperationException, SetUp, TearDown (+7 more)
 
 ### Community 98 - "IJumpOverPolicy"
-Cohesion: 0.07
-Nodes (28): JumpOverStrategy, ActionKind, Executor, Simulator, IJumpOverPolicy, ActionKind, BigAliveCollisionPaddingRatio, DamageBigAliveWithoutYByReach (+20 more)
+Cohesion: 0.09
+Nodes (19): IJumpOverPolicy, ActionKind, BigAliveCollisionPaddingRatio, DamageBigAliveWithoutYByReach, DescriptionPrefix, EnergyCost, ExpectedOverState, JumpOverChainCalculator (+11 more)
 
 ### Community 99 - "RuntimePerformanceScope"
 Cohesion: 0.05
 Nodes (40): RuntimePerformanceScope, GameManagerLateUpdateLoop, GameManagerLateUpdateOtherListener, GameManagerLateUpdateRuntimeBotListener, GameManagerUpdateGameUiListener, GameManagerUpdateHamsterListener, GameManagerUpdateLoop, GameManagerUpdateObstacleListener (+32 more)
 
 ### Community 100 - "DailyQuestRewardModalController"
-Cohesion: 0.07
-Nodes (25): ResourceType, DailyCommonRewardSnapshot, Amount, Generation, OriginDate, ProfileId, RemainingRewards, RewardType (+17 more)
+Cohesion: 0.08
+Nodes (23): ResourceType, DailyCommonRewardSnapshot, Amount, Generation, OriginDate, ProfileId, RemainingRewards, RewardType (+15 more)
 
 ### Community 101 - "CheckpointReason"
 Cohesion: 0.05
@@ -1000,16 +976,16 @@ Cohesion: 0.09
 Nodes (16): Button, GeometryChangedEvent, Label, List, Rect, StyleBackground, VisualElement, NextGoalCardView (+8 more)
 
 ### Community 103 - "Label"
-Cohesion: 0.10
-Nodes (17): Label, AccountDevToolsUiPage, DevToolsUiPageBase, Root, Title, ExperienceProgressTestingUiPage, GameplayDevToolsUiPage, GameProgressTestingUiPage (+9 more)
+Cohesion: 0.06
+Nodes (31): ChecklistState, Label, AccountDevToolsUiPage, DevToolsCollapsibleSection, Content, Root, DevToolsNavigationLink, CardColor (+23 more)
 
 ### Community 104 - "LoseModalController"
-Cohesion: 0.08
-Nodes (17): UiLoseModalMechanics, GameManager, Hamster, Button, ClickEvent, Func, IVisualElementScheduledItem, Label (+9 more)
+Cohesion: 0.09
+Nodes (14): Button, ClickEvent, Func, IVisualElementScheduledItem, Label, Task, VisualElement, LoseModalController (+6 more)
 
 ### Community 105 - "Intro"
-Cohesion: 0.12
-Nodes (12): Coroutine, BindingId, LocalizedButton, ClickEvent, EventCallback, Exception, IEnumerator, List (+4 more)
+Cohesion: 0.08
+Nodes (24): Coroutine, BindingId, LocalizedButton, ClickEvent, EventCallback, Exception, IEnumerator, List (+16 more)
 
 ### Community 106 - "LostCyberHamster: runtime hamster-obstacle interaction spec"
 Cohesion: 0.05
@@ -1020,56 +996,56 @@ Cohesion: 0.10
 Nodes (14): DevToolsOverlayShell, Color, EventSystem, Font, GameManager, GameObject, Image, InputSystemUIInputModule (+6 more)
 
 ### Community 108 - "SkinVisual"
-Cohesion: 0.08
-Nodes (21): SkinActionContext, Action, ActionId, Duration, IsLoop, Outcome, PlaybackSpeed, Variant (+13 more)
+Cohesion: 0.09
+Nodes (18): SkinActionContext, Action, ActionId, Duration, IsLoop, Outcome, PlaybackSpeed, Variant (+10 more)
 
 ### Community 109 - "SkateboardAttack"
 Cohesion: 0.09
 Nodes (15): GameManager, Hamster, Obstacle, SkateboardSurfaceController, SkateboardAttack, ChargePerObstacle, IsActive, IsJumping (+7 more)
 
 ### Community 110 - "UserSettings"
-Cohesion: 0.08
-Nodes (21): AssetBundle, Assets, Awaitable, Catalog, crc, Hash, Hash128, AssetBundlesManager (+13 more)
+Cohesion: 0.10
+Nodes (19): AssetBundle, Assets, Awaitable, Catalog, crc, Hash, Hash128, AssetBundlesManager (+11 more)
 
-### Community 111 - "UnityRewardedAdProvider"
-Cohesion: 0.06
-Nodes (21): IUnityAdsInitializationListener, IUnityAdsLoadListener, IUnityAdsShowListener, Action, UnityAdsLoadError, AdLoadListener, UnityRewardedAdProvider, Action (+13 more)
+### Community 111 - "GameAds"
+Cohesion: 0.09
+Nodes (16): GameAds, IUnityAdsInitializationListener, UnityRewardedAdProvider, TaskCompletionSource, AdsInitializationListener, InterstitialPolicy, MonetizationConfig, Current (+8 more)
 
 ### Community 112 - "GameUi"
-Cohesion: 0.08
-Nodes (14): EnergyMechanics, AtomicEvent, AtomicVariable, UiGameOverMechanics, Func, GameManager, Hamster, GameUi (+6 more)
+Cohesion: 0.05
+Nodes (26): Keyboard, InitGameUiLoadingTask, Children, Name, Dictionary, IGameListener, List, Task (+18 more)
 
 ### Community 113 - "LostCyberHamster.Editor"
-Cohesion: 0.06
-Nodes (19): LostCyberHamster.Editor, AddressablesAutomation, IReadOnlyList, SkinAddPlan, DefaultSkin, Id, LocalizationPaths, NormalTemplateSheets (+11 more)
+Cohesion: 0.07
+Nodes (16): LostCyberHamster.Editor, AddressablesAutomation, IReadOnlyList, SkinAddPlan, DefaultSkin, Id, LocalizationPaths, NormalTemplateSheets (+8 more)
 
 ### Community 114 - "DeviceLogUploader"
 Cohesion: 0.12
 Nodes (17): DeviceLogUploadMetadata, DeviceLogUploadPayload, EconomyAck, DeviceLogUploader, DeviceLogUploadMetadata, DeviceLogUploadPayload, EconomyAck, EconomyPayload (+9 more)
 
-### Community 115 - "Agent Tools"
-Cohesion: 0.06
-Nodes (30): Android-приёмка, Проверки и доказательства, Реализовано, Статистика плейтестов — реализация, Точки записи, T1 — Записывать фактическую историю игры, T2 — Доставлять и сохранять журнал, T3 — Подготовить JSON для ответа агента (+22 more)
+### Community 115 - "Статистика Android-плейтестов — минимальный план"
+Cohesion: 0.10
+Nodes (17): Android-приёмка, Проверки и доказательства, Реализовано, Статистика плейтестов — реализация, Точки записи, T1 — Записывать фактическую историю игры, T2 — Доставлять и сохранять журнал, T3 — Подготовить JSON для ответа агента (+9 more)
 
 ### Community 116 - "CloudSaveTestingWindow"
-Cohesion: 0.11
-Nodes (13): ExperienceProgressTestingPage, GameProgressTestingPage, Action, GUIStyle, MenuItem, PlayModeStateChange, Vector2, CloudSaveTestingWindow (+5 more)
+Cohesion: 0.05
+Nodes (35): ExperienceProgressTestingPage, GameProgressTestingPage, CloudSaveE2EScenario, AutomaticSynchronization, ConflictChooseCloud, ConflictChooseDevice, DeferredSynchronization, FirstCloudSave (+27 more)
 
 ### Community 117 - "AnimatedPngDecoder"
-Cohesion: 0.12
-Nodes (15): FrameData, AnimatedPngDecoder, DecodedAnimation, Frames, Height, Width, PngChunk, Data (+7 more)
+Cohesion: 0.17
+Nodes (9): FrameData, AnimatedPngDecoder, PngChunk, Data, Type, Color32, DecodedAnimation, List (+1 more)
 
 ### Community 118 - "PartOfDayScoreMechanics"
 Cohesion: 0.08
 Nodes (26): PartOfDayScoreMechanics, LatestRecordPreview, LatestResult, LatestRunId, AtomicVariable, GameManager, RunResultData, IsLastLevelOfPart (+18 more)
 
 ### Community 119 - "ShieldPracticeController"
-Cohesion: 0.09
-Nodes (15): FirstSessionFocusOutline, VisualElement, ShieldPracticeController, IsPresenting, Button, Hamster, Label, List (+7 more)
+Cohesion: 0.12
+Nodes (13): Goal, FirstSessionFocusOutline, VisualElement, FirstSessionGoalPresenter, Goal, ShieldPracticeController, IsPresenting, Button (+5 more)
 
 ### Community 120 - "CollisionController"
-Cohesion: 0.15
-Nodes (9): Conditional, SkateboardCollisionSensor, BoxCollider2D, Collider2D, CollisionController, DamageGate, Collider2D, Hamster (+1 more)
+Cohesion: 0.08
+Nodes (24): Conditional, SkateboardCollisionSensor, BoxCollider2D, Collider2D, CollisionController, DamageGate, Collider2D, Hamster (+16 more)
 
 ### Community 121 - "Android Dev Build Automation Menu"
 Cohesion: 0.06
@@ -1084,16 +1060,16 @@ Cohesion: 0.10
 Nodes (15): WeeklyRecordPreview, Context, IsLocalOnly, Score, FirstSessionTelemetry, RuntimeInitializeOnLoadMethod, Hamster, HashSet (+7 more)
 
 ### Community 124 - "TutorialFlowController"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (15): TutorialFlowController, CanResumeByUser, CanShutdown, IsUserPaused, Phase, RequiresExclusiveInput, RequiresGameplayRoot, GameManager (+7 more)
 
 ### Community 125 - "NextGoalCoordinator"
-Cohesion: 0.09
-Nodes (14): NextGoalCardPlacement, Home, SelectLevel, Win, NextGoalConfiguration, DateTime, Dictionary, List (+6 more)
+Cohesion: 0.08
+Nodes (17): NextGoalCardPlacement, Home, SelectLevel, Win, NextGoalConfiguration, Task, TextAsset, NextGoalConfigurationLoader (+9 more)
 
 ### Community 126 - "NotificationMessage"
-Cohesion: 0.09
-Nodes (22): IReadOnlyList, List, Rect, NotificationCoordinator, IsPresenting, PendingMessage, Func, NotificationMessage (+14 more)
+Cohesion: 0.07
+Nodes (27): IReadOnlyList, List, Rect, NotificationCoordinator, IsPresenting, PendingMessage, Func, NotificationMessage (+19 more)
 
 ### Community 127 - "Концепты"
 Cohesion: 0.06
@@ -1104,56 +1080,56 @@ Cohesion: 0.10
 Nodes (32): FrameStats, color_distance(), component_mask(), connected_components(), dilate(), erode(), grow_from_seeds(), main() (+24 more)
 
 ### Community 129 - "DailyQuestService"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (16): DailyQuestSchedulerTests, Test, DailyCommonRewardDefinition, DateTime, DailyQuestScheduler, DateTime, HashSet, IReadOnlyCollection (+8 more)
 
 ### Community 130 - "AddressableLeaseTests"
-Cohesion: 0.10
-Nodes (17): Assets.Tests.System.Resources, IResourceLocation, AddressableLeaseTests, DummyLocation, Data, Dependencies, DependencyHashCode, HasDependencies (+9 more)
+Cohesion: 0.07
+Nodes (25): Assets.Tests.System.Resources, IResourceLocation, AddressableLeaseTests, DummyLocation, Data, Dependencies, DependencyHashCode, HasDependencies (+17 more)
 
 ### Community 131 - "Монетизация — задачи"
-Cohesion: 0.07
-Nodes (28): Scope и передача, Выполненные проверки, Граница готовности, Монетизация — результат, Проверка наград и сохранений, Реализовано, M1 — 50 монет за видео, M2 — бонус Win (+20 more)
+Cohesion: 0.08
+Nodes (24): Scope и передача, Выполненные проверки, Граница готовности, Монетизация — результат, Проверка наград и сохранений, Реализовано, M1 — 50 монет за видео, M2 — бонус Win (+16 more)
 
 ### Community 132 - "ReturnActivityState"
-Cohesion: 0.08
-Nodes (15): ISerializationCallbackReceiver, ActivityReward, List, ActivityWeekState, ReturnActivityRecovery, IsRequired, List, ReturnActivityState (+7 more)
-
-### Community 133 - "SkinCandidateImporterParityTool"
-Cohesion: 0.14
-Nodes (11): ISpriteOutlineDataProvider, ISpritePhysicsOutlineDataProvider, SpriteRect, Dictionary, IReadOnlyList, ISpriteNameFileIdDataProvider, List, Sprite (+3 more)
-
-### Community 134 - "DevToolsUiToolkitHost"
 Cohesion: 0.09
-Nodes (10): DevToolsUiToolkitHost, CurrentPageId, Factory, IsOpen, Root, IDevToolsUiPage, Root, Title (+2 more)
+Nodes (13): ISerializationCallbackReceiver, ActivityReward, ActivityWinReceipt, ReturnActivityEvent, List, ReturnActivityState, Cycle, Step (+5 more)
+
+### Community 133 - "ArgumentException"
+Cohesion: 0.14
+Nodes (13): ArgumentException, ISpriteOutlineDataProvider, ISpritePhysicsOutlineDataProvider, SpriteNameFileIdPair, SpriteRect, Dictionary, IReadOnlyList, ISpriteNameFileIdDataProvider (+5 more)
+
+### Community 134 - "DevToolsUiToolkitOverlayShell"
+Cohesion: 0.06
+Nodes (15): Inject, DevToolsUiToolkitHost, CurrentPageId, Factory, IsOpen, Root, IDevToolsUiPage, Root (+7 more)
 
 ### Community 135 - "UiGameScreenMechanics"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (7): RunCoinBudget, AvailableCoins, GrossCoins, UiGameScreenMechanics, GrossCollectedCoins, GameManager, Hamster
 
-### Community 136 - "AddressableLease"
-Cohesion: 0.08
-Nodes (20): AddressableLease, Handle, IsActive, Value, AsyncOperationHandle, AddressableLoader, CancellationToken, Task (+12 more)
+### Community 136 - "EnergyShieldAttack"
+Cohesion: 0.06
+Nodes (28): GameManager, GameObject, Hamster, Obstacle, EnergyShieldAttack, ChargePerObstacle, IsActive, Snapshot (+20 more)
 
 ### Community 137 - "TutorialRuntimeHost"
-Cohesion: 0.09
-Nodes (16): InitTutorialRuntimeLoadingTask, Children, Name, Dictionary, List, Task, TutorialConstants, TutorialRuntimeHost (+8 more)
+Cohesion: 0.12
+Nodes (12): Dictionary, Task, TutorialConstants, TutorialRuntimeHost, ActiveFlow, GameManager, Hamster, IDisposable (+4 more)
 
 ### Community 138 - "AnimatedPngSpriteSheetConverter"
-Cohesion: 0.11
-Nodes (19): Assets.EditorTools.AnimatedPng, AnimatedPngSpriteSheetConverter, SelectedAnimatedPng, AssetPath, Bytes, SheetLayout, Columns, Height (+11 more)
+Cohesion: 0.13
+Nodes (17): AnimatedPngSpriteSheetConverter, SelectedAnimatedPng, AssetPath, Bytes, SheetLayout, Columns, Height, Rows (+9 more)
 
 ### Community 140 - "PreparedScreenInputBlockTests"
-Cohesion: 0.11
-Nodes (12): PreparedScreenInputBlockTests, TestModalController, _modalAssetName, TestScreenController, _screenAssetName, IDisposable, IEnumerator, Task (+4 more)
+Cohesion: 0.12
+Nodes (11): PreparedScreenInputBlockTests, TestModalController, _modalAssetName, TestScreenController, _screenAssetName, IDisposable, IEnumerator, Task (+3 more)
 
 ### Community 141 - "RuntimePerformanceDiagnostics"
 Cohesion: 0.11
 Nodes (3): RuntimePerformanceDiagnostics, RuntimePerformanceFrameFlag, RuntimeBotAsyncPlanRunning
 
-### Community 142 - "SkinVisualAction"
-Cohesion: 0.08
-Nodes (23): SkinActionDescriptor, Action, Outcome, TransformClipName, Variant, SkinActionResolver, SkinVisualAction, GroundJump (+15 more)
+### Community 142 - "Assets.Scripts.GameEngine.Skins"
+Cohesion: 0.06
+Nodes (27): Assets.Scripts.GameEngine.Skins, SkinActionDescriptor, Action, Outcome, TransformClipName, Variant, SkinActionResolver, SkinVisualAction (+19 more)
 
 ### Community 143 - "LevelUpModalController"
 Cohesion: 0.09
@@ -1168,40 +1144,40 @@ Cohesion: 0.07
 Nodes (25): Assets.Scripts.System.Models, AssetsDataForPreload, List, EffectAssetData, PrefabName, SortingLayer, SpriteName, PreloadedEffect (+17 more)
 
 ### Community 146 - "AbilityProgressTestingRunner"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (15): Execute, AbilityProgressTestingRunner, CanBegin, CanMutate, Commands, InMenu, Shared, Action (+7 more)
 
 ### Community 147 - "LevelController"
-Cohesion: 0.09
-Nodes (11): IGameIntroListener, Dictionary, Task, AutomationRuntimePrefs, LevelController, Instance, IsLevelLoaded, Button (+3 more)
+Cohesion: 0.13
+Nodes (8): IGameIntroListener, LevelController, Instance, IsLevelLoaded, Button, GameManager, RuntimeBotController, Task
 
 ### Community 148 - "OnlineServicesCoordinator"
-Cohesion: 0.10
-Nodes (14): Job, Dictionary, Task, Job, OnlineServicesCoordinator, EnvironmentName, UnityServicesReady, Dictionary (+6 more)
+Cohesion: 0.09
+Nodes (16): Job, Dictionary, Task, Dictionary, Task, Job, OnlineServicesCoordinator, EnvironmentName (+8 more)
 
 ### Community 149 - "SkinVisualContentValidator"
 Cohesion: 0.15
 Nodes (14): AddressableAssetGroup, AddressableAssetSettings, Animator, AnimatorController, BoxCollider2D, GameObject, ICollection, IReadOnlyList (+6 more)
 
 ### Community 150 - "CharacterDevelopmentService"
-Cohesion: 0.12
-Nodes (9): SuperAttackLevelProgress, Action, ICollection, IReadOnlyCollection, CharacterDevelopmentService, DevelopmentPoints, List, IReadOnlyList (+1 more)
+Cohesion: 0.10
+Nodes (10): LevelUpReward, SuperAttackLevelProgress, Action, ICollection, IReadOnlyCollection, CharacterDevelopmentService, DevelopmentPoints, List (+2 more)
 
 ### Community 151 - "summarize.py"
 Cohesion: 0.17
 Nodes (20): add_run_expense(), add_run_flows(), build_summary(), canonical(), classify_run_result(), empty_flow_totals(), empty_resource_totals(), ensure_run() (+12 more)
 
 ### Community 152 - "LevelAssetsAddressableSync"
-Cohesion: 0.17
-Nodes (9): AddressableAssetEntry, AssetPostprocessor, LevelAssetPostprocessor, LevelAssetsAddressableSync, AddressableAssetGroup, AddressableAssetSettings, IEnumerable, List (+1 more)
+Cohesion: 0.25
+Nodes (6): AddressableAssetEntry, LevelAssetsAddressableSync, AddressableAssetGroup, AddressableAssetSettings, List, MenuItem
 
 ### Community 153 - "LocationTheme"
 Cohesion: 0.14
 Nodes (7): LocationAssetFallbackTests, Test, LocationTheme, SpriteTypeMapping, List, LocationAssetFallback, HashSet
 
-### Community 154 - "QuestTimeFacade"
-Cohesion: 0.07
-Nodes (18): PlayModeStateChange, IGameClock, LocalNow, RealtimeSeconds, UtcNow, DateTime, UnityGameClock, Instance (+10 more)
+### Community 154 - "IGameClock"
+Cohesion: 0.15
+Nodes (11): IGameClock, LocalNow, RealtimeSeconds, UtcNow, DateTime, UnityGameClock, Instance, LocalNow (+3 more)
 
 ### Community 155 - ".Resolve"
 Cohesion: 0.44
@@ -1212,16 +1188,16 @@ Cohesion: 0.08
 Nodes (9): AdsManager, EventSystem, InputSystemUIInputModule, LoadSceneMode, Scene, StandaloneInputModule, GameEventSystemController, VibrationManager (+1 more)
 
 ### Community 157 - "BotDiagnosticCategory"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (19): BotDiagnosticCategory, All, BranchSelection, DeadEnd, Economy, Execution, None, Pattern (+11 more)
 
 ### Community 158 - "ReturnActivityService"
 Cohesion: 0.12
-Nodes (14): DateTime, ActivityDayPolicy, ActivityWinReceipt, DateTime, ReturnActivityService, CanMutate, DayPolicyVersion, IsClockBlocked (+6 more)
+Nodes (13): List, ActivityWeekState, DateTime, ReturnActivityService, CanMutate, DayPolicyVersion, IsClockBlocked, IsReady (+5 more)
 
 ### Community 159 - "ActivityRewardModalController"
-Cohesion: 0.12
-Nodes (13): Button, Label, Task, ActivityRewardModalController, Claim, Later, _modalAssetName, Status (+5 more)
+Cohesion: 0.16
+Nodes (8): Button, Label, Task, ActivityRewardModalController, Claim, Later, _modalAssetName, Status
 
 ### Community 160 - "LostCyberHamsterBuildAutomation"
 Cohesion: 0.13
@@ -1231,41 +1207,41 @@ Nodes (11): AndroidSigningConfig, AndroidSigningScope, BuildReport, BuildTargetG
 Cohesion: 0.15
 Nodes (14): HorizontalBounds, BoxCollider2D, GameObject, Tile, Tilemap, Vector3, HorizontalBounds, Left (+6 more)
 
-### Community 162 - ".BeginCard"
-Cohesion: 0.11
-Nodes (16): IDisposable, CenteredColumnScope, TestingWindowLayout, BodyStyle, ButtonStyle, CaptionStyle, CurrentContentWidth, ErrorStyle (+8 more)
+### Community 162 - ".SpaceSection"
+Cohesion: 0.06
+Nodes (27): Action, IDisposable, CenteredColumnScope, TestingWindowLayout, BodyStyle, ButtonStyle, CaptionStyle, CurrentContentWidth (+19 more)
 
 ### Community 163 - "IJumpFromRoofPolicy"
-Cohesion: 0.10
-Nodes (22): IJumpFromRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix, EnergyCost, ExpectedSuccessState, JumpFromRoofChainModel, FirstFireShift (+14 more)
+Cohesion: 0.07
+Nodes (35): JumpFromRoofStrategy, ActionKind, Executor, Simulator, IJumpFromRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix (+27 more)
 
 ### Community 164 - "DevToolsUiToolkitFactory"
-Cohesion: 0.13
-Nodes (11): DevToolsUiToolkitFactory, DevToolsUiToolkitTheme, Button, Color, DropdownField, FontStyle, IntegerField, Label (+3 more)
+Cohesion: 0.11
+Nodes (12): DevToolsUiToolkitFactory, DevToolsUiToolkitTheme, Button, Color, DropdownField, FontStyle, IntegerField, Label (+4 more)
 
 ### Community 165 - "AnalyticsManager"
-Cohesion: 0.12
-Nodes (13): Event, MonetizationEvent, AnalyticsManager, CanRecordReturnActivity, IsInitialized, IDisposable, Task, TrackingSuppressionLease (+5 more)
+Cohesion: 0.11
+Nodes (14): Event, MonetizationEvent, AnalyticsManager, CanRecordReturnActivity, IsInitialized, IDisposable, Task, TrackingSuppressionLease (+6 more)
 
-### Community 166 - "InterstitialAdService"
-Cohesion: 0.09
-Nodes (16): DateTime, Func, RuntimeInitializeOnLoadMethod, Task, InterstitialAdService, CanUse, HasSelectedPause, Instance (+8 more)
+### Community 166 - "UnityInterstitialAdProvider"
+Cohesion: 0.05
+Nodes (26): IUnityAdsLoadListener, Action, UnityAdsLoadError, AdLoadListener, DateTime, Func, RuntimeInitializeOnLoadMethod, Task (+18 more)
 
 ### Community 167 - "LeaderboardReadStatus"
-Cohesion: 0.09
-Nodes (17): LeaderboardParticipationStatus, Conflict, Connecting, ProfileRequired, Ready, Synchronizing, LeaderboardReadStatus, AuthenticationRequired (+9 more)
+Cohesion: 0.07
+Nodes (22): LeaderboardParticipationStatus, Conflict, Connecting, ProfileRequired, Ready, Synchronizing, LeaderboardPersonalStatus, NoEntry (+14 more)
 
 ### Community 168 - "New York daypart pattern draft"
 Cohesion: 0.08
 Nodes (25): Afternoon 01 - бонусы и умеренный разгон, Afternoon 02 - первое заманивание на крыши, Afternoon 03 - первый выбор линии, Afternoon 04 - давление прыжками и первая широкая крыша, Afternoon 05 - дневной мини-финал, Evening 01 - контролируемый roof/shift mix, Evening 02 - roof gaps и переключение крыши, Evening 03 - плотные смещения (+17 more)
 
-### Community 169 - "DevToolsUiToolkitOverlayShell"
-Cohesion: 0.11
-Nodes (7): DevToolsMenuOverlay, Inject, DevToolsUiToolkitOverlayShell, PanelElement, GameManager, UIDocument, VisualElement
+### Community 169 - "SpriteAnimatorController"
+Cohesion: 0.08
+Nodes (12): ShieldJumpDamageTests, Test, SpriteAnimatorController, HamsterAnimationEventsMechanics, AtomicEvent, AtomicVariable, ObstacleDamageGate, AtomicEvent (+4 more)
 
-### Community 170 - "AddCoinsOrBonusMechanics"
-Cohesion: 0.12
-Nodes (8): AddCoinsOrBonusMechanics, AtomicEvent, IEnumerator, MonoBehaviour, Obstacle, CollectCoinsOrBonusAction, Hamster, Obstacle
+### Community 170 - "JumpResolveContext"
+Cohesion: 0.16
+Nodes (8): IReadOnlyList, IReadOnlyList, IReadOnlyList, JumpOutcomeResolver, IReadOnlyList, JumpResolveContext, SuperJumpOutcomeResolver, IReadOnlyList
 
 ### Community 171 - "telegram_build_worker.ps1"
 Cohesion: 0.16
@@ -1288,16 +1264,16 @@ Cohesion: 0.11
 Nodes (16): AddressableExtentions, Label, List, VisualTreeAsset, LevelItem, CardRoot, IsLocked, LevelName (+8 more)
 
 ### Community 176 - "PartView"
-Cohesion: 0.14
-Nodes (12): PartView, DisplayName, Id, Index, IsCompleted, IsMastered, IsUnlocked, Key (+4 more)
+Cohesion: 0.10
+Nodes (17): CurrentPlayer, Top, PartView, DisplayName, Id, Index, IsCompleted, IsMastered (+9 more)
 
 ### Community 177 - "ObstacleFactory"
-Cohesion: 0.18
+Cohesion: 0.19
 Nodes (10): ObstacleFactory, AnimationClip, AnimationType, Animator, BoxCollider2D, GameObject, List, Sprite (+2 more)
 
-### Community 178 - ".CreateButton"
-Cohesion: 0.20
-Nodes (12): ContentSizeFitter, Button, Color, GameObject, Image, InputField, RectTransform, Transform (+4 more)
+### Community 178 - "DevToolsUiFactory"
+Cohesion: 0.21
+Nodes (14): ContentSizeFitter, DevToolsUiFactory, Button, Color, Font, GameObject, Image, InputField (+6 more)
 
 ### Community 179 - "Суперудар «Скейтборд»"
 Cohesion: 0.08
@@ -1308,35 +1284,31 @@ Cohesion: 0.24
 Nodes (9): AnimationClip, Animator, AnimatorController, GameObject, IEnumerable, IReadOnlyDictionary, List, Sprite (+1 more)
 
 ### Community 181 - "RunLootBuffer"
-Cohesion: 0.12
-Nodes (8): SetUp, RunLootBuffer, AvailableCoins, AvailableCrystals, GrossCoins, HasPendingLoot, IsCurrent, Label
+Cohesion: 0.07
+Nodes (22): SetUp, RunLootBuffer, AvailableCoins, AvailableCrystals, GrossCoins, HasPendingLoot, IsCurrent, RunLootSnapshot (+14 more)
 
-### Community 182 - ".TryGetType"
-Cohesion: 0.16
-Nodes (16): DevToolsUiFactory, Font, FontStyle, Text, Transform, GameProgressTestingView, RootObject, Action (+8 more)
+### Community 182 - ".CreateCommandCard"
+Cohesion: 0.14
+Nodes (15): DevToolsTheme, Color, FontStyle, Text, GameProgressTestingView, RootObject, Action, Button (+7 more)
 
-### Community 183 - "SkinManager"
-Cohesion: 0.10
-Nodes (16): Dictionary, Task, Skin, Sprite, Task, SkinFactory, List, Task (+8 more)
+### Community 183 - ".CreateSkinAsync"
+Cohesion: 0.38
+Nodes (4): Skin, Sprite, Task, SkinFactory
 
 ### Community 184 - "QuestAttemptPreview"
-Cohesion: 0.09
-Nodes (19): QuestCategory, Daily, None, Story, IReadOnlyList, QuestAttemptPreview, AttemptId, AttemptProgress (+11 more)
+Cohesion: 0.12
+Nodes (15): IReadOnlyList, QuestAttemptPreview, AttemptId, AttemptProgress, Category, CommittedProgress, Generation, InstanceId (+7 more)
 
 ### Community 185 - "ShieldOnboardingController"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (10): FirstSessionCoachView, Button, Label, Rect, VisualElement, ShieldOnboardingController, IsPresenting, IsShieldAvailableToLearn (+2 more)
 
 ### Community 186 - "ReturnActivitiesScreenController"
 Cohesion: 0.14
-Nodes (9): Button, IVisualElementScheduledItem, Label, StyleColor, VisualElement, ReturnActivitiesScreenController, InitialKind, _screenAssetName (+1 more)
-
-### Community 187 - ".BindView"
-Cohesion: 0.13
-Nodes (3): Button, ClickEvent, Task
+Nodes (10): UIDocument, Button, IVisualElementScheduledItem, Label, StyleColor, VisualElement, ReturnActivitiesScreenController, InitialKind (+2 more)
 
 ### Community 188 - "DebugManager"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (6): DiagChannel, DebugManager, DiagChannel, BotEvents, Economy, Stability
 
 ### Community 189 - ".TryGetType"
@@ -1344,11 +1316,11 @@ Cohesion: 0.13
 Nodes (11): Action, Dictionary, TextAsset, ObstacleSpriteTypeMapping, List, ObstacleSpriteTypeMappings, List, Action (+3 more)
 
 ### Community 190 - "PatternSequencePanel"
-Cohesion: 0.14
-Nodes (12): PatternSequencePanel, Root, Button, ChangeEvent, IEnumerable, IntegerField, List, ListView (+4 more)
+Cohesion: 0.10
+Nodes (14): Button, ListView, PatternSequencePanel, Root, Button, ChangeEvent, IEnumerable, IntegerField (+6 more)
 
 ### Community 191 - "NetworkingDevToolsScreen"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (11): IDevToolsScreen, RootObject, GameObject, NetworkingDevToolsScreen, RootObject, Action, Button, GameObject (+3 more)
 
 ### Community 192 - "ensure_device_log_docker_stack.ps1"
@@ -1356,11 +1328,11 @@ Cohesion: 0.15
 Nodes (21): ConvertTo-ComposePath(), ConvertTo-HostPath(), Ensure-LocalEnvFile(), Get-CommandLineProcesses(), Get-ComposePsJson(), Get-ComposeServiceLogTail(), Get-GoogleDriveOutputRootCandidates(), Get-NgrokAuthtoken() (+13 more)
 
 ### Community 193 - "ActivityRewardSnapshot"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (16): ActivityRewardSnapshot, Claimed, Coins, ConfigVersion, Cycle, Gems, Generation, Id (+8 more)
 
 ### Community 194 - "SkateboardLandingImpactTarget"
-Cohesion: 0.14
+Cohesion: 0.16
 Nodes (11): GameObject, Obstacle, Outcome, SkateboardLandingImpactTarget, CompletionOutcome, Obstacle, TickResult, Invalid (+3 more)
 
 ### Community 195 - "prepare_quests_unity_assets.py"
@@ -1388,20 +1360,20 @@ Cohesion: 0.10
 Nodes (21): RuntimePerformanceCounter, JumpObstacleProjectionBuildBaseCalls, JumpObstacleProjectionBuildBaseItems, JumpObstacleProjectionBuildShiftedCalls, JumpObstacleProjectionBuildShiftedItems, ObstacleChainBuilderElementListItems, ObstacleChainBuilderElementLists, ObstacleChainConstructed (+13 more)
 
 ### Community 201 - "SkateboardVisualSequence"
-Cohesion: 0.16
-Nodes (7): SkateboardRideAnimation, Run2, Run3, Dictionary, GameObject, Obstacle, SkateboardVisualSequence
+Cohesion: 0.13
+Nodes (8): SkateboardRideAnimation, Run2, Run3, Dictionary, GameObject, IReadOnlyList, Obstacle, SkateboardVisualSequence
 
 ### Community 202 - ".Generate"
 Cohesion: 0.15
 Nodes (14): DailyQuestDifficulty, Hard, Medium, None, Simple, HashSet, ICollection, IReadOnlyCollection (+6 more)
 
 ### Community 203 - "SkateboardLandingImpactRuntime"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (9): Bounds, BoxCollider2D, Camera, GameManager, Hamster, List, Obstacle, Outcome (+1 more)
 
 ### Community 204 - "AbilityUpgradeModalController"
 Cohesion: 0.13
-Nodes (12): Button, CancellationToken, CancellationTokenSource, IVisualElementScheduledItem, Label, Sprite, Task, AbilityUpgradeModalController (+4 more)
+Nodes (11): Button, CancellationToken, CancellationTokenSource, IVisualElementScheduledItem, Label, Sprite, AbilityUpgradeModalController, CloseButton (+3 more)
 
 ### Community 205 - "План реализации"
 Cohesion: 0.10
@@ -1412,8 +1384,8 @@ Cohesion: 0.10
 Nodes (20): P3-00 — Зафиксировать решения и принять shared, P3-01 — Домен, конфигурация и игровой день, P3-02 — Durable Win receipt и восстановление, P3-03 — Семь накопительных победных дней, P3-04 — Самостоятельная цель недели, P3-05 — Получение валюты по snapshot, P3-06 — Cloud/offline и совместимость с блоком2, P3-07 — Утвердить композицию и подготовить UI-ассеты (+12 more)
 
 ### Community 207 - "GameManager"
-Cohesion: 0.14
-Nodes (9): IGameFixedUpdateListener, GameManager, State, Exception, IGameLateUpdateListener, IGameListener, IGameUpdateListener, Inject (+1 more)
+Cohesion: 0.16
+Nodes (8): IGameFixedUpdateListener, GameManager, State, IGameLateUpdateListener, IGameListener, IGameUpdateListener, Inject, List
 
 ### Community 208 - "AccountProfileStore"
 Cohesion: 0.22
@@ -1424,20 +1396,20 @@ Cohesion: 0.20
 Nodes (3): PlanEvaluator, IReadOnlyList, PlanningBranchComparer
 
 ### Community 210 - "DeviceLogUploadRunner"
-Cohesion: 0.16
-Nodes (10): DeviceLogUploadRunner, QueuePath, QueueEntry, QueueState, IDisposable, List, RuntimeInitializeOnLoadMethod, Task (+2 more)
+Cohesion: 0.13
+Nodes (11): RuntimeInitializeOnLoadMethod, DeviceLogUploadRunner, QueuePath, QueueEntry, QueueState, IDisposable, List, RuntimeInitializeOnLoadMethod (+3 more)
 
 ### Community 211 - "Listeners"
-Cohesion: 0.13
-Nodes (10): IGameListener, IGameFinishListener, IGameFixedUpdateListener, IGameIntroListener, IGameLateUpdateListener, IGameListener, IGameResumeListener, IGameStartListener (+2 more)
+Cohesion: 0.15
+Nodes (9): IGameListener, IGameFinishListener, IGameFixedUpdateListener, IGameIntroListener, IGameLateUpdateListener, IGameListener, IGameStartListener, IGameUpdateListener (+1 more)
 
 ### Community 212 - "Energybar"
 Cohesion: 0.12
 Nodes (12): UiHamsterStateMechanics, Hamster, Label, AttachToPanelEvent, DetachFromPanelEvent, IVisualElementScheduledItem, Label, VisualTreeAsset (+4 more)
 
 ### Community 213 - "TutorialFocusMaskBuilder"
-Cohesion: 0.21
-Nodes (8): TutorialFocusMaskBuilder, Color32, Rect, Texture2D, Vector2, TutorialFocusShape, Circle, RoundedRect
+Cohesion: 0.14
+Nodes (11): TutorialFocusMaskBuilder, Color32, Rect, Texture2D, Vector2, TutorialFocusOverlay, Rect, VisualElement (+3 more)
 
 ### Community 214 - "DevToolsPointerDragHandle"
 Cohesion: 0.15
@@ -1451,9 +1423,9 @@ Nodes (18): Выполненные проверки, Изменённые фай
 Cohesion: 0.11
 Nodes (18): Jump From Roof - 2 препятствий, Jump From Roof On Roof - 2 препятствий или 1 BigAlive, Jump On - 1 препятствие, Jump On From Roof - 2 препятствий, Jump On Roof - 1 препятствие, Jump Over - 1 препятствие, Level Design: Jump Constraints per Strategy, Roof Jump Over - 1 препятствие (+10 more)
 
-### Community 217 - "ISuperAttackRuntime"
-Cohesion: 0.12
-Nodes (8): Obstacle, ISuperAttackRuntime, ChargePerObstacle, Snapshot, AtomicEvent, AtomicVariable, Obstacle, UltaChargeMechanics
+### Community 217 - "IJumpFromRoofOnRoofPolicy"
+Cohesion: 0.10
+Nodes (24): JumpFromRoofOnRoofStrategy, ActionKind, Executor, Simulator, IJumpFromRoofOnRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix (+16 more)
 
 ### Community 218 - "ObstacleAnimationPreviewer"
 Cohesion: 0.25
@@ -1471,25 +1443,25 @@ Nodes (18): 05 — Экономика, удержание и монетизац�
 Cohesion: 0.24
 Nodes (7): ITilePlacementRule, ITilePlacementStrategy, DecorPlacementRule, YPositionRule, List, TilePlacementPipeline, TilePlacementStrategies
 
-### Community 222 - "SkinCatalogAuthoring"
-Cohesion: 0.17
-Nodes (6): Encoding, IReadOnlyList, TextAsset, SkinCatalogAuthoring, List, SkinDataList
+### Community 222 - ".BuildPlan"
+Cohesion: 0.11
+Nodes (12): IReadOnlyList, SkinAddService, Encoding, IReadOnlyList, TextAsset, SkinCatalogAuthoring, SkinLocalizationEntry, List (+4 more)
 
 ### Community 223 - "QuestTestingPage"
-Cohesion: 0.19
-Nodes (8): Action, GUIStyle, QuestTestingPage, CaptionStyle, SectionTitleStyle, StateStyle, StatusStyle, VerticalScope
+Cohesion: 0.11
+Nodes (13): HorizontalScope, Action, GUIStyle, QuestTestingPage, CaptionStyle, SectionTitleStyle, StateStyle, StatusStyle (+5 more)
 
 ### Community 224 - "SkinTestingRunner"
-Cohesion: 0.13
-Nodes (12): PlayModeStateChange, SkinTestingRunner, AppliedStatus, AvailabilityStatus, CanRun, GrantedStatus, IsReady, PriceStatus (+4 more)
+Cohesion: 0.06
+Nodes (24): PlayModeStateChange, SkinTestingRunner, AppliedStatus, AvailabilityStatus, CanRun, GrantedStatus, IsReady, PriceStatus (+16 more)
 
 ### Community 225 - "TestLevelPickerWindow"
 Cohesion: 0.22
 Nodes (5): Color, GUIStyle, HashSet, Vector2, TestLevelPickerWindow
 
 ### Community 226 - "PlayerExperienceService"
-Cohesion: 0.21
-Nodes (3): PlayerData, PlayerExperienceService, Button
+Cohesion: 0.17
+Nodes (10): ExperienceGrantResult, Amount, CoinsEarned, DevelopmentPointsEarned, FromLevel, LevelChanged, Source, ToLevel (+2 more)
 
 ### Community 227 - "SaveArea"
 Cohesion: 0.16
@@ -1499,9 +1471,9 @@ Nodes (11): Color, GeometryChangedEvent, UIDocument, VisualElement, SaveArea, Bo
 Cohesion: 0.12
 Nodes (16): TutorialAction, Jump, SuperJump, Tap, TutorialGameplayStep, CompletionState, ExpectedActions, InstructionKey (+8 more)
 
-### Community 229 - "EnvironmentTexturePostprocessor"
-Cohesion: 0.17
-Nodes (3): Assets.EditorTools, EnvironmentTexturePostprocessor, ObstacleSpritePostprocessor
+### Community 229 - "Assets.EditorTools"
+Cohesion: 0.15
+Nodes (4): Assets.EditorTools, DiagnosticLogViewer, MenuItem, ObstacleSpritePostprocessor
 
 ### Community 230 - "Android Ngrok Device Logging"
 Cohesion: 0.12
@@ -1512,24 +1484,24 @@ Cohesion: 0.12
 Nodes (14): Clean Code: справочник для агентов, Как использовать, Каталог тем, Приоритет правил, Роутинг по типу задачи, Восстанавливать Docker после ошибки служебных сокетов, Использование инструментов, Использовать штатную диагностику (+6 more)
 
 ### Community 232 - ".CreateSceneWithTilemap"
-Cohesion: 0.23
+Cohesion: 0.27
 Nodes (8): Grid, GameObject, Scene, Sprite, SpriteRenderer, Tilemap, SceneCreator, TilemapRenderer
 
 ### Community 233 - "TestLevelLauncher"
 Cohesion: 0.19
 Nodes (7): PlayModeStateChange, TestLevelEntry, Address, MenuLabel, TestLevelLauncher, TimeScaleOverrideKey, SceneAsset
 
-### Community 234 - "GameEntryPoint"
-Cohesion: 0.16
-Nodes (11): MonetizationConfig, Current, GameEntryPoint, Dictionary, Exception, Task, Dictionary, Task (+3 more)
+### Community 234 - "TutorialGameplayWorldAdapter"
+Cohesion: 0.10
+Nodes (10): ITutorialGameplayWorldAdapter, HamsterState, State, IReadOnlyList, TutorialGameplayWorldAdapter, HamsterState, State, GameManager (+2 more)
 
 ### Community 235 - "AccountDevToolsScreen"
-Cohesion: 0.17
+Cohesion: 0.14
 Nodes (7): AccountDevToolsScreen, RootObject, Action, Button, GameObject, RectTransform, Text
 
 ### Community 236 - "ElectricStrikeAttack"
-Cohesion: 0.21
-Nodes (10): BoxCollider2D, GameManager, GameObject, Hamster, List, Obstacle, ElectricStrikeAttack, ChargePerObstacle (+2 more)
+Cohesion: 0.11
+Nodes (17): BoxCollider2D, GameManager, GameObject, Hamster, List, Obstacle, ElectricStrikeAttack, ChargePerObstacle (+9 more)
 
 ### Community 237 - "Сборка игры и публикация в Telegram"
 Cohesion: 0.12
@@ -1544,48 +1516,44 @@ Cohesion: 0.13
 Nodes (11): RoofGapSnapMath, RoofGapSnapTarget, Tight, Wide, Consts, ANDROID_GAME_ID, BasePath, BaseSettingsPath (+3 more)
 
 ### Community 240 - "RewardedAdLifecycle"
-Cohesion: 0.15
+Cohesion: 0.12
 Nodes (4): RewardedAdInputGuard, Scene, RewardedAdLifecycle, Service
 
-### Community 241 - "UnityInterstitialAdProvider"
-Cohesion: 0.15
-Nodes (7): Action, UnityAdsLoadError, UnityAdsShowCompletionState, UnityAdsShowError, UnityInterstitialAdProvider, IsLoading, IsReady
+### Community 241 - "PlanBuildResult"
+Cohesion: 0.08
+Nodes (24): PlanBuildResult, DeadEndReport, DeadEndSelection, HasDeadEnd, Plan, PlanningDeadEndReport, Depth, NextObstacleIndex (+16 more)
 
 ### Community 242 - "PlayerJumpInputSequencer"
-Cohesion: 0.25
+Cohesion: 0.22
 Nodes (3): DoubleJumpDetector, PlayerJumpInputSequencer, Hamster
 
-### Community 243 - ".DiagStability"
-Cohesion: 0.16
-Nodes (5): DeviceLogReporter, LogType, RuntimeInitializeOnLoadMethod, Dictionary, Task
+### Community 243 - "DeviceLogReporter"
+Cohesion: 0.21
+Nodes (3): DeviceLogReporter, LogType, Exception
 
-### Community 244 - "SuperAttackService"
-Cohesion: 0.14
-Nodes (12): Dictionary, Task, List, SuperAttackDataList, Dictionary, IReadOnlyList, Task, TextAsset (+4 more)
+### Community 244 - "SuperAttackData"
+Cohesion: 0.08
+Nodes (21): Dictionary, Task, SuperAttackData, List, SuperAttackDataList, SuperAttackLevelData, SuperAttackLevelResolver, Dictionary (+13 more)
 
 ### Community 245 - "SpritePhysicsShapeColliderSync"
-Cohesion: 0.19
+Cohesion: 0.18
 Nodes (8): SpritePhysicsShapeColliderSync, PolygonCollider, SpriteRenderer, Dictionary, Sprite, SpriteRenderer, Vector2, PolygonCollider2D
 
-### Community 246 - "SkateboardCollisionDiagnostic"
-Cohesion: 0.12
-Nodes (15): Hamster, SkateboardCollisionDiagnostic, Hamster, LivesAfter, LivesBefore, ObstacleActiveAfter, ObstacleType, Outcome (+7 more)
+### Community 247 - "SkinVisualHost"
+Cohesion: 0.13
+Nodes (12): Hamster, SkinVisualHost, CurrentVisual, Slot, Transform, SkinVisualRuntime, GameObject, Task (+4 more)
 
-### Community 247 - "SkinVisualRuntime"
-Cohesion: 0.18
-Nodes (7): SkinVisualRuntime, GameObject, Task, SkinVisualRuntimeFactory, Hamster, Task, Skateboard
-
-### Community 248 - "SuperAttackData"
-Cohesion: 0.30
-Nodes (4): SuperAttackData, SuperAttackLevelData, SuperAttackLevelResolver, SuperAttackDescriptionFormatter
+### Community 248 - ".Day"
+Cohesion: 0.19
+Nodes (6): DateTime, ActivityDayPolicy, DateTime, ActivityUiText, DateTime, HomeActivitySelector
 
 ### Community 249 - "ElectricStrikeUlta"
 Cohesion: 0.23
 Nodes (6): IEnumerator, SpriteRenderer, ElectricStrikeUlta, IsConfigured, WorldRightEdge, Destroy
 
-### Community 250 - "CameraShakeController"
-Cohesion: 0.17
-Nodes (4): Camera, Vector3, CameraShakeController, ICameraShake
+### Community 250 - ".Create"
+Cohesion: 0.11
+Nodes (8): Camera, Vector3, CameraShakeController, ICameraShake, Camera, GameManager, Hamster, SkateboardAttackComposer
 
 ### Community 251 - "AccountPromptModalController"
 Cohesion: 0.17
@@ -1604,8 +1572,8 @@ Cohesion: 0.13
 Nodes (14): 1. Ядро квестов, 2. Каталог квестов, 3. Управление квестами, 4. Генерация Daily, 5. Генерация Story, 6. Интерфейс квестов, Запланировано, Общий поток (+6 more)
 
 ### Community 255 - "Конвенции кода и валидация"
-Cohesion: 0.13
-Nodes (15): Smart Resize, Summary и комментарии, Unity Editor API, Валидация, Данные и миграции, Именование, Именование анимаций, Компиляция и warnings (+7 more)
+Cohesion: 0.08
+Nodes (22): Диагностика ошибок, Доказать root cause до фикса, Логировать под гипотезу, Отделить анализ от фикса, Привязать snapshot устройства к сессии, Проверить наблюдаемость, Учесть стоимость диагностики, Smart Resize (+14 more)
 
 ### Community 256 - "OverlapAvoidanceOnRoofRule"
 Cohesion: 0.36
@@ -1616,8 +1584,8 @@ Cohesion: 0.16
 Nodes (8): ResourcesDevToolsScreen, RootObject, Action, Button, GameObject, InputField, RectTransform, Text
 
 ### Community 258 - "ReturnActivityTestingRunner"
-Cohesion: 0.20
-Nodes (6): ReturnActivityTestingRunner, CanBegin, CanChange, Shared, Status, Action
+Cohesion: 0.13
+Nodes (13): ReturnActivityTestingRunner, CanBegin, CanChange, Shared, Status, Action, ActivityAttemptContext, Committed (+5 more)
 
 ### Community 259 - "RootDevToolsScreen"
 Cohesion: 0.16
@@ -1655,24 +1623,24 @@ Nodes (10): List, MenuItem, Tile, Tilemap, Vector3, JsonToTilemapEditor, TileDat
 Cohesion: 0.24
 Nodes (6): VerticalResizeManipulator, PointerCaptureOutEvent, PointerDownEvent, PointerMoveEvent, PointerUpEvent, PointerManipulator
 
-### Community 268 - "RoofPlatformPlacementGhostRenderer"
-Cohesion: 0.24
-Nodes (7): Bounds, Color, SceneView, Tile, Tilemap, Vector2, RoofPlatformPlacementGhostRenderer
+### Community 268 - "SpriteLoader"
+Cohesion: 0.14
+Nodes (8): GridBrush, Action, AsyncOperationHandle, Dictionary, List, Regex, Sprite, SpriteLoader
 
-### Community 269 - "GameProgressTestingPage"
-Cohesion: 0.25
-Nodes (5): Action, GUIStyle, GameProgressTestingPage, OutputHeadingStyle, OutputTextStyle
+### Community 269 - "DecorationSpawner"
+Cohesion: 0.14
+Nodes (9): DecorationInstance, DecorationInstance, DecorationSpawner, Instance, GameObject, List, Sprite, SpriteRenderer (+1 more)
 
 ### Community 270 - "ExistingAccountRestoreResult"
-Cohesion: 0.14
-Nodes (11): ExistingAccountRestoreCoordinator, Task, ExistingAccountRestoreResult, ApplyFailed, LoadFailed, OwnerMismatch, Restored, SignInFailed (+3 more)
+Cohesion: 0.22
+Nodes (8): ExistingAccountRestoreResult, ApplyFailed, LoadFailed, OwnerMismatch, Restored, SignInFailed, SnapshotMissing, SnapshotRejected
 
 ### Community 271 - "SnapshotBuilder"
 Cohesion: 0.27
 Nodes (7): SnapshotBuilder, BoxCollider2D, Camera, Comparison, Dictionary, Hamster, List
 
 ### Community 272 - "ObstacleBonusDropKind"
-Cohesion: 0.22
+Cohesion: 0.20
 Nodes (10): DefaultObstacleBonusDropPolicy, IObstacleBonusDropPolicy, NoEnergyObstacleBonusDropPolicy, ObstacleBonusDropKind, Coins, Crystals, Energy, Life (+2 more)
 
 ### Community 273 - "WeeklyRunContext"
@@ -1707,21 +1675,21 @@ Nodes (5): Lane, Lane, Bottom, Top, ObstacleLaneResolver
 Cohesion: 0.35
 Nodes (6): Tile, Tilemap, Vector3, xMax, xMin, OverlapAvoidanceOnRoadRule
 
-### Community 281 - "SwitchLaneStrategy"
+### Community 281 - "IDisposable"
 Cohesion: 0.23
-Nodes (5): SwitchLaneSpecification, SwitchLaneStrategy, ActionKind, Executor, Simulator
+Nodes (8): IDisposable, Action, ProfileReplacementLease, Button, DetachFromPanelEvent, Label, VisualElement, ProfileOwnershipPrompt
 
 ### Community 282 - "TestCollectablesScriptedLifeLossHook"
-Cohesion: 0.19
+Cohesion: 0.24
 Nodes (5): TestCollectablesScriptedLifeLossHook, Action, Func, Hamster, HashSet
 
 ### Community 283 - ".LogAndStopGame"
 Cohesion: 0.36
 Nodes (4): List, Sprite, Texture2D, LevelDataValidator
 
-### Community 284 - "ActivityAttemptContext"
-Cohesion: 0.18
-Nodes (8): Action, ActivityAttemptContext, Committed, GrossCoins, Id, IsCurrent, Level, PendingCompletion
+### Community 284 - ".IsTestLevelAutomationRun"
+Cohesion: 0.20
+Nodes (3): Dictionary, Task, AutomationRuntimePrefs
 
 ### Community 285 - "InitBackground2LoadingTask"
 Cohesion: 0.23
@@ -1751,17 +1719,17 @@ Nodes (7): TransformAnimationEventsDispatcher, LicenseManager, List, SkinManager
 Cohesion: 0.18
 Nodes (7): GameManagerInstaller, GameObject, List, IInstaller, ListenersInstaller, GameObject, IGameListener
 
-### Community 292 - "EnergyShieldAttack"
-Cohesion: 0.18
-Nodes (8): GameManager, GameObject, Hamster, EnergyShieldAttack, ChargePerObstacle, IsActive, Snapshot, SuperAttackRuntimeSnapshot
+### Community 292 - "ExperienceProgressTestingView"
+Cohesion: 0.15
+Nodes (10): ExperienceProgressTestingView, RootObject, Button, GameObject, List, Text, Transform, ReturnActivityTestingView (+2 more)
 
 ### Community 293 - ".DecideRouting"
-Cohesion: 0.24
-Nodes (5): TutorialLaunchService, TutorialRoutingDecision, None, ShouldRedirect, TargetLevelAddress
+Cohesion: 0.18
+Nodes (7): TutorialLaunchService, Dictionary, Task, TutorialRoutingDecision, None, ShouldRedirect, TargetLevelAddress
 
 ### Community 294 - "HomeActivityPresenter"
-Cohesion: 0.18
-Nodes (5): UiLocalizedText, Button, IVisualElementScheduledItem, VisualElement, HomeActivityPresenter
+Cohesion: 0.15
+Nodes (6): UiLocalizedText, Button, IVisualElementScheduledItem, Label, VisualElement, HomeActivityPresenter
 
 ### Community 295 - "invoke_codex_build.ps1"
 Cohesion: 0.26
@@ -1799,33 +1767,33 @@ Nodes (12): DEV и редакторский Testing Tool, Голосовой ч�
 Cohesion: 0.24
 Nodes (8): EditorWindow, List, MenuItem, Tilemap, Vector3Int, TileData, TilemapToJsonEditor, Wrapper
 
-### Community 304 - "HorizontalScope"
-Cohesion: 0.33
-Nodes (5): HorizontalScope, Action, GUIStyle, SkateboardTestingPage, StatusStyle
+### Community 304 - "EnvironmentTexturePostprocessor"
+Cohesion: 0.23
+Nodes (4): AssetPostprocessor, EnvironmentTexturePostprocessor, LevelAssetPostprocessor, IEnumerable
 
-### Community 305 - "AesCryptoService"
-Cohesion: 0.24
-Nodes (4): MenuItem, GameDataDebugMenu, AesCryptoService, ICryptoService
+### Community 305 - ".Commit_PersistsCurrentPlayerDataSnapshot"
+Cohesion: 0.19
+Nodes (5): MenuItem, GameDataDebugMenu, Test, AesCryptoService, ICryptoService
 
 ### Community 306 - ".GetExactTileWorldPosition"
 Cohesion: 0.18
 Nodes (8): Tile, Tilemap, Vector3, Tile, Tilemap, Vector3, Vector3Int, TilemapPositionUtility
 
 ### Community 307 - ".SetBlocked"
-Cohesion: 0.21
-Nodes (6): TutorialArchitectureTests, Test, TestCase, GameplayInputGate, IsBlocked, HashSet
+Cohesion: 0.13
+Nodes (9): TutorialArchitectureTests, Test, TestCase, GameplayInputGate, IsBlocked, HashSet, HashSet, UiInputBlock (+1 more)
 
 ### Community 308 - "IRewardedAdProvider"
-Cohesion: 0.18
-Nodes (7): Action, Task, IRewardedAdProvider, HasLoadedAd, IsInitialized, IsSupported, Task
+Cohesion: 0.22
+Nodes (6): Action, Task, IRewardedAdProvider, HasLoadedAd, IsInitialized, IsSupported
 
 ### Community 309 - "RewardedAdState"
 Cohesion: 0.17
 Nodes (11): RewardedAdState, AwaitingResult, Cancelled, Completed, Failed, Loading, Preparing, Settling (+3 more)
 
-### Community 310 - "SuperAttackDropBudget"
-Cohesion: 0.17
-Nodes (8): GameObject, Hamster, HashSet, RuntimeInitializeOnLoadMethod, SuperAttackDropBudget, DestroyedCount, DropsCreated, TestingRoll
+### Community 310 - "Agent Tools"
+Cohesion: 0.15
+Nodes (13): Agent Tools, Android Device Logs через ngrok + Dropbox, Automation Bridge fallback, Build / Telegram Publishing, Diagnostic Log, PowerShell Scripts, Skin Candidate Pipeline, Test Levels (+5 more)
 
 ### Community 311 - "DeviceLogStartupProbe"
 Cohesion: 0.36
@@ -1839,9 +1807,9 @@ Nodes (11): NextGoalAction, ActivityReward, BuySkin, DailyReward, EquipAbility, 
 Cohesion: 0.17
 Nodes (11): State и логи, Telegram Build Worker, Архитектура, Безопасная проверка, Доступ, Если не работает, Запуск и статус, Статусы прогресса (+3 more)
 
-### Community 315 - "Networking: реализация и ручная проверка"
-Cohesion: 0.20
-Nodes (7): Networking: реализация и ручная проверка, Выполненная проверка, Результат, Ручная приёмка, Состав изменений, Управление, Проверка игры без интернета — 5 сентября 2026
+### Community 315 - "Реализация работы без интернета — 5 сентября 2026"
+Cohesion: 0.11
+Nodes (15): Networking: реализация и ручная проверка, Выполненная проверка, Результат, Ручная приёмка, Состав изменений, Управление, Проверка игры без интернета — 5 сентября 2026, Android-приёмка (+7 more)
 
 ### Community 316 - "Игровая валюта LostCyberHamster"
 Cohesion: 0.18
@@ -1867,13 +1835,13 @@ Nodes (10): Android-плейтест: вечер 10–11.09.2026, XP и откр
 Cohesion: 0.29
 Nodes (4): IReadOnlyList, MenuItem, Vector2, SkinAddWindow
 
-### Community 322 - "TestingPage"
-Cohesion: 0.18
-Nodes (11): TestingPage, Account, CloudSave, ExperienceProgress, GameProgress, Networking, Quests, Resources (+3 more)
+### Community 322 - "LeaderboardService"
+Cohesion: 0.23
+Nodes (7): IReadOnlyList, LeaderboardEntry, LeaderboardVersions, Task, LeaderboardService, ConfiguredLeaderboardIds, WeeklyScoreMetadata
 
-### Community 323 - ".EnqueueReward"
-Cohesion: 0.25
-Nodes (3): ReturnActivityAnalyticsEvent, ReturnActivityEvent, ReturnActivityTelemetry
+### Community 323 - "UiLoseModalMechanics"
+Cohesion: 0.29
+Nodes (3): UiLoseModalMechanics, GameManager, Hamster
 
 ### Community 324 - "BootstrapEntryPoint"
 Cohesion: 0.25
@@ -1887,25 +1855,25 @@ Nodes (5): HamsterActorSwitcher, IsSkateboardActive, NormalActor, SkateboardActo
 Cohesion: 0.18
 Nodes (7): Button, ClickEvent, VisualElement, IntroScreenController, _buttonSkip, _IntroImage, _screenAssetName
 
-### Community 328 - ".GetAwaiter"
-Cohesion: 0.20
-Nodes (6): AsyncOperation, System.Runtime.CompilerServices, IsExternalInit, TimeSpan, AwaitExtensions, TaskAwaiter
+### Community 328 - "GameResultModalPresentation"
+Cohesion: 0.08
+Nodes (23): Align, AsyncOperation, ConditionalWeakTable, System.Runtime.CompilerServices, Justify, IsExternalInit, TimeSpan, AwaitExtensions (+15 more)
 
-### Community 329 - "SkateboardTestingUiPage"
-Cohesion: 0.27
-Nodes (5): ChecklistState, DevToolsCollapsibleSection, Content, Root, SkateboardTestingUiPage
+### Community 329 - "AsyncPlanBuildRequest"
+Cohesion: 0.18
+Nodes (11): AsyncPlanBuildRequest, CurrentPlan, InProgressHeadAction, InProgressHeadFireTime, InProgressHeadRemainingReservedEnergyCost, IsActionInProgress, IsHeadCommitted, ReplanReasons (+3 more)
 
 ### Community 330 - "CollisionUtilsTests.cs"
 Cohesion: 0.40
 Nodes (6): CollisionUtilsTests, CollisionUtils, Obstacle, Tests, Transform, Test
 
 ### Community 331 - "LevelInfo"
-Cohesion: 0.22
-Nodes (5): Assets.Editor.Shared, JsonDataHandler, TextAsset, LevelInfo, List
+Cohesion: 0.14
+Nodes (8): Assets.Editor.Shared, JsonDataHandler, TextAsset, DecorationPattern, List, DecorationTile, LevelInfo, List
 
 ### Community 332 - ".ResolveCurrentSlugs"
-Cohesion: 0.33
-Nodes (3): DaypartSlug, LocationSlug, EnvironmentKeyResolver
+Cohesion: 0.10
+Nodes (10): DaypartSlug, LocationSlug, EnvironmentKeyResolver, LevelCatalogRuntimeConfigurator, Dictionary, IList, IResourceLocation, Task (+2 more)
 
 ### Community 333 - "Проверка работы без сети"
 Cohesion: 0.20
@@ -1943,16 +1911,12 @@ Nodes (7): SuperJumpOnRoofPolicy, ActionKind, DamageBigAliveWithoutYByReach, Des
 Cohesion: 0.22
 Nodes (7): CloudSyncStatusEnum, Conflict, LocalOnly, Pending, Saved, Synchronizing, Unavailable
 
-### Community 343 - "UltaMechanics"
+### Community 344 - ".RunOperationAsync"
 Cohesion: 0.20
-Nodes (5): Action, AtomicEvent, AtomicVariable, Func, UltaMechanics
-
-### Community 344 - ".ApplyVerified"
-Cohesion: 0.22
-Nodes (4): List, PurchaseCatalog, PurchaseEntitlements, ProductDefinition
+Nodes (3): ActiveOperationKind, CancellationTokenSource, Func
 
 ### Community 345 - "LocalSaveFeedback"
-Cohesion: 0.20
+Cohesion: 0.18
 Nodes (4): Exception, Label, UIDocument, LocalSaveFeedback
 
 ### Community 346 - ".Render"
@@ -1963,9 +1927,9 @@ Nodes (3): IllustratedAlphabetKerning, VisualElement, IllustratedAlphabetText
 Cohesion: 0.49
 Nodes (9): Format-UnityCliErrors(), Get-UnityCliProperty(), Invoke-UnityCliCommandResult(), Invoke-UnityCliJson(), Invoke-UnityCliRecompile(), Invoke-UnityCliRegenerateProjectFiles(), Invoke-UnityCliTestLevel(), Resolve-UnityTestLevelTransport() (+1 more)
 
-### Community 348 - "Диагностика ошибок"
+### Community 348 - "ReturnActivityRecovery"
 Cohesion: 0.22
-Nodes (7): Диагностика ошибок, Доказать root cause до фикса, Логировать под гипотезу, Отделить анализ от фикса, Привязать snapshot устройства к сессии, Проверить наблюдаемость, Учесть стоимость диагностики
+Nodes (3): ReturnActivityRecovery, IsRequired, ReturnActivityValidator
 
 ### Community 349 - "Level Tilemap Editor — UI Refactor: Техническое задание"
 Cohesion: 0.22
@@ -1987,65 +1951,61 @@ Nodes (9): 14 — Активности на Home, Выбор ближайшег�
 Cohesion: 0.31
 Nodes (5): IPlayerAccountService, UnityPlayerAccountGateway, IsSignedIn, Task, TaskCompletionSource
 
+### Community 354 - "AdShowListener"
+Cohesion: 0.22
+Nodes (5): IUnityAdsShowListener, Action, UnityAdsShowCompletionState, UnityAdsShowError, AdShowListener
+
 ### Community 355 - ".DiscoverTestLevels"
 Cohesion: 0.28
 Nodes (5): IEnumerable, List, MenuItem, TestLevelEntry, TestLevelPickerWindow
 
 ### Community 356 - "AccountState"
-Cohesion: 0.22
+Cohesion: 0.15
 Nodes (8): AccountState, Error, Guest, Linked, Linking, NotStarted, Resolving, SigningIn
 
-### Community 357 - "SuperJumpOnPolicy"
+### Community 357 - "SuperJumpFromRoofPolicy"
 Cohesion: 0.25
-Nodes (6): SuperJumpOnPolicy, ActionKind, DescriptionPrefix, EnergyCost, ExpectedJumpOnState, LogTag
+Nodes (7): SuperJumpFromRoofPolicy, ActionKind, BigAliveCollisionPaddingRatio, DescriptionPrefix, EnergyCost, ExpectedSuccessState, JumpFromRoofTravel
 
-### Community 358 - "SuperJumpOverPolicy"
-Cohesion: 0.25
-Nodes (7): SuperJumpOverPolicy, ActionKind, BigAliveCollisionPaddingRatio, DamageBigAliveWithoutYByReach, DescriptionPrefix, EnergyCost, ExpectedOverState
+### Community 358 - "Блок 4: соревнование и перепрохождение"
+Cohesion: 0.29
+Nodes (6): Ассеты, Блок 4: соревнование и перепрохождение, Владение, Интеграционные замечания, Проверки, Реализация
 
 ### Community 359 - "LaneCheckStage"
 Cohesion: 0.22
 Nodes (9): LaneCheckStage, AwaitJumpDuringShift, AwaitJumpForRejectedTap, AwaitRideTap, AwaitShiftTap, AwaitTapDuringJump, None, WaitRideShiftCompletion (+1 more)
 
-### Community 360 - "InitGameUiLoadingTask"
-Cohesion: 0.25
-Nodes (7): InitGameUiLoadingTask, Children, Name, Dictionary, IGameListener, List, Task
-
 ### Community 361 - "UiPauseMechanics"
-Cohesion: 0.28
-Nodes (4): UiPauseMechanics, ClickEvent, VisualElement, IGamePauseListener
+Cohesion: 0.24
+Nodes (5): UiPauseMechanics, ClickEvent, VisualElement, Button, IGamePauseListener
 
-### Community 362 - "ExperienceGrantResult"
-Cohesion: 0.22
-Nodes (8): ExperienceGrantResult, Amount, CoinsEarned, DevelopmentPointsEarned, FromLevel, LevelChanged, Source, ToLevel
-
-### Community 363 - ".DeserializeSnapshot"
-Cohesion: 0.31
-Nodes (3): IEnumerable, List, SerializableLevelProgressEntry
+### Community 362 - "LevelEnum"
+Cohesion: 0.29
+Nodes (6): LevelEnum, Lvl1, Lvl2, Lvl3, Lvl4, Lvl5
 
 ### Community 364 - "WeeklyRunStatus"
 Cohesion: 0.22
 Nodes (8): WeeklyRunStatus, AwaitingLocalSave, ConfirmedImprovement, Expired, LocalOnly, NotImproved, Pending, Unconfirmed
 
-### Community 365 - "RunLootSnapshot"
-Cohesion: 0.22
-Nodes (9): RunLootSnapshot, GrossCoins, HasLoot, IsCurrent, LevelKey, RunCoins, RunCrystals, WalletCoins (+1 more)
+### Community 365 - "DecodedAnimation"
+Cohesion: 0.40
+Nodes (5): DecodedAnimation, Frames, Height, Width, IReadOnlyList
 
-### Community 366 - ".CreateAsync"
-Cohesion: 0.25
-Nodes (7): Camera, CancellationToken, GameManager, GameObject, Hamster, Task, SuperAttackFactory
+### Community 366 - "PlayerDataValidationStatus"
+Cohesion: 0.40
+Nodes (4): PlayerDataValidationStatus, Rejected, Repairable, Valid
 
-### Community 367 - "LevelDescriptor"
-Cohesion: 0.22
-Nodes (9): LevelDescriptor, Address, DisplayOrder, LevelIndex, LevelKey, LocationId, LocationIndex, PartId (+1 more)
+### Community 367 - ".BuildLevelLookups"
+Cohesion: 0.12
+Nodes (13): ByAddress, ByKey, LevelDescriptor, Address, DisplayOrder, LevelIndex, LevelKey, LocationId (+5 more)
 
 ### Community 368 - "AddressableSetLease"
 Cohesion: 0.28
 Nodes (7): AddressableSetLease, Handle, IsActive, Values, AsyncOperationHandle, IList, IReadOnlyList
 
-### Community 369 - "TutorialFocusOverlay"
+### Community 369 - "21 — Мягкий запуск монетизации"
 Cohesion: 0.50
-Nodes (3): TutorialFocusOverlay, Rect, VisualElement
+Nodes (4): 21 — Мягкий запуск монетизации, Минимальный IAP-путь, Рекламная пауза, Стартовый набор: до открытия скина
 
 ### Community 370 - "start_device_log_stack.ps1"
 Cohesion: 0.53
@@ -2056,8 +2016,12 @@ Cohesion: 0.22
 Nodes (8): Promotion, Safety contract, Skin Candidate Pipeline, Unity importer parity, Validation, Генерация Cyberpunk Pulse skateboard sheets, Инструменты, Процесс
 
 ### Community 372 - "FeatureFlagToggle"
-Cohesion: 0.29
-Nodes (4): Assets.Scripts.System.FeatureFlags, Key, KeyCode, FeatureFlagToggle
+Cohesion: 0.17
+Nodes (6): Assets.Scripts.Debugging, Assets.Scripts.System.FeatureFlags, Key, KeyCode, AndroidDiagnosticsHelper, FeatureFlagToggle
+
+### Community 373 - "LocalizedDropdown"
+Cohesion: 0.50
+Nodes (3): DropdownField, BindingId, LocalizedDropdown
 
 ### Community 374 - "Android dev signing"
 Cohesion: 0.25
@@ -2070,10 +2034,6 @@ Nodes (7): Когда читать, Концепция, Правила, Прав
 ### Community 376 - "База опыта агентов"
 Cohesion: 0.25
 Nodes (8): Alpha у сгенерированного UI, База опыта агентов, Запас плашки под локализацию, Запись и рост, Импорт спрайтов, Карта документов, Новые записи, После первой неудачной попытки
-
-### Community 377 - "Реализация работы без интернета — 5 сентября 2026"
-Cohesion: 0.25
-Nodes (8): Android-приёмка, Границы надёжности, Основные точки кода, Проверки, Реализация работы без интернета — 5 сентября 2026, Собранный APK, Совместная работа, Что изменено
 
 ### Community 378 - "Retention UI — интеграция принятых макетов"
 Cohesion: 0.25
@@ -2094,10 +2054,6 @@ Nodes (8): Unity-интеграция UI-ассетов, Импорт в Unity, 
 ### Community 382 - "Блок 1: отчёт реализации"
 Cohesion: 0.25
 Nodes (8): Блок 1: отчёт реализации, Границы приёмки, Диагностика compile gate, Контракты передачи блоку 2, Проверки, Рабочее дерево, Собственные файлы Assets, Что исправило ревью
-
-### Community 383 - "Карточки ближайших целей: ограниченный объём"
-Cohesion: 0.25
-Nodes (8): Графика, Карточки ближайших целей: ограниченный объём, Конфигурация, Механизм, Назначение, Проверка результата, Связанные согласованные работы, Четыре случая
 
 ### Community 384 - "Research 04 — дополнительные подцели монетизации"
 Cohesion: 0.25
@@ -2143,37 +2099,25 @@ Nodes (8): ParsedAnimation, DeclaredFrameCount, Frames, HeaderChunks, HeaderData
 Cohesion: 0.25
 Nodes (6): GameState, FINISHED, INTRO, OFF, PAUSED, PLAYING
 
-### Community 397 - "DevToolsNavigationLink"
-Cohesion: 0.25
-Nodes (6): DevToolsNavigationLink, CardColor, Description, PageId, Title, DevToolsNavigationPage
-
 ### Community 398 - "GameScreenStatusFormatter"
-Cohesion: 0.39
+Cohesion: 0.33
 Nodes (4): GameScreenStatusFormatter, GameManager, Hamster, StringBuilder
 
 ### Community 399 - "UiResumeMechanics"
-Cohesion: 0.32
-Nodes (4): UiResumeMechanics, ClickEvent, VisualElement, Button
+Cohesion: 0.28
+Nodes (4): UiResumeMechanics, ClickEvent, VisualElement, IGameResumeListener
 
-### Community 400 - ".CreateMockResults"
-Cohesion: 0.32
-Nodes (5): CurrentPlayer, Top, IReadOnlyList, LeaderboardEntry, VisualElement
+### Community 400 - "LocalizedToggle"
+Cohesion: 0.50
+Nodes (3): BindingId, LocalizedToggle, Toggle
 
 ### Community 401 - "SkateboardLandingImpactTimeline"
-Cohesion: 0.25
+Cohesion: 0.29
 Nodes (6): SkateboardLandingImpactTimeline, BumpDuration, CameraShakeDurationMultiplier, CameraShakeFrequencyMultiplier, DestroyDelay, WaveDuration
 
 ### Community 402 - ".ApplySpriteWithDefaultMaterial"
 Cohesion: 0.32
 Nodes (5): EnvironmentLayerPlacement, SpriteRendererMaterialHelper, Sprite, SpriteRenderer, Material
-
-### Community 403 - "ShieldTutorialProgress"
-Cohesion: 0.25
-Nodes (4): ShieldTutorialProgress, IsPending, IsShieldEquipped, IsShieldUnlocked
-
-### Community 404 - "TutorialLevelRoutingLoadingTask"
-Cohesion: 0.25
-Nodes (6): TutorialLevelRoutingLoadingTask, Children, Name, Dictionary, List, Task
 
 ### Community 405 - "Lost Cyber Hamster Documentation"
 Cohesion: 0.25
@@ -2182,10 +2126,6 @@ Nodes (7): Lost Cyber Hamster Documentation, Игровые события, Ин
 ### Community 406 - "Device Log Collector"
 Cohesion: 0.25
 Nodes (7): Collector API, Device Log Collector, Legacy fallback, Retention, Unity config, Основной запуск, Ручная быстрая проверка
-
-### Community 408 - "Booking"
-Cohesion: 0.33
-Nodes (6): DateOnly, DateTimeOffset, Guid, Booking, CreateBookingRequest, Hotel
 
 ### Community 409 - "Чистый код: профессиональная позиция"
 Cohesion: 0.29
@@ -2292,7 +2232,7 @@ Cohesion: 0.29
 Nodes (7): 15 — Условия и бюджет возвращений, База сравнения и статус фактов, Доступность и получение, Недельный контент, Предлагаемый стартовый баланс, Риск замещения рекламы и покупок, Сценарии D0–D30
 
 ### Community 435 - "Пополнения и доход Morning — 10.09.2026"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (7): Все 15 утренних уровней, Источники и проверка, Оставлять ли монету за перепрыгивание, Пополнения и доход Morning — 10.09.2026, Правила дохода, Реализованный контракт покупки, Цены и остальные источники
 
 ### Community 436 - "19 — Монетизация: история решений и актуальное состояние"
@@ -2307,49 +2247,13 @@ Nodes (7): Git-передача, Аналитика, Блок 3 — реализ
 Cohesion: 0.29
 Nodes (6): Super Attacks — Research, Аналоги, Время, Граница данных и логики, Разрушение и награды, Текущая система
 
-### Community 439 - ".GetCurrent"
-Cohesion: 0.52
-Nodes (3): Goal, FirstSessionGoalPresenter, Goal
-
-### Community 441 - "BotReplanReason"
-Cohesion: 0.29
-Nodes (7): BotReplanReason, ActionCancelled, ActionCompleted, BotEnabled, LevelStart, None, SpawnPattern
-
 ### Community 442 - "CloudSyncStateEnum"
 Cohesion: 0.29
 Nodes (6): CloudSyncStateEnum, CloudChanged, CloudMissing, Conflict, LocalChanged, Synchronized
 
-### Community 443 - "DevToolsNavigation"
-Cohesion: 0.29
-Nodes (3): DevToolsNavigation, Current, Stack
-
-### Community 444 - "RunnerMode"
-Cohesion: 0.29
-Nodes (7): RunnerMode, JumpCollision, LaneShift, None, RideCollision, Scripted, Timeout
-
-### Community 445 - "LoadAddressablesLoadingTask"
-Cohesion: 0.29
-Nodes (6): LoadAddressablesLoadingTask, Children, Name, Dictionary, List, Task
-
-### Community 446 - "StartAccountLoadingTask"
-Cohesion: 0.29
-Nodes (6): StartAccountLoadingTask, Children, Name, Dictionary, List, Task
-
-### Community 447 - "InitCameraLoadingTask"
-Cohesion: 0.29
-Nodes (6): InitCameraLoadingTask, Children, Name, Dictionary, List, Task
-
-### Community 448 - "InitCurrentLevelAssetsLoadingTask"
-Cohesion: 0.29
-Nodes (6): InitCurrentLevelAssetsLoadingTask, Children, Name, Dictionary, List, Task
-
-### Community 449 - "InitDecorationsLoadingTask"
-Cohesion: 0.29
-Nodes (6): InitDecorationsLoadingTask, Children, Name, Dictionary, List, Task
-
-### Community 450 - "RootTask"
-Cohesion: 0.29
-Nodes (6): RootTask, Children, Name, Dictionary, List, Task
+### Community 443 - "Assets.Scripts.DevTools.Core"
+Cohesion: 0.11
+Nodes (7): Assets.Scripts.DevTools.Root, Assets.Scripts.DevTools.Core, DevelopmentConsolePolicy, RuntimeInitializeOnLoadMethod, DevToolsNavigation, Current, Stack
 
 ### Community 451 - "ReturnActivityConfig"
 Cohesion: 0.29
@@ -2423,33 +2327,17 @@ Nodes (5): Caveman Mode Soft, Когда расширяться, Правила 
 Cohesion: 0.33
 Nodes (5): Caveman Mode Strict, Когда расширяться, Правила ответа, Стиль, Формат
 
-### Community 470 - "QuestTestingUiPage"
-Cohesion: 0.53
-Nodes (3): QuestTestingUiPage, DropdownField, List
-
 ### Community 471 - "HealthBarMechanics"
 Cohesion: 0.33
 Nodes (3): HealthBarMechanics, AtomicEvent, AtomicVariable
-
-### Community 472 - "LeaderboardPersonalStatus"
-Cohesion: 0.33
-Nodes (5): LeaderboardPersonalStatus, NoEntry, ProfileRequired, Ready, Unavailable
 
 ### Community 473 - "LeaderboardSubmissionResult"
 Cohesion: 0.33
 Nodes (5): LeaderboardSubmissionResult, IsNewRecord, PlayerId, PreviousWeeklyBestRunScore, WeeklyBestRunScore
 
-### Community 474 - "RunLootSpendResult"
-Cohesion: 0.33
-Nodes (6): RunLootSpendResult, FromRunLoot, FromWallet, Price, RunCoinsAfter, WalletCoinsAfter
-
 ### Community 475 - "SkateboardState"
 Cohesion: 0.33
 Nodes (6): SkateboardState, Inactive, Jump, Landing, Ride, SuperJump
-
-### Community 476 - ".Create"
-Cohesion: 0.40
-Nodes (4): Camera, GameManager, Hamster, SkateboardAttackComposer
 
 ### Community 477 - "SkateboardLandingImpactRequest"
 Cohesion: 0.33
@@ -2515,10 +2403,6 @@ Nodes (5): Outcome, BumpOnly, Collect, Ignore, PreserveSupport
 Cohesion: 0.40
 Nodes (3): Rect, VisualElement, UiSafeArea
 
-### Community 496 - ".LoadAsync"
-Cohesion: 0.50
-Nodes (3): AudioClip, Dictionary, Task
-
 ### Community 497 - "Задача 8: Zoom к выбранному паттерну (Level mode)"
 Cohesion: 0.50
 Nodes (4): Задача 8: Zoom к выбранному паттерну (Level mode), Реализация, Связка с Level Sequence, Фича
@@ -2559,10 +2443,6 @@ Nodes (3): Tile, Tilemap, Vector3
 Cohesion: 0.50
 Nodes (3): Tile, Tilemap, Vector3
 
-### Community 512 - "DevelopmentCardState"
-Cohesion: 0.50
-Nodes (4): DevelopmentCardState, Hidden, Preview, Unlocked
-
 ### Community 513 - "codebase_compact.ps1"
 Cohesion: 0.83
 Nodes (3): Get-FilesForModule(), Invoke-Generate(), Invoke-GenerateModule()
@@ -2591,29 +2471,25 @@ Nodes (3): Задача 9: Override в контексте полной отри�
 Cohesion: 0.67
 Nodes (3): BlendOperation, Over, Source
 
-### Community 533 - "HeroTab"
-Cohesion: 0.67
-Nodes (3): HeroTab, Abilities, Skins
-
 ## Knowledge Gaps
-- **3398 isolated node(s):** `Width`, `Height`, `Frames`, `Width`, `Height` (+3393 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4930 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **3394 isolated node(s):** `Width`, `Height`, `Frames`, `Width`, `Height` (+3389 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 4922 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `RuntimeBotController` connect `RuntimeBotController` to `Assets.Scripts.Bot.PlanState`, `PlannedAction`, `.Log`, `BotActionKind`, `DecorationSpawner`, `MonoBehaviour`, `ObstacleSpawner`, `GameplayDevToolsActionResult`, `SnapshotBuilder`, `WorldSnapshot`, `BotPlan`, `Action`, `BotReplanReason`, `TestCollectablesScriptedLifeLossHook`, `PlanningGraphNode`, `BotDiagnosticCategory`, `.BeginAllocationSample`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
-- **Why does `Assets.Scripts.System` connect `Assets.Scripts.System` to `Assets.Scripts.Bot.PlanState`, `Vues.GameCore`, `EnvironmentTexturePostprocessor`, `.Configure`, `Intro`, `TutorialRuntimeHost`, `PartView`, `Assets.Scripts.Common.Models`, `LevelController`, `LocationView`, `Assets.Scripts.Diagnostics`, `LevelProgressKey`, `LevelProgress`, `QuestDefinition`, `FirstSessionNotificationHost`, `GameEventSystemController`?**
-  _High betweenness centrality (0.058) - this node is a cross-community bridge._
-- **Why does `PlannedAction` connect `PlannedAction` to `Assets.Scripts.Bot.PlanState`, `BotActionKind`, `ObstacleSnapshot`, `PlanningState`, `WorldSnapshot`, `SwitchLaneStrategy`, `PlanningBranch`, `.Project`, `RuntimeBotController`, `.Log`, `IJumpFromRoofPolicy`, `JumpOnFromRoofTravel`, `.TryGetPositiveValue`, `PlanningGraphNode`, `.BeginAllocationSample`, `RoofJumpOverStrategy`, `ActionGenerator`, `PlanEvaluator`, `PlanningBranchMetrics`, `BotPlan`, `IJumpOverPolicy`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **Why does `Assets.Scripts.System` connect `Assets.Scripts.System` to `Assets.Scripts.Bot.PlanState`, `Vues.GameCore`, `Assets.EditorTools`, `.Configure`, `NextGoalCandidate`, `.Awake`, `TutorialRuntimeHost`, `PartView`, `Assets.Scripts.Common.Models`, `LocationView`, `QuestDefinition`, `ArgumentNullException`, `LevelProgress`, `.IsTestLevelAutomationRun`, `FirstSessionNotificationHost`, `GameEventSystemController`?**
+  _High betweenness centrality (0.079) - this node is a cross-community bridge._
+- **Why does `RuntimeBotController` connect `RuntimeBotController` to `Assets.Scripts.Bot.PlanState`, `PlannedAction`, `.Log`, `BotActionKind`, `ScrollingEnvironment`, `MonoBehaviour`, `ObstacleSpawner`, `AsyncPlanBuildRequest`, `GameplayDevToolsActionResult`, `SnapshotBuilder`, `GameUi`, `PlanBuildResult`, `BotPlan`, `BotDiagnosticCategory`, `TestCollectablesScriptedLifeLossHook`, `WorldSnapshot`, `.BeginAllocationSample`?**
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
+- **Why does `Assets.Scripts.Common.Models` connect `Assets.Scripts.Common.Models` to `Assets.Scripts.Bot.PlanState`, `Vues.GameCore`, `Assets.Scripts.System`, `LevelDataManager`, `ObstacleTypeEnum`, `LevelInfo`, `LevelEnum`, `LevelTilemapEditor`, `LevelInfoRef`, `ITilePlacementRule`, `LocationTheme`, `.TryGetType`, `PatternSequencePanel`?**
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
 - **What connects `Width`, `Height`, `Frames` to the rest of the system?**
-  _3398 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3394 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Assets.Scripts.Bot.PlanState` be split into smaller, more focused modules?**
-  _Cohesion score 0.03836107754083661 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04227188081936685 - nodes in this community are weakly interconnected._
 - **Should `Vues.GameCore` be split into smaller, more focused modules?**
-  _Cohesion score 0.02361111111111111 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03125734430082256 - nodes in this community are weakly interconnected._
 - **Should `PlannedAction` be split into smaller, more focused modules?**
   _Cohesion score 0.027992633517495397 - nodes in this community are weakly interconnected._
