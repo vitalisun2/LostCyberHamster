@@ -51,6 +51,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Codex project integration failed.' }
 & graphify hook install
 if ($LASTEXITCODE -ne 0) { throw 'Git hook installation failed.' }
 
+$hooksPath = (& git rev-parse --git-path hooks).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($hooksPath)) {
+    throw 'Could not resolve Git hooks path.'
+}
+$projectHook = Join-Path $repoRoot '.githooks\post-commit'
+$installedHook = Join-Path $hooksPath 'post-commit'
+Copy-Item -LiteralPath $projectHook -Destination $installedHook -Force
+
 & graphify hook status
 if ($LASTEXITCODE -ne 0) { throw 'Git hook status check failed.' }
 
