@@ -36,6 +36,7 @@ $uvToolBin = Join-Path $env:USERPROFILE '.local\bin'
 if (Test-Path $uvToolBin) { $env:PATH = "$uvToolBin;$env:PATH" }
 
 Invoke-Uv @('tool', 'install', '--force', "graphifyy==$GraphifyVersion")
+Invoke-Uv @('tool', 'update-shell')
 
 $graphify = Get-Command graphify -ErrorAction SilentlyContinue
 if (-not $graphify) {
