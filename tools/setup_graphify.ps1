@@ -49,28 +49,4 @@ if ($LASTEXITCODE -ne 0) { throw 'Graphify version check failed.' }
 & graphify install --project --platform codex
 if ($LASTEXITCODE -ne 0) { throw 'Codex project integration failed.' }
 
-& graphify hook install
-if ($LASTEXITCODE -ne 0) { throw 'Git hook installation failed.' }
-
-$hooksPath = (& git rev-parse --git-path hooks).Trim()
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($hooksPath)) {
-    throw 'Could not resolve Git hooks path.'
-}
-$projectHook = Join-Path $repoRoot '.githooks\post-commit'
-$installedHook = Join-Path $hooksPath 'post-commit'
-Copy-Item -LiteralPath $projectHook -Destination $installedHook -Force
-
-$projectHookHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $projectHook).Hash
-$installedHookHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installedHook).Hash
-if ($projectHookHash -ne $installedHookHash) {
-    throw 'Installed post-commit hook does not match .githooks/post-commit.'
-}
-
-$hookStatus = (& graphify hook status | Out-String).Trim()
-if ($LASTEXITCODE -ne 0) { throw 'Git hook status check failed.' }
-Write-Host $hookStatus
-if ($hookStatus -notmatch '(?m)^post-commit: installed\r?$') {
-    throw 'Project post-commit wrapper was not recognized by Graphify.'
-}
-
-Write-Host "Graphify $GraphifyVersion setup complete."
+Write-Host "Graphify $GraphifyVersion setup complete. graphify-out remains local-only; update/query are manual operations."
