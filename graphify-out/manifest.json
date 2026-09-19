@@ -6216,8 +6216,8 @@
     "semantic_hash": ""
   },
   ".github/copilot-instructions.md": {
-    "mtime": 1789564518.5692327,
-    "seen": 1789567234.275875,
+    "mtime": 1789572977.8507154,
+    "seen": 1789574048.1813545,
     "ast_hash": "f739577496bd81e427c0b656107c3972",
     "semantic_hash": ""
   },
@@ -6372,8 +6372,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1789564539.421219,
-    "seen": 1789567234.275912,
+    "mtime": 1789572977.8507154,
+    "seen": 1789574048.1813943,
     "ast_hash": "e1e52fa51088ff3a81eb67a3342c35ce",
     "semantic_hash": ""
   },
@@ -7283,40 +7283,10 @@
     "ast_hash": "051778db007615af6a185fc92627d457",
     "semantic_hash": ""
   },
-  "tools/agent-orchestrator-demo/HotelBooking.Api/HotelBooking.Api.csproj": {
-    "mtime": 1789491790.051201,
-    "seen": 1789492034.1160467,
-    "ast_hash": "a80e8a7ac5956b0eb1c1fad5e3e45f51",
-    "semantic_hash": ""
-  },
-  "tools/agent-orchestrator-demo/HotelBooking.Api/Program.cs": {
-    "mtime": 1789491790.051201,
-    "seen": 1789492034.1160486,
-    "ast_hash": "468abcd29ba6497dfa9aaa6770d625a8",
-    "semantic_hash": ""
-  },
   "tools/agentctl.ps1": {
-    "mtime": 1789564468.1585786,
-    "seen": 1789567234.2758236,
+    "mtime": 1789572977.8507154,
+    "seen": 1789574048.1812983,
     "ast_hash": "0bdb85abf9ee04c57acc722a9e82fba2",
-    "semantic_hash": ""
-  },
-  "tools/agent-orchestrator-demo/README.md": {
-    "mtime": 1789491830.7763,
-    "seen": 1789492034.116359,
-    "ast_hash": "e5c60d306c194ff66a03b6e3dfe46eb8",
-    "semantic_hash": ""
-  },
-  "tools/agent-orchestrator-demo/frontend/index.html": {
-    "mtime": 1789491790.053659,
-    "seen": 1789492034.1163604,
-    "ast_hash": "6496b6c54eb6f289306949ca1098c2b4",
-    "semantic_hash": ""
-  },
-  "tools/agent-orchestrator-demo/ORCHESTRATOR_PLAN.json": {
-    "mtime": 1789491830.775298,
-    "seen": 1789492034.1160505,
-    "ast_hash": "afa0385e7734c81de9b062688f3483f6",
     "semantic_hash": ""
   }
 }
