@@ -4,8 +4,6 @@
 
 Дополнительные документы читай только по маршрутизации из секции «Что читать перед работой» в `docs/rules/AGENTS.md`.
 
-Для сложных задач через локальный Agent Orchestrator используй `C:\Personal\crystal-wave\repos\agent-orchestrator\MAIN_AGENT_INSTRUCTIONS.md` (оркестратор живёт в отдельном репозитории: https://github.com/vitalisun2/agent-orchestrator).
-
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

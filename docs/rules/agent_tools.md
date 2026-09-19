@@ -13,6 +13,7 @@
 - [Test Levels](#test-levels)
 - [Unity Editor Tools](#unity-editor-tools)
 - [Skin Candidate Pipeline](#skin-candidate-pipeline)
+- [Agent Orchestrator / agentctl](#agent-orchestrator--agentctl)
 - [Build / Telegram Publishing](#build--telegram-publishing)
 - [PowerShell Scripts](#powershell-scripts)
 
@@ -202,6 +203,15 @@ Production/default assets остаются неизменными. Candidate `.m
 - Owner-документ процесса: `docs/rules/build_and_telegram_publishing.md`.
 - Инструмент: локальный Codex skill `publish-build-to-telegram-buffer` (`%USERPROFILE%\.codex\skills\publish-build-to-telegram-buffer`).
 - Перед запуском сборки или публикации читать owner-документ и `SKILL.md` skill-а.
+
+## Agent Orchestrator / agentctl
+
+Статус: концепция в разработке. В текущем рабочем процессе не используется.
+
+CLI-обёртка сохранена для дальнейшей разработки:
+
+- `tools/agentctl.cmd`
+- `tools/agentctl.ps1`
 
 ## PowerShell Scripts
 
