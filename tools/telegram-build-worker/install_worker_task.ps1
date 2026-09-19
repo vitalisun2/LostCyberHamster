@@ -136,6 +136,8 @@ $workerArgumentValues = @(
     '-NoLogo'
     '-NoProfile'
     '-NonInteractive'
+    '-WindowStyle'
+    'Hidden'
     '-ExecutionPolicy'
     'Bypass'
     '-File'
