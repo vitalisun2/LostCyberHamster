@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# graphify-hook-start
 # Project wrapper around Graphify's post-commit hook.
 # Rebuild the tracked project map, then commit only its generated output.
 
@@ -35,3 +36,4 @@ fi
 # The source commit already succeeded. Rebuild/auto-commit failures stay visible
 # in the working tree and must not make Git report the original commit as failed.
 exit 0
+# graphify-hook-end

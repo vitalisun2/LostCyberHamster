@@ -14,9 +14,24 @@ function Invoke-Git {
     }
 }
 
+function Resolve-GraphifyExecutable {
+    $command = Get-Command graphify -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+
+    $uvExecutable = Join-Path $env:USERPROFILE '.local\bin\graphify.exe'
+    if (Test-Path -LiteralPath $uvExecutable) {
+        return $uvExecutable
+    }
+
+    throw 'Graphify executable was not found. Run tools/setup_graphify.ps1.'
+}
+
 try {
     Write-Host '[graphify hook] rebuilding tracked project map...'
-    & graphify update .
+    $graphifyExecutable = Resolve-GraphifyExecutable
+    & $graphifyExecutable update .
     if ($LASTEXITCODE -ne 0) {
         throw "graphify update failed with exit code $LASTEXITCODE."
     }
