@@ -254,6 +254,7 @@
     <Compile Include="Assets\Scripts\UI\Screens\LeaderboardScreenController.cs" />
     <Compile Include="Assets\Scripts\Common\Models\PartOfDayEnum.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\Quests\Types\ActionCounter\ActionCounterQuestStrategy.cs" />
+    <Compile Include="Assets\Scripts\UI\Common\ReturnActivitiesAssetLifetime.cs" />
     <Compile Include="Assets\Scripts\System\AutomationRuntimePrefs.cs" />
     <Compile Include="Assets\Scripts\System\LevelManagement\LevelCatalogService.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyLeaderboardRun.cs" />
