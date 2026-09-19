@@ -40,6 +40,9 @@ namespace LostCyberHamster.UI
         /// <summary>Готовит отдельное дерево, сохраняя состояние ещё видимого контроллера.</summary>
         internal async Task<PreparedScreen> PrepareScreenAsync(CancellationToken cancellationToken)
         {
+            if (_screenAssetName == ScreenEnum.ReturnActivitiesScreen)
+                await ReturnActivitiesAssetLifetime.Ready;
+
             AddressableLease<VisualTreeAsset> lease =
                 await AddressableLoader.LoadAssetAsync<VisualTreeAsset>(
                     _screenAssetName.ToString(), cancellationToken);
