@@ -97,6 +97,13 @@ namespace Assets.Scripts.Gameplay
         public AtomicVariable<bool> IsOnBottomLine = new(false);
         public AtomicVariable<int> Lives = new(3);
         public AtomicVariable<int> Energy = new(100);
+
+        /// <summary>Энергия на максимуме (100): бонусы энергии не нужны.</summary>
+        public bool IsEnergyFull => Energy.Value >= 100;
+
+        /// <summary>Жизни на максимуме (3): бонусы жизни не нужны.</summary>
+        public bool IsLivesFull => Lives.Value >= 3;
+
         public AtomicVariable<bool> IsShifting = new(false);
         public AtomicVariable<bool> IsDamaged = new(false);
         public AtomicVariable<bool> NeedCheckCollisionInRunFromRoofAfterShift = new(false);
