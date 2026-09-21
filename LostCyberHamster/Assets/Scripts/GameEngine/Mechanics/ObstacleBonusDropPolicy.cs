@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Mechanics
 {
-    internal enum ObstacleBonusDropKind
+    public enum ObstacleBonusDropKind
     {
         Coins,
         Energy,
@@ -10,31 +10,95 @@ namespace Assets.Scripts.GameEngine.Mechanics
         Crystals
     }
 
-    internal interface IObstacleBonusDropPolicy
+    public interface IObstacleBonusDropPolicy
     {
-        ObstacleBonusDropKind SelectDrop();
+        ObstacleBonusDropKind SelectDrop(bool energyFull, bool livesFull);
     }
 
-    internal sealed class DefaultObstacleBonusDropPolicy : IObstacleBonusDropPolicy
+    /// <summary>
+    /// Базовая политика: выбирает вид дропа по весовой таблице абсолютных процентов
+    /// (монеты 65, энергия 25, жизнь 5, кристаллы 5). Состояние ресурсов не учитывает.
+    /// </summary>
+    public sealed class DefaultObstacleBonusDropPolicy : IObstacleBonusDropPolicy
     {
-        public ObstacleBonusDropKind SelectDrop()
+        // Порядок массивов должен совпадать: DropKinds[i] выпадает с весом DropWeights[i].
+        private static readonly ObstacleBonusDropKind[] DropKinds =
         {
-            float bonusChance = Random.value;
-            if (bonusChance >= 0.3f)
-                return ObstacleBonusDropKind.Coins;
+            ObstacleBonusDropKind.Coins,
+            ObstacleBonusDropKind.Energy,
+            ObstacleBonusDropKind.Life,
+            ObstacleBonusDropKind.Crystals,
+        };
 
-            float bonusTypeChance = Random.value;
-            if (bonusTypeChance < 0.85f)
-                return ObstacleBonusDropKind.Energy;
+        private static readonly float[] DropWeights = { 65f, 25f, 5f, 5f };
 
-            if (bonusTypeChance < 0.9f)
-                return ObstacleBonusDropKind.Life;
+        public ObstacleBonusDropKind SelectDrop(bool energyFull, bool livesFull)
+        {
+            // Базовые веса не зависят от состояния ресурсов.
+            return ResolveByWeights(Random.value * TotalWeight());
+        }
 
-            return ObstacleBonusDropKind.Crystals;
+        /// <summary>Выбирает вариант по значению броска в диапазоне [0, сумма весов).</summary>
+        public static ObstacleBonusDropKind ResolveByWeights(float roll)
+        {
+            for (int i = 0; i < DropKinds.Length; ++i)
+            {
+                roll -= DropWeights[i];
+                if (roll < 0f)
+                    return DropKinds[i];
+            }
+
+            return DropKinds[DropKinds.Length - 1];
+        }
+
+        private static float TotalWeight()
+        {
+            float total = 0f;
+            foreach (float weight in DropWeights)
+                total += weight;
+            return total;
         }
     }
 
-    internal sealed class NoEnergyObstacleBonusDropPolicy : IObstacleBonusDropPolicy
+    /// <summary>
+    /// Игровое правило полноты ресурсов: при полной энергии энергия не выпадает,
+    /// при полных жизнях жизнь не выпадает. Исключённая доля автоматически
+    /// перераспределяется остальным вариантам: повторный бросок даёт условное
+    /// распределение базовой политики по разрешённым вариантам.
+    /// </summary>
+    public sealed class StateAwareObstacleBonusDropPolicy : IObstacleBonusDropPolicy
+    {
+        private const int MaxRollAttempts = 8;
+
+        private readonly IObstacleBonusDropPolicy _basePolicy;
+
+        public StateAwareObstacleBonusDropPolicy(IObstacleBonusDropPolicy basePolicy)
+        {
+            _basePolicy = basePolicy;
+        }
+
+        public ObstacleBonusDropKind SelectDrop(bool energyFull, bool livesFull)
+        {
+            for (int attempt = 0; attempt < MaxRollAttempts; ++attempt)
+            {
+                ObstacleBonusDropKind drop = _basePolicy.SelectDrop(energyFull, livesFull);
+                if (!IsExcluded(drop, energyFull, livesFull))
+                    return drop;
+            }
+
+            // Монеты никогда не исключаются — безопасный fallback после серии исключённых бросков.
+            return ObstacleBonusDropKind.Coins;
+        }
+
+        private static bool IsExcluded(ObstacleBonusDropKind drop, bool energyFull, bool livesFull)
+        {
+            return (energyFull && drop == ObstacleBonusDropKind.Energy)
+                || (livesFull && drop == ObstacleBonusDropKind.Life);
+        }
+    }
+
+    /// <summary>Ботовая политика: энергия не выпадает вовсе, а подменяется монетами.</summary>
+    public sealed class NoEnergyObstacleBonusDropPolicy : IObstacleBonusDropPolicy
     {
         private readonly IObstacleBonusDropPolicy _basePolicy;
 
@@ -43,19 +107,19 @@ namespace Assets.Scripts.GameEngine.Mechanics
             _basePolicy = basePolicy;
         }
 
-        public ObstacleBonusDropKind SelectDrop()
+        public ObstacleBonusDropKind SelectDrop(bool energyFull, bool livesFull)
         {
-            ObstacleBonusDropKind drop = _basePolicy.SelectDrop();
+            ObstacleBonusDropKind drop = _basePolicy.SelectDrop(energyFull, livesFull);
             return drop == ObstacleBonusDropKind.Energy
                 ? ObstacleBonusDropKind.Coins
                 : drop;
         }
     }
 
-    internal static class ObstacleBonusDropPolicyProvider
+    public static class ObstacleBonusDropPolicyProvider
     {
         private static readonly IObstacleBonusDropPolicy DefaultPolicy =
-            new DefaultObstacleBonusDropPolicy();
+            new StateAwareObstacleBonusDropPolicy(new DefaultObstacleBonusDropPolicy());
 
         private static readonly IObstacleBonusDropPolicy NoEnergyPolicy =
             new NoEnergyObstacleBonusDropPolicy(DefaultPolicy);

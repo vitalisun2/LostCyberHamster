@@ -51,7 +51,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         private void CalculateAndApplyBonus()
         {
-            switch (ObstacleBonusDropPolicyProvider.Current.SelectDrop())
+            var hamster = LevelController.Instance.LevelData.Hamster;
+            switch (ObstacleBonusDropPolicyProvider.Current.SelectDrop(hamster.IsEnergyFull, hamster.IsLivesFull))
             {
                 case ObstacleBonusDropKind.Energy:
                     ApplyEnergyBonus();

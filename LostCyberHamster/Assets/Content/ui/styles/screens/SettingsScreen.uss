@@ -549,10 +549,13 @@
     transform-origin: 0 0;
 }
 
+/* Панель редактирования имени держим у верхнего края: при фокусе поля ввода
+   софт-клавиатура телефона занимает нижнюю половину экрана в landscape,
+   и поле ввода должно оставаться видимым над ней. */
 .settings-name-dialog {
     position: absolute;
     left: 456px;
-    top: 137px;
+    top: 24px;
     width: 760px;
     height: 320px;
     padding-top: 67px;
