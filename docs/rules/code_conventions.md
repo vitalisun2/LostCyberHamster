@@ -12,11 +12,6 @@
 - После реализации быстро просмотреть весь свой diff и сразу исправить очевидные локальные ошибки, грубый код, дублирование, несколько типов в одном файле, явные нарушения SOLID / DRY / KISS и опасные проблемы lifecycle, state или DI. Не доводить код до идеала.
 - Обычный необходимый рефакторинг внутри одобренной задачи и исправления basic review не требуют отдельного согласования. Большой самостоятельный рефакторинг, изменение дизайна или scope не начинать без явного запроса пользователя.
 
-## Именование
-
-- Не добавлять в актуальные классы и тесты суффиксы версий бота (`BotV2`, `BotV3`). Использовать нейтральные имена и убирать устаревшую версионность при ближайшем релевантном изменении.
-- Следовать существующим соглашениям проекта (PascalCase для классов/методов, camelCase для локальных переменных).
-
 ## Файловая структура
 
 - При создании, удалении или переименовании `.cs`-файлов проверять соответствующие `<Compile Include="..." />` записи в `.csproj`.
@@ -30,22 +25,6 @@
 - Не использовать `global::` квалификатор в коде — вместо этого добавлять нужный `using` в начало файла.
 - Использовать актуальные API (`FindAnyObjectByType` вместо `FindObjectOfType`).
 - Не оставлять код с deprecated API.
-- Для code-edit/fix задач удалять временные debug/diagnostic логи перед завершением правок; оставлять только устойчивую диагностику, оформленную через Diagnostic Log инфраструктуру из секции «Логирование».
-- Для analysis-only/root cause задач временную диагностику не удалять после доказательства причины; сразу сообщить root cause, рекомендацию и где остались временные логи.
-
-## Логирование
-
-- Для runtime/bot диагностики использовать Diagnostic Log инфраструктуру, а не ручные `Debug.Log`, `Console.WriteLine`, запись файлов или ad-hoc logging helpers.
-- Центральный gate bot diagnostics: `Assets.Scripts.Bot.Diagnostics.BotDiagnostics` (`LostCyberHamster/Assets/Scripts/Bot/Diagnostics/BotDiagnostics.cs`). Новые bot-сообщения добавлять через профильные helpers в `LostCyberHamster/Assets/Scripts/Bot/Diagnostics/`: `BotExecutionDiagnostics`, `BotReplanDiagnostics`, `BotStrategyDiagnostics`, `BotRuntimeEventDiagnostics` и т.д.
-- Если нужного метода логирования нет, добавить его в соответствующий diagnostics-класс с правильными `BotDiagnosticCategory`/`BotDiagnosticLevel`, затем вызывать этот метод из runtime-кода.
-- `DebugManager` (`LostCyberHamster/Assets/Scripts/GameEngine/DebugManager.cs`) — низкоуровневый transport/sink diagnostic file: `DiagLog`, `DiagLogVerbose`, `DiagChannel`, путь `EditorLogs/diagnostic_log.txt`.
-- Теги каналов: `[CH=STAB]`, `[CH=BOT]`, `[CH=ECO]`.
-- `Debug.LogWarning`/`Debug.LogError` допустимы для editor/user-facing предупреждений и исключительных ошибок; не использовать их как способ сбора regression facts.
-- Не для production кода — только Editor/Debug.
-
-## Данные и миграции
-
-- При добавлении обязательных полей в JSON-данные сначала мигрировать существующие файлы. `JsonUtility.FromJson` для отсутствующих полей подставляет default-значения (`0`, `false`, `null`), поэтому ошибка может проявиться как валидные, но неверные данные.
 
 ## Summary и комментарии
 
@@ -65,42 +44,5 @@
   1. Выполнить `regenerate_project_files`, чтобы обновить generated `.csproj`/`.sln`.
   2. Выполнить `dotnet build <affected generated .csproj> --no-restore`.
 - Если build упал из-за текущих изменений, исправить их и повторить эти два шага.
-- После компиляции выполнить минимальный запуск игры в Unity Editor: войти в Play Mode штатным путём, дождаться стартового экрана и проверить новые ошибки Console. Зафиксировать результат и остановить пробный запуск. Это обязательная проверка по решению пользователя от 10.09.2026; проверка игрового функционала и прохождение в неё не входят.
-- Другие проверки и перепроверки запускать по явному запросу пользователя.
-- Unity recompile по умолчанию вручную запускает пользователь. `recompile_scripts`, Test Runner и любые дополнительные проверки агент запускает только по явному запросу пользователя; они не входят в финальный C# gate.
-- По явному запросу пользователя можно править существующие тесты.
-- Addressables и build config sync/build проверять только по явному запросу пользователя; они не входят в финальный C# gate.
-- Не считать задачу выполненной, если валидация не пройдена.
 
-## Unity Editor API
-
-- `AnimationMode.StartAnimationMode()` + `SampleAnimationClip()` для анимаций в Editor mode (не `animator.Play()`).
-- `EditorApplication.timeSinceStartup` для времени в Editor (не `Time.deltaTime`).
-- `SceneView.Frame(bounds, false)` для центрирования.
-- `PrefabUtility.InstantiatePrefab()` для создания префабов в Editor.
-- `GetComponentInChildren<T>()` вместо поиска по имени.
-- Незнакомый API — проверить документацию перед использованием.
-
-## Препятствия и ассеты
-
-### Константы размеров (Consts.cs)
-- SMALL_ALIVE: 152×108
-- BIG_ALIVE: 100×212
-- BIG_NOTALIVE: 388×172
-- SMALL_NOTALIVE: 140×108
-- Все размеры делятся на 4 (ETC2 компрессия).
-
-### Smart Resize
-- Только downscale (запрет upscaling).
-- Сохранение aspect ratio.
-- Чистые integer ratios (2x, 4x, 8x).
-- Результат делится на 4.
-
-### Именование анимаций
-- `obstacle_{location}_{category}_{id}_{animType}-{frame}.png`
-- Типы: `_idle` (статичные), `_walk` (с движением).
-
-### Структура префабов
-- Корневой объект: `BigCitizenPrefab` / `SmallCitizenPrefab` / `MediumOrBigNotAlivePrefab`.
-- Дочерний с Animator/SpriteRenderer: `*Sprite`.
-- Pivot: Bottom Center.
+При код ревью руководствуйся в том числе рекомедациями из docs\rules\refactoring
