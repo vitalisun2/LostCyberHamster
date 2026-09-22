@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -103,6 +104,9 @@ def review(manifest: Path, out: Path) -> dict:
 
     errors: list[str] = []
     warnings: list[str] = []
+    contract_version = int(config.get("qa_contract_version", 1))
+    if contract_version >= 2 and "sidewalk_rise" in config and "height_midpoint" not in config:
+        errors.append("QA contract v2 requires height_midpoint for a raised sidewalk")
     source_pixels = np.asarray(source)
     background_pixels = np.asarray(background)
     allowed = np.asarray(edited_mask) > 0
@@ -113,6 +117,7 @@ def review(manifest: Path, out: Path) -> dict:
         errors.append(f"Background changed {mismatch_count} pixels outside edited_mask")
 
     required_paving_report = None
+    paving = None
     if "required_paving_mask" in config:
         paving_image = Image.open(resolve(manifest, config["required_paving_mask"])).convert("L")
         if paving_image.size != source.size:
@@ -134,7 +139,23 @@ def review(manifest: Path, out: Path) -> dict:
         if road_mismatch:
             errors.append(f"Preserved road changed {road_mismatch} RGBA pixels")
 
+    cutout_reports: list[dict] = []
+    if "unpainted_empty_background" in config:
+        unpainted = rgba(resolve(manifest, config["unpainted_empty_background"]))
+        if unpainted.size != source.size:
+            raise ValueError("unpainted_empty_background must equal source size")
+        unpainted_alpha = np.asarray(unpainted)[:, :, 3]
+        for region in config.get("required_cutout_regions", []):
+            mask = mask_for_polygons(source.size, [region["polygon"]], (0, 0))
+            remaining = int(np.count_nonzero(mask & (unpainted_alpha != 0)))
+            cutout_reports.append({"id": region["id"], "remaining_opaque_pixels": remaining})
+            if remaining:
+                errors.append(f"{region['id']}: {remaining} building pixels remain in unpainted background")
+    elif config.get("required_cutout_regions"):
+        raise ValueError("required_cutout_regions needs unpainted_empty_background")
+
     sidewalk_rise_report = None
+    rise_excess = None
     if "sidewalk_rise" in config:
         rise = config["sidewalk_rise"]
         heights = [float(value) for value in rise["building_heights"]]
@@ -157,7 +178,7 @@ def review(manifest: Path, out: Path) -> dict:
             "allowed_rise": round(allowed_rise, 3),
         }
         if actual_rise > allowed_rise:
-            errors.append(f"Sidewalk rise {actual_rise}px exceeds allowed {allowed_rise:.2f}px")
+            rise_excess = f"Sidewalk rise {actual_rise}px exceeds half-mean guide {allowed_rise:.2f}px"
 
     overlay = source.copy()
     red = Image.new("RGBA", source.size, (255, 30, 30, 100))
@@ -199,6 +220,7 @@ def review(manifest: Path, out: Path) -> dict:
     if not sprites:
         raise ValueError("Manifest has no sprites")
     seen: set[str] = set()
+    sprite_vertical_bounds: dict[str, tuple[int, int]] = {}
     sprite_reports: list[dict] = []
     contact_items: list[tuple[str, Image.Image]] = []
     reconstruction = background.copy()
@@ -215,6 +237,10 @@ def review(manifest: Path, out: Path) -> dict:
         pixels = np.asarray(sprite)
         source_crop_pixels = source_pixels[y : y + sprite.height, x : x + sprite.width]
         visible = pixels[:, :, 3] > 0
+        if not visible.any():
+            raise ValueError(f"Sprite {identifier} has no opaque pixels")
+        visible_ys = np.where(visible)[0]
+        sprite_vertical_bounds[identifier] = (y + int(visible_ys.min()), y + int(visible_ys.max()))
         repairs = mask_for_polygons(sprite.size, spec.get("repair_polygons", []), (x, y))
         forbidden_polygons = spec.get("forbidden_polygons", [])
         forbidden = mask_for_polygons(sprite.size, forbidden_polygons, (x, y))
@@ -222,6 +248,14 @@ def review(manifest: Path, out: Path) -> dict:
             np.count_nonzero(visible & ~repairs & np.any(pixels != source_crop_pixels, axis=2))
         )
         forbidden_overlap = int(np.count_nonzero(visible & forbidden))
+        failed_anchors = []
+        for point in spec.get("required_anchor_points", []):
+            anchor_x, anchor_y = map(int, point)
+            local_x, local_y = anchor_x - x, anchor_y - y
+            if not (0 <= local_x < sprite.width and 0 <= local_y < sprite.height and visible[local_y, local_x]):
+                failed_anchors.append([anchor_x, anchor_y])
+        if failed_anchors:
+            errors.append(f"{identifier}: architectural anchors missing from one sprite: {failed_anchors}")
         if source_mismatch:
             errors.append(f"{identifier}: {source_mismatch} visible pixels differ from source outside repair polygons")
         if forbidden_overlap:
@@ -243,10 +277,89 @@ def review(manifest: Path, out: Path) -> dict:
                 "forbidden_opaque_pixels": forbidden_overlap,
                 "forbidden_region_pixels": int(forbidden.sum()),
                 "forbidden_polygon_count": len(forbidden_polygons),
+                "required_anchor_count": len(spec.get("required_anchor_points", [])),
+                "failed_anchor_points": failed_anchors,
             }
         )
 
     save_contact_sheet(contact_items, out / "sprites_contact_sheet.png")
+    height_midpoint_report = None
+    midpoint_passed = False
+    if "height_midpoint" in config:
+        midpoint_config = config["height_midpoint"]
+        house_ids = midpoint_config["house_ids"]
+        spans = midpoint_config["paving_intervals_x"]
+        if not house_ids or len(set(house_ids)) != len(house_ids):
+            raise ValueError("height_midpoint needs distinct house_ids")
+        if not spans or paving is None:
+            raise ValueError("height_midpoint needs paving_intervals_x and required_paving_mask")
+        unknown = sorted(set(house_ids) - set(sprite_vertical_bounds))
+        if unknown:
+            raise ValueError(f"height_midpoint has unknown house_ids: {unknown}")
+        roof_y = min(sprite_vertical_bounds[identifier][0] for identifier in house_ids)
+        base_y = max(sprite_vertical_bounds[identifier][1] for identifier in house_ids)
+        midpoint_y = (roof_y + base_y) / 2
+        midpoint_row = math.ceil(midpoint_y)
+        edge_ys: list[np.ndarray] = []
+        missing_columns = 0
+        unpaved_midpoint_columns = 0
+        overlay = on_checker(background)
+        draw = ImageDraw.Draw(overlay)
+        for pair in spans:
+            if len(pair) != 2:
+                raise ValueError("Each paving interval must have two x coordinates")
+            x0, x1 = map(int, pair)
+            if not 0 <= x0 < x1 <= source.width:
+                raise ValueError("Invalid half-open paving interval")
+            columns = paving[:, x0:x1]
+            present = np.any(columns, axis=0)
+            missing_columns += int(np.count_nonzero(~present))
+            unpaved_midpoint_columns += int(np.count_nonzero(~paving[midpoint_row, x0:x1]))
+            edge = np.argmax(columns, axis=0)
+            edge_ys.append(edge[present])
+            draw.line((x0, midpoint_row, x1 - 1, midpoint_row), fill=(255, 75, 220), width=2)
+            for dx, y_edge in enumerate(edge):
+                if present[dx]:
+                    draw.point((x0 + dx, int(y_edge)), fill=(60, 240, 100))
+        if missing_columns:
+            errors.append(f"Required paving is absent in {missing_columns} midpoint span columns")
+        if unpaved_midpoint_columns:
+            errors.append(f"Required paving misses midpoint in {unpaved_midpoint_columns} span columns")
+        all_edges = np.concatenate(edge_ys) if edge_ys else np.array([], dtype=int)
+        edge_range = [int(all_edges.min()), int(all_edges.max())] if all_edges.size else None
+        if edge_range and edge_range[1] > midpoint_y:
+            errors.append(f"Pavement rear edge y={edge_range[1]} misses scene midpoint y={midpoint_y}")
+        height_midpoint_report = {
+            "house_count": len(house_ids), "highest_roof_y": roof_y,
+            "lowest_base_y": base_y, "scene_midpoint_y": midpoint_y,
+            "paving_intervals_x": spans, "rear_edge_y_range": edge_range,
+            "missing_columns": missing_columns,
+            "unpaved_midpoint_columns": unpaved_midpoint_columns,
+        }
+        midpoint_passed = not missing_columns and not unpaved_midpoint_columns and bool(edge_range) and edge_range[1] <= midpoint_y
+        overlay.save(out / "height_midpoint_overlay.png")
+    elif "sidewalk_rise" in config:
+        warnings.append("height_midpoint missing: scene-wide roof/base midpoint was not checked")
+    if rise_excess:
+        if midpoint_passed:
+            warnings.append(rise_excess + "; scene midpoint criterion passes")
+        else:
+            errors.append(rise_excess)
+    movement_preview_report = None
+    if "movement_preview" in config:
+        preview = rgba(resolve(manifest, config["movement_preview"]))
+        if preview.size != source.size:
+            raise ValueError("movement_preview must equal source size")
+        preview_alpha = np.asarray(preview)[:, :, 3]
+        movement_preview_report = []
+        for region in config.get("required_preview_opaque_regions", []):
+            mask = mask_for_polygons(source.size, [region["polygon"]], (0, 0))
+            transparent = int(np.count_nonzero(mask & (preview_alpha == 0)))
+            movement_preview_report.append({"id": region["id"], "transparent_pixels": transparent})
+            if transparent:
+                errors.append(f"{region['id']}: moved preview has {transparent} transparent gap pixels")
+    elif config.get("required_preview_opaque_regions"):
+        raise ValueError("required_preview_opaque_regions needs movement_preview")
     reconstruction.save(out / "reconstruction.png")
     reconstruction_pixels = np.asarray(reconstruction).astype(np.int16)
     difference = np.abs(source_pixels.astype(np.int16) - reconstruction_pixels)
@@ -260,6 +373,7 @@ def review(manifest: Path, out: Path) -> dict:
         "source": str(source_path),
         "source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
         "source_size": list(source.size),
+        "qa_contract_version": contract_version,
         "sprite_count": len(sprite_reports),
         "background_edited_pixels": int(allowed.sum()),
         "background_retained_pixels": int(retained.sum()),
@@ -267,7 +381,10 @@ def review(manifest: Path, out: Path) -> dict:
         "background_retained_mismatch_pixels": mismatch_count,
         "required_paving": required_paving_report,
         "preserved_road": preserved_road_report,
+        "required_cutout_regions": cutout_reports,
         "sidewalk_rise": sidewalk_rise_report,
+        "height_midpoint": height_midpoint_report,
+        "movement_preview": movement_preview_report,
         "extension": extension_report,
         "sprites": sprite_reports,
         "reconstruction_mean_rgb_difference": round(float(difference[:, :, :3].mean()), 6),
