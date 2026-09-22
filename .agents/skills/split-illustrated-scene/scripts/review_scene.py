@@ -112,6 +112,53 @@ def review(manifest: Path, out: Path) -> dict:
     if mismatch_count:
         errors.append(f"Background changed {mismatch_count} pixels outside edited_mask")
 
+    required_paving_report = None
+    if "required_paving_mask" in config:
+        paving_image = Image.open(resolve(manifest, config["required_paving_mask"])).convert("L")
+        if paving_image.size != source.size:
+            raise ValueError("required_paving_mask must equal source size")
+        paving = np.asarray(paving_image) > 0
+        nonopaque = int(np.count_nonzero(paving & (background_pixels[:, :, 3] != 255)))
+        required_paving_report = {"pixels": int(paving.sum()), "nonopaque_pixels": nonopaque}
+        if nonopaque:
+            errors.append(f"Required paving has {nonopaque} nonopaque pixels")
+
+    preserved_road_report = None
+    if "preserved_road_mask" in config:
+        road_image = Image.open(resolve(manifest, config["preserved_road_mask"])).convert("L")
+        if road_image.size != source.size:
+            raise ValueError("preserved_road_mask must equal source size")
+        road = np.asarray(road_image) > 0
+        road_mismatch = int(np.count_nonzero(road & np.any(source_pixels != background_pixels, axis=2)))
+        preserved_road_report = {"pixels": int(road.sum()), "rgba_mismatch_pixels": road_mismatch}
+        if road_mismatch:
+            errors.append(f"Preserved road changed {road_mismatch} RGBA pixels")
+
+    sidewalk_rise_report = None
+    if "sidewalk_rise" in config:
+        rise = config["sidewalk_rise"]
+        heights = [float(value) for value in rise["building_heights"]]
+        if not heights or any(value <= 0 for value in heights):
+            raise ValueError("sidewalk_rise requires positive building_heights")
+        top_y = int(rise["top_y"])
+        original_top_y = int(rise["original_top_y"])
+        fraction = float(rise.get("max_fraction_of_mean_height", 0.5))
+        if not 0 < fraction <= 1 or not 0 <= top_y < original_top_y <= source.height:
+            raise ValueError("Invalid sidewalk_rise coordinates or fraction")
+        mean_height = float(np.mean(heights))
+        actual_rise = original_top_y - top_y
+        allowed_rise = mean_height * fraction
+        sidewalk_rise_report = {
+            "top_y": top_y,
+            "original_top_y": original_top_y,
+            "building_count": len(heights),
+            "mean_building_height": round(mean_height, 3),
+            "actual_rise": actual_rise,
+            "allowed_rise": round(allowed_rise, 3),
+        }
+        if actual_rise > allowed_rise:
+            errors.append(f"Sidewalk rise {actual_rise}px exceeds allowed {allowed_rise:.2f}px")
+
     overlay = source.copy()
     red = Image.new("RGBA", source.size, (255, 30, 30, 100))
     overlay.alpha_composite(Image.composite(red, Image.new("RGBA", source.size), edited_mask))
@@ -218,6 +265,9 @@ def review(manifest: Path, out: Path) -> dict:
         "background_retained_pixels": int(retained.sum()),
         "background_retained_exact_pixels": int(retained_exact.sum()),
         "background_retained_mismatch_pixels": mismatch_count,
+        "required_paving": required_paving_report,
+        "preserved_road": preserved_road_report,
+        "sidewalk_rise": sidewalk_rise_report,
         "extension": extension_report,
         "sprites": sprite_reports,
         "reconstruction_mean_rgb_difference": round(float(difference[:, :, :3].mean()), 6),
