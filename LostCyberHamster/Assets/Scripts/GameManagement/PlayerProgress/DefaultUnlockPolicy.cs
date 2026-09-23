@@ -114,16 +114,26 @@ namespace GameManagement.Progress
             LevelProgressKey currentLevel,
             HierarchicalLevelCatalog.PartOfDayEntry currentPart)
         {
-            var entries = snapshot
-                .EnumeratePart(currentLevel.LocationId, currentLevel.PartOfDayId)
-                .ToList();
             var requiredLevelCount = currentPart.Levels?.Count ?? 0;
             var requiredStars = GetRequiredStarsForNextPart(requiredLevelCount);
+            if (requiredStars <= 0)
+            {
+                return false;
+            }
 
-            return requiredStars > 0 &&
-                   entries.Count >= requiredLevelCount &&
-                   entries.All(entry => entry.Stars > 0) &&
-                   entries.Sum(entry => entry.Stars) >= requiredStars;
+            var earnedStars = 0;
+            for (var levelIndex = 0; levelIndex < requiredLevelCount; levelIndex++)
+            {
+                var key = new LevelProgressKey(currentLevel.LocationId, currentLevel.PartOfDayId, levelIndex);
+                if (!snapshot.TryGet(key, out var entry) || entry.Stars <= 0)
+                {
+                    return false;
+                }
+
+                earnedStars += entry.Stars;
+            }
+
+            return earnedStars >= requiredStars;
         }
     }
 }
