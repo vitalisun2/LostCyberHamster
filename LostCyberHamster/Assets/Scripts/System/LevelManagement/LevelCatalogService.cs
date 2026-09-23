@@ -25,5 +25,10 @@ namespace Assets.Scripts.System
         {
             return _catalog.TryFindLevel(identifier, out descriptor);
         }
+
+        public static bool TryFindLevelByAddress(string address, out HierarchicalLevelCatalog.LevelDescriptor descriptor)
+        {
+            return _catalog.TryFindLevelByAddress(address, out descriptor);
+        }
     }
 }

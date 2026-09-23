@@ -68,7 +68,9 @@ namespace GameManagement.Progress
                 return 0;
             }
 
-            var currentStars = snapshot.EnumerateLocation(currentLocationId).Sum(entry => entry.Stars);
+            var currentStars = _catalog.EnumerateLevels()
+                .Where(level => string.Equals(level.LocationId, currentLocationId, StringComparison.OrdinalIgnoreCase))
+                .Sum(level => snapshot.GetStars(new LevelProgressKey(level.LocationId, level.PartId, level.LevelIndex)));
             return Math.Max(requiredStars - currentStars, 0);
         }
 

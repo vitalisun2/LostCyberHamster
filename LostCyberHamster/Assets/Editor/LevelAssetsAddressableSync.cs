@@ -88,6 +88,7 @@ namespace Assets.EditorTools
             }
 
             var changed = false;
+            var currentGameplayAddresses = EnumerateCurrentGameplayAddresses();
 
             foreach (var locationDir in Directory.GetDirectories(LocationsRoot))
             {
@@ -106,6 +107,11 @@ namespace Assets.EditorTools
                 changed |= SyncLegacyLevels(settings, legacyLevelsGroup, levelsDir);
                 changed |= SyncLevelsByDayPart(settings, levelsByDayPartGroup, levelsDir, locationKey);
             }
+
+            changed |= RemoveStaleGameplayEntries(
+                settings,
+                levelsByDayPartGroup,
+                currentGameplayAddresses);
 
             var validationErrors = ValidateLevelAssets();
             if (validationErrors.Count > 0)
@@ -130,6 +136,91 @@ namespace Assets.EditorTools
             }
             else if (!logSilently)
             {
+            }
+        }
+
+        /// <summary>
+        /// Удаляет из управляемой группы игровые entries, для которых больше нет уровня в Content.
+        /// </summary>
+        private static bool RemoveStaleGameplayEntries(
+            AddressableAssetSettings settings,
+            AddressableAssetGroup group,
+            ISet<string> currentGameplayAddresses)
+        {
+            var staleGuids = group.entries
+                .Where(entry => entry.labels.Contains(GlobalDayPartLabel)
+                                && HierarchicalLevelCatalog.IsGameplayLevelAddress(entry.address)
+                                && !currentGameplayAddresses.Contains(entry.address))
+                .Select(entry => entry.guid)
+                .ToList();
+
+            foreach (var guid in staleGuids)
+            {
+                settings.RemoveAssetEntry(guid, postEvent: false);
+            }
+
+            return staleGuids.Count > 0;
+        }
+
+        /// <summary>
+        /// Собирает адреса игровых уровней из текущей структуры Content.
+        /// </summary>
+        private static ISet<string> EnumerateCurrentGameplayAddresses()
+        {
+            var addresses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(LocationsRoot))
+            {
+                return addresses;
+            }
+
+            foreach (var locationDir in Directory.GetDirectories(LocationsRoot))
+            {
+                var locationKey = Path.GetFileName(locationDir);
+                var levelsDir = Path.Combine(locationDir, "levels");
+                if (string.IsNullOrEmpty(locationKey) || !Directory.Exists(levelsDir))
+                {
+                    continue;
+                }
+
+                foreach (var partDir in Directory.GetDirectories(levelsDir))
+                {
+                    var partKey = Path.GetFileName(partDir);
+                    if (string.IsNullOrEmpty(partKey))
+                    {
+                        continue;
+                    }
+
+                    foreach (var levelDir in Directory.GetDirectories(partDir))
+                    {
+                        var hasLevelJson = Directory.GetFiles(
+                            levelDir,
+                            "*.json",
+                            SearchOption.TopDirectoryOnly).Length > 0;
+                        if (hasLevelJson)
+                        {
+                            AddGameplayAddress(addresses, locationKey, partKey, Path.GetFileName(levelDir));
+                        }
+                    }
+
+                    foreach (var file in Directory.GetFiles(partDir, "*.json", SearchOption.TopDirectoryOnly))
+                    {
+                        AddGameplayAddress(addresses, locationKey, partKey, Path.GetFileNameWithoutExtension(file));
+                    }
+                }
+            }
+
+            return addresses;
+        }
+
+        private static void AddGameplayAddress(
+            ISet<string> addresses,
+            string locationKey,
+            string partKey,
+            string levelKey)
+        {
+            if (HierarchicalLevelCatalog.IsGameplayLevelKey(levelKey))
+            {
+                addresses.Add(BuildLevelAddress(locationKey, partKey, levelKey));
             }
         }
 
@@ -508,8 +599,6 @@ namespace Assets.EditorTools
     }
 }
 #endif
-
-
 
 
 

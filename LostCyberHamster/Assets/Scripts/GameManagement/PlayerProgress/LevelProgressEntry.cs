@@ -10,18 +10,25 @@ namespace GameManagement.Progress
         public const int MaxStars = 3;
 
         public LevelProgressEntry(LevelProgressKey key)
-            : this(key, false, 0)
+            : this(key, false, 0, null)
         {
         }
 
         public LevelProgressEntry(LevelProgressKey key, bool isUnlocked, int stars)
+            : this(key, isUnlocked, stars, null)
+        {
+        }
+
+        public LevelProgressEntry(LevelProgressKey key, bool isUnlocked, int stars, string? address)
         {
             Key = key;
+            Address = address?.Trim();
             Stars = NormalizeStars(stars);
             IsUnlocked = isUnlocked || Stars > 0;
         }
 
         public LevelProgressKey Key { get; }
+        public string? Address { get; }
         public bool IsUnlocked { get; }
         public int Stars { get; }
         public bool IsCompleted => Stars > 0;
@@ -33,7 +40,7 @@ namespace GameManagement.Progress
                 return this;
             }
 
-            return new LevelProgressEntry(Key, true, Stars);
+            return new LevelProgressEntry(Key, true, Stars, Address);
         }
 
         public LevelProgressEntry WithStars(int stars)
@@ -44,7 +51,7 @@ namespace GameManagement.Progress
                 return this;
             }
 
-            return new LevelProgressEntry(Key, IsUnlocked || normalized > 0, normalized);
+            return new LevelProgressEntry(Key, IsUnlocked || normalized > 0, normalized, Address);
         }
 
         public LevelProgressEntry ApplyStars(int stars)
@@ -55,7 +62,7 @@ namespace GameManagement.Progress
                 return Unlock();
             }
 
-            return new LevelProgressEntry(Key, true, normalized);
+            return new LevelProgressEntry(Key, true, normalized, Address);
         }
 
         private static int NormalizeStars(int stars)

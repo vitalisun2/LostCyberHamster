@@ -133,7 +133,7 @@ namespace GameManagement.Progress
                             firstUnlockedAssigned = true;
                         }
 
-                        entries[key] = new LevelProgressEntry(key, isUnlocked, 0);
+                        entries[key] = new LevelProgressEntry(key, isUnlocked, 0, orderedLevels[levelIndex].Address);
                     }
 
                     partIndex++;

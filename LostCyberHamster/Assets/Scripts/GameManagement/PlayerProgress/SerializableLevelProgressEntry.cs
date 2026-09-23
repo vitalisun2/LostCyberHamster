@@ -7,6 +7,7 @@ namespace GameManagement
     {
         public string LocationId;
         public string PartOfDayId;
+        public string Address;
         public int LevelIndex;
         public bool IsUnlocked;
         public int Stars;

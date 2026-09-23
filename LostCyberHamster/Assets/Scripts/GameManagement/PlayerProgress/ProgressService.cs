@@ -32,7 +32,7 @@ namespace GameManagement.Progress
         }
 
         /// <summary>
-        /// Применяет результат прохождения и открывает следующий доступный уровень или локацию.
+        /// Применяет результат прохождения и пересчитывает доступ по всему текущему каталогу.
         /// </summary>
         public LevelProgressSnapshot HandleLevelCompleted(LevelProgressSnapshot snapshot, LevelProgressKey progressKey, int stars)
         {
@@ -46,26 +46,13 @@ namespace GameManagement.Progress
 
             if (!snapshot.TryGet(progressKey, out var entry))
             {
-                entry = new LevelProgressEntry(progressKey, true, 0);
+                entry = new LevelProgressEntry(progressKey, true, 0, GetAddress(progressKey));
             }
 
             snapshot = snapshot.Set(entry.ApplyStars(clampedStars));
 
-            // Применяет правила открытия к следующему элементу каталога.
-            if (TryGetNextProgressKey(progressKey, out var nextKey))
-            {
-                var shouldUnlock = string.Equals(progressKey.LocationId, nextKey.LocationId, StringComparison.OrdinalIgnoreCase)
-                    ? _unlockPolicy.CanUnlockNextLevel(snapshot, progressKey, nextKey)
-                    : _unlockPolicy.CanUnlockNextLocation(snapshot, progressKey.LocationId, nextKey.LocationId);
-
-                if (shouldUnlock && (!snapshot.TryGet(nextKey, out var nextEntry) || !nextEntry.IsUnlocked))
-                {
-                    var unlocked = new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0);
-                    snapshot = snapshot.Set(unlocked);
-                }
-            }
-
-            return snapshot;
+            // Пересчитывает все производные unlock-флаги: replay раннего уровня тоже может открыть часть.
+            return ReconcileUnlocks(snapshot);
         }
 
         /// <summary>
@@ -99,7 +86,7 @@ namespace GameManagement.Progress
                     : _unlockPolicy.CanUnlockNextLocation(current, progressKey.LocationId, nextKey.LocationId);
                 if (shouldUnlock && (!current.TryGet(nextKey, out var nextEntry) || !nextEntry.IsUnlocked))
                 {
-                    current = current.Set(new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0));
+                    current = current.Set(new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0, GetAddress(nextKey)));
                 }
             }
 
@@ -249,6 +236,16 @@ namespace GameManagement.Progress
             }
 
             return value;
+        }
+
+        private string GetAddress(LevelProgressKey key)
+        {
+            return _catalog.EnumerateLevels()
+                .Where(level => string.Equals(level.LocationId, key.LocationId, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(level.PartId, key.PartOfDayId, StringComparison.OrdinalIgnoreCase) &&
+                                level.LevelIndex == key.LevelIndex)
+                .Select(level => level.Address)
+                .FirstOrDefault();
         }
 
         private static int GetContiguousUnlockedLocationCount(LevelProgressOverview overview)

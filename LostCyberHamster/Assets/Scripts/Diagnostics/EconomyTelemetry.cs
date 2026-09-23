@@ -8,6 +8,7 @@ using Assets.Scripts.Online;
 using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
 using GameManagement;
+using GameManagement.Progress;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Vues.GameCore;
@@ -24,6 +25,7 @@ namespace Assets.Scripts.Diagnostics
         private string _cohort, _runCloseHint;
         private double _active, _nextProgress;
         private bool _paused, _focused = true;
+        private EconomyProgressionState _progressionBefore;
         private GameManager _game;
         private Hamster _hamster;
         private readonly List<EconomyFlow> _pending = new();
@@ -35,8 +37,10 @@ namespace Assets.Scripts.Diagnostics
         private static void Bootstrap()
         {
             var settings = DeviceLogUploader.LoadSettings();
+            // В Editor сохраняем локальный журнал для диагностики; загрузка отдельно остаётся запрещена allowInEditor=false.
+            var telemetryAllowed = Application.isEditor || settings?.IsPlatformAllowed() == true;
             if (!(Application.isEditor || Debug.isDebugBuild) || settings?.economyTelemetryEnabled != true ||
-                !settings.IsPlatformAllowed() || _instance != null) return;
+                !telemetryAllowed || _instance != null) return;
             var host = new GameObject(nameof(EconomyTelemetry));
             DontDestroyOnLoad(host);
             _instance = host.AddComponent<EconomyTelemetry>();
@@ -48,6 +52,7 @@ namespace Assets.Scripts.Diagnostics
             _session = Guid.NewGuid().ToString("N");
             Safe(() => _journal = new EconomyJournal(Path.Combine(Application.persistentDataPath, "economy"), _settings.endpointUrl));
             GameDataManager.ProfileChanged += ProfileChanged;
+            GameDataManager.ProgressReconciled += ProgressReconciled;
             GameDataManager.SaveFailed += SaveFailed;
             GameEventsManager.OnLevelStarted += StartRun;
             SceneManager.sceneUnloaded += SceneUnloaded;
@@ -75,6 +80,7 @@ namespace Assets.Scripts.Diagnostics
             _cohort = Application.isEditor ? "editor" : GameDataManager.IsProgressionTestingProfile ? "dev" : "playtest";
             if (_journal.State.dev_profiles.Contains(_profile)) _cohort = "dev";
             _pending.Clear();
+            _progressionBefore = null;
             _last = EconomySnapshot.Capture(GameDataManager.PlayerData);
 
             // Сверяем сохранение с последней локальной квитанцией и отмечаем оборванную попытку.
@@ -154,6 +160,24 @@ namespace Assets.Scripts.Diagnostics
             if (Ready(allowTutorial: true)) _instance.Emit(new EconomyEvent { type = type, source = source, detail = detail, value = value });
         });
 
+        /// <summary>Записывает только изменившуюся при загрузке сверку прогресса с каталогом.</summary>
+        private void ProgressReconciled(string reason)
+        {
+            Safe(() =>
+            {
+                if (!Ready(allowTutorial: true)) return;
+                Emit(new EconomyEvent
+                {
+                    type = "progress_reconciled",
+                    source = reason,
+                    after = EconomySnapshot.Capture(GameDataManager.PlayerData),
+                    progression_after = CaptureProgressionState(GameDataManager.PlayerData.CurrentLevel),
+                    confirmed = true
+                });
+                PersistState();
+            });
+        }
+
         /// <summary>Редкие переходы попытки и рекламы: revive, refill и судьба добычи.</summary>
         internal static void RecordRunTransition(
             string action,
@@ -189,9 +213,10 @@ namespace Assets.Scripts.Diagnostics
             _game = FindAnyObjectByType<GameManager>();
             _hamster = FindAnyObjectByType<Hamster>();
             int best = LevelManager.TryGetCurrentProgressKey(out var key) ? GameDataManager.PlayerData.Progress.GetStars(key) : 0;
+            _progressionBefore = CaptureProgressionState(_level);
             Emit(new EconomyEvent { type = "run_started", previous_best_stars = best,
                 source = best > 0 ? "repeat" : "uncompleted", before = EconomySnapshot.Capture(GameDataManager.PlayerData),
-                runtime = CaptureRuntimeState("pending") });
+                progression_before = _progressionBefore, runtime = CaptureRuntimeState("pending") });
             PersistState();
         });
 
@@ -207,14 +232,17 @@ namespace Assets.Scripts.Diagnostics
             if (string.IsNullOrEmpty(_run)) return;
             var flows = CloneFlows(_pending, allowEmpty: false);
             var runtime = CaptureRuntimeState(lootDisposition);
+            var progressionAfter = CaptureProgressionState(_level);
             Emit(new EconomyEvent { type = "run_finished", source = outcome, stars = stars, confirmed = confirmed,
                 remaining_lives = remainingLives >= 0 ? remainingLives : CurrentRemainingLives(),
+                progression_before = _progressionBefore, progression_after = progressionAfter,
                 after = EconomySnapshot.Capture(GameDataManager.PlayerData), runtime = runtime, flows = flows });
             _pending.Clear();
             _run = null;
             _level = null;
             _active = 0;
             _runCloseHint = null;
+            _progressionBefore = null;
             _game = null;
             _hamster = null;
             PersistState();
@@ -301,6 +329,69 @@ namespace Assets.Scripts.Diagnostics
         private static string RecoverUnfinishedLootDisposition(string hint) => hint == "backgrounded" || hint == "quitting"
             ? "discarded"
             : "discarded";
+
+        /// <summary>Собирает редкий снимок уровня и границы разблокировки из текущего каталога.</summary>
+        private static EconomyProgressionState CaptureProgressionState(string levelAddress)
+        {
+            if (string.IsNullOrWhiteSpace(levelAddress) || !LevelCatalogService.HasCatalog ||
+                LevelCatalogService.Catalog.IsEmpty || GameDataManager.PlayerData?.Progress == null ||
+                !LevelCatalogService.TryFindLevel(levelAddress, out var current))
+                return null;
+
+            var catalog = LevelCatalogService.Catalog;
+            var snapshot = GameDataManager.PlayerData.Progress;
+            var currentKey = new LevelProgressKey(current.LocationId, current.PartId, current.LevelIndex);
+            var ordered = catalog.EnumerateLevels()
+                .OrderBy(item => item.LocationIndex)
+                .ThenBy(item => item.PartIndex)
+                .ThenBy(item => item.LevelIndex)
+                .ToList();
+            var currentIndex = ordered.FindIndex(item => string.Equals(item.Address, current.Address, StringComparison.OrdinalIgnoreCase));
+            var next = currentIndex >= 0 && currentIndex + 1 < ordered.Count
+                ? ordered[currentIndex + 1]
+                : default(HierarchicalLevelCatalog.LevelDescriptor);
+            var hasNext = currentIndex >= 0 && currentIndex + 1 < ordered.Count;
+            var state = new EconomyProgressionState
+            {
+                level_address = current.Address,
+                location_id = current.LocationId,
+                part_id = current.PartId,
+                level_index = current.LevelIndex,
+                stars = snapshot.GetStars(currentKey),
+                level_unlocked = snapshot.IsLevelUnlocked(currentKey),
+                location_stars = catalog.EnumerateLevels()
+                    .Where(item => string.Equals(item.LocationId, current.LocationId, StringComparison.OrdinalIgnoreCase))
+                    .Sum(item => snapshot.GetStars(new LevelProgressKey(item.LocationId, item.PartId, item.LevelIndex))),
+                current_part_stars = catalog.EnumerateLevels(current.LocationIndex, current.PartIndex)
+                    .Sum(item => snapshot.GetStars(new LevelProgressKey(item.LocationId, item.PartId, item.LevelIndex))),
+                current_part_required_stars = DefaultUnlockPolicy.GetRequiredStarsForNextPart(
+                    catalog.EnumerateLevels(current.LocationIndex, current.PartIndex).Count()),
+                current_part_completed = catalog.EnumerateLevels(current.LocationIndex, current.PartIndex)
+                    .All(item => snapshot.GetStars(new LevelProgressKey(item.LocationId, item.PartId, item.LevelIndex)) > 0),
+                stars_to_next_location = new DefaultUnlockPolicy(catalog, DefaultUnlockPolicy.DefaultStarUnlockOffset)
+                    .GetRequiredStarsForNextLocation(snapshot, current.LocationId)
+            };
+            if (catalog.TryGetPart(current.LocationIndex, current.PartId, out var currentPartIndex, out _)
+                && catalog.TryGetLocation(current.LocationIndex, out var location)
+                && currentPartIndex + 1 < location.PartsOfDay.Count)
+            {
+                var nextPartFirst = catalog.EnumerateLevels(current.LocationIndex, currentPartIndex + 1).FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(nextPartFirst.Address))
+                {
+                    var nextPartKey = new LevelProgressKey(nextPartFirst.LocationId, nextPartFirst.PartId, nextPartFirst.LevelIndex);
+                    state.next_part_first_address = nextPartFirst.Address;
+                    state.next_part_first_unlocked = snapshot.IsLevelUnlocked(nextPartKey);
+                }
+            }
+            if (hasNext)
+            {
+                var nextKey = new LevelProgressKey(next.LocationId, next.PartId, next.LevelIndex);
+                state.next_level_address = next.Address;
+                state.next_level_stars = snapshot.GetStars(nextKey);
+                state.next_level_unlocked = snapshot.IsLevelUnlocked(nextKey);
+            }
+            return state;
+        }
 
         private static EconomyFlow[] CloneFlows(IEnumerable<EconomyFlow> flows, bool allowEmpty = true)
         {
@@ -445,6 +536,7 @@ namespace Assets.Scripts.Diagnostics
         {
             Application.quitting -= HandleApplicationQuitting;
             GameDataManager.ProfileChanged -= ProfileChanged;
+            GameDataManager.ProgressReconciled -= ProgressReconciled;
             GameDataManager.SaveFailed -= SaveFailed;
             GameEventsManager.OnLevelStarted -= StartRun;
             SceneManager.sceneUnloaded -= SceneUnloaded;

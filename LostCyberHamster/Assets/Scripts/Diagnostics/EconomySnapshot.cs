@@ -69,9 +69,19 @@ namespace Assets.Scripts.Diagnostics
         public bool ads_test_mode, purchases_enabled, interstitial_enabled;
         public bool confirmed;
         public EconomySnapshot before, after;
+        public EconomyProgressionState progression_before, progression_after;
         public long xp_delta, coins_delta, crystals_delta, points_delta;
         public EconomyFlow[] flows;
         public EconomyRuntimeState runtime;
+    }
+
+    [Serializable]
+    internal sealed class EconomyProgressionState
+    {
+        public string level_address, location_id, part_id, next_level_address, next_part_first_address;
+        public int level_index, stars, next_level_stars, location_stars, stars_to_next_location;
+        public int current_part_stars, current_part_required_stars;
+        public bool level_unlocked, next_level_unlocked, current_part_completed, next_part_first_unlocked;
     }
 
     [Serializable]

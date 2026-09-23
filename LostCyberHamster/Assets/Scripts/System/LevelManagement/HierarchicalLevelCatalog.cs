@@ -149,6 +149,14 @@ namespace Assets.Scripts.System
             return _levelsByKey.TryGetValue(normalizedKey, out descriptor);
         }
 
+        /// <summary>Пытается найти уровень только по полному адресу.</summary>
+        public bool TryFindLevelByAddress(string address, out LevelDescriptor descriptor)
+        {
+            descriptor = default;
+            if (string.IsNullOrWhiteSpace(address)) return false;
+            return _levelsByAddress.TryGetValue(NormalizeAddress(address), out descriptor);
+        }
+
         public IEnumerable<LevelDescriptor> EnumerateLevels()
         {
             return _levelsByAddress.Values;

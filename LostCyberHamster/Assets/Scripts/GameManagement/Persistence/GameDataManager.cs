@@ -20,6 +20,7 @@ namespace GameManagement
         public static SettingsData Settings = new SettingsData();
         public static event Action PlayerDataReplaced;
         public static event Action ProfileChanged;
+        public static event Action<string> ProgressReconciled;
         public static event Action JournalsChanged;
         public static event Action<Exception> SaveFailed;
 
@@ -68,9 +69,20 @@ namespace GameManagement
         {
             // Незавершённая DEV-сессия восстанавливается и в обычной сборке до чтения профиля.
             if (HasProgressionTestingBackup) RestoreProgressionTestingEnvelope(discardUnreadable: true);
-            var fromPrimary = TryReadEnvelope(_playerDataKey, out var loaded, out _);
-            if (!fromPrimary && !TryReadEnvelope(_playerDataBackupKey, out loaded, out _))
+            var fromPrimary = TryReadEnvelope(_playerDataKey, out var loaded, out _, out var primaryRepaired);
+            var hasReadableEnvelope = fromPrimary;
+            var readRepaired = primaryRepaired;
+            if (!fromPrimary)
+            {
+                hasReadableEnvelope = TryReadEnvelope(_playerDataBackupKey, out loaded, out _, out var backupRepaired);
+                readRepaired = backupRepaired;
+            }
+            if (!hasReadableEnvelope)
+            {
+                if (PlayerPrefs.HasKey(_playerDataKey) || PlayerPrefs.HasKey(_playerDataBackupKey))
+                    throw new InvalidOperationException("Existing player save is unreadable; raw save slots preserved.");
                 loaded = CreateEnvelope(CreateDefaultPlayerData(), legacy: false);
+            }
 
             // Приводим игровой снимок к текущему каталогу до публикации профиля.
             _envelope = loaded;
@@ -83,10 +95,18 @@ namespace GameManagement
             _envelope.PlayerData = PlayerData;
             IsLoaded = true;
             Generation++;
-            try { PersistEnvelope(rotateValidPrimary: fromPrimary); }
+            try
+            {
+                PersistEnvelope(rotateValidPrimary: fromPrimary);
+            }
             catch (Exception exception) { ReportSaveFailure(exception); throw; }
             Notify(PlayerDataReplaced);
             Notify(ProfileChanged);
+            var alignmentChanged = !string.Equals(beforeAlignment, PlayerData.ToJson(), StringComparison.Ordinal);
+            if (readRepaired || alignmentChanged)
+                NotifyProgressReconciled(readRepaired && alignmentChanged
+                    ? "load_repaired_and_aligned"
+                    : readRepaired ? "load_repaired" : "load_alignment_changed");
             return Task.CompletedTask;
         }
 
@@ -102,10 +122,12 @@ namespace GameManagement
             };
         }
 
-        private static bool TryReadEnvelope(string key, out LocalSaveEnvelope envelope, out bool migrated)
+        private static bool TryReadEnvelope(string key, out LocalSaveEnvelope envelope, out bool migrated,
+            out bool repaired)
         {
             envelope = null;
             migrated = false;
+            repaired = false;
             if (!PlayerPrefs.HasKey(key))
                 return false;
 
@@ -139,8 +161,10 @@ namespace GameManagement
                 }
 
                 var beforeValidation = envelope.PlayerData?.ToJson();
+                AlignProgressToCatalog(envelope.PlayerData);
                 EnsureValidated(envelope.PlayerData);
-                if (!migrated && !string.Equals(beforeValidation, envelope.PlayerData.ToJson(), StringComparison.Ordinal))
+                repaired = migrated || !string.Equals(beforeValidation, envelope.PlayerData.ToJson(), StringComparison.Ordinal);
+                if (!migrated && repaired)
                     envelope.LocalRevision++;
                 return true;
             }
@@ -151,7 +175,7 @@ namespace GameManagement
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[GameData] Local snapshot rejected ({exception.GetType().Name}).");
+                Debug.LogWarning($"[GameData] Local snapshot '{key}' rejected ({exception.GetType().Name}: {exception.Message}).");
                 envelope = null;
                 return false;
             }
@@ -531,7 +555,7 @@ namespace GameManagement
             var encrypted = _cryptoService.Encrypt(json);
             try
             {
-                if (rotateValidPrimary && TryReadEnvelope(_playerDataKey, out _, out _))
+                if (rotateValidPrimary && TryReadEnvelope(_playerDataKey, out _, out _, out _))
                     PlayerPrefs.SetString(_playerDataBackupKey, oldPrimary);
                 PlayerPrefs.SetString(_playerDataKey, encrypted);
                 PlayerPrefs.Save();
@@ -583,7 +607,7 @@ namespace GameManagement
 
         private static void RestoreProgressionTestingEnvelope(bool discardUnreadable = false)
         {
-            if (!TryReadEnvelope(_progressionTestingBackupKey, out var original, out _))
+            if (!TryReadEnvelope(_progressionTestingBackupKey, out var original, out _, out _))
             {
                 if (!discardUnreadable)
                     throw new InvalidOperationException("Testing backup is unreadable; recovery marker retained.");
@@ -634,6 +658,17 @@ namespace GameManagement
             {
                 try { handler(); }
                 catch (Exception exception) { Debug.LogError($"[GameData] Post-commit subscriber failed ({exception.GetType().Name})."); }
+            }
+        }
+
+        private static void NotifyProgressReconciled(string reason)
+        {
+            var handlers = ProgressReconciled;
+            if (handlers == null) return;
+            foreach (Action<string> handler in handlers.GetInvocationList())
+            {
+                try { handler(reason); }
+                catch (Exception exception) { Debug.LogError($"[GameData] Progress reconciliation subscriber failed ({exception.GetType().Name})."); }
             }
         }
 
@@ -766,6 +801,7 @@ namespace GameManagement
                     return;
                 }
 
+                data.RemapProgressToCatalog(catalog);
                 var baseSnapshot = LevelProgressSnapshot.CreateFromCatalog(catalog);
                 var existingSnapshot = data.Progress;
 
@@ -794,8 +830,14 @@ namespace GameManagement
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[GameDataManager] Failed to align player progress with catalog: {ex.Message}");
+                throw new InvalidOperationException("Player progress cannot be aligned with current catalog.", ex);
             }
+        }
+
+        private static void AlignProgressToCatalog(PlayerData data)
+        {
+            if (data == null || !LevelCatalogService.HasCatalog || LevelCatalogService.Catalog.IsEmpty) return;
+            data.RemapProgressToCatalog(LevelCatalogService.Catalog);
         }
 
         /// <summary>
@@ -837,7 +879,7 @@ namespace GameManagement
                 return;
             }
 
-            if (LevelCatalogService.TryFindLevel(data.CurrentLevel, out var descriptor))
+            if (LevelCatalogService.TryFindLevelByAddress(data.CurrentLevel, out var descriptor))
             {
                 if (!string.IsNullOrWhiteSpace(descriptor.Address))
                 {

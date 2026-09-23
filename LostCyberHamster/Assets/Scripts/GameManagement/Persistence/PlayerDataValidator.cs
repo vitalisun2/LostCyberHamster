@@ -133,9 +133,9 @@ namespace GameManagement
                 IsRemovedSuperHitTutorialLevel(data.CurrentLevel);
             if (LevelCatalogService.HasCatalog &&
                 !hasRemovedSuperHitTutorialLevel &&
-                !LevelCatalogService.TryFindLevel(data.CurrentLevel, out _))
+                !LevelCatalogService.TryFindLevelByAddress(data.CurrentLevel, out _))
             {
-                return PlayerDataValidationResult.Rejected("unknown_current_level");
+                return PlayerDataValidationResult.Repairable("unknown_current_level");
             }
 
             LevelProgressSnapshot progress;
@@ -210,6 +210,17 @@ namespace GameManagement
             {
                 data.CurrentLevel = FirstGameplayLevelAddress;
                 data.IsTutorialCompleted = true;
+            }
+            else if (LevelCatalogService.HasCatalog &&
+                     !LevelCatalogService.TryFindLevelByAddress(data.CurrentLevel, out _))
+            {
+                var firstLevel = LevelCatalogService.Catalog.EnumerateLevels()
+                    .OrderBy(level => level.LocationIndex)
+                    .ThenBy(level => level.PartIndex)
+                    .ThenBy(level => level.LevelIndex)
+                    .FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(firstLevel.Address))
+                    data.CurrentLevel = firstLevel.Address.Trim();
             }
 
             data.PurchasedSkinIds ??= new List<int>();

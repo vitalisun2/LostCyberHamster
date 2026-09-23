@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GameManagement.Progress;
+using Assets.Scripts.System;
 using UnityEngine;
 using Vues.GameCore;
 using Vues.GameCore.Quests;
@@ -91,6 +92,48 @@ namespace GameManagement
             RestoreSnapshot();
         }
 
+        /// <summary>Привязывает сохранённые результаты к текущим адресам каталога.</summary>
+        internal void RemapProgressToCatalog(HierarchicalLevelCatalog catalog)
+        {
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            EnsureSerializedProgressCollection();
+
+            var byLegacyKey = catalog.EnumerateLevels()
+                .ToDictionary(level => new LevelProgressKey(level.LocationId, level.PartId, level.LevelIndex));
+            var remapped = new Dictionary<LevelProgressKey, SerializableLevelProgressEntry>();
+            foreach (var serialized in _serializedProgress)
+            {
+                if (serialized == null) continue;
+                HierarchicalLevelCatalog.LevelDescriptor descriptor;
+                if (!string.IsNullOrWhiteSpace(serialized.Address))
+                {
+                    if (!catalog.TryFindLevelByAddress(serialized.Address, out descriptor)) continue;
+                }
+                else
+                {
+                    var legacyKey = new LevelProgressKey(
+                        serialized.LocationId?.Trim() ?? string.Empty,
+                        serialized.PartOfDayId?.Trim() ?? string.Empty,
+                        Math.Max(0, serialized.LevelIndex));
+                    if (!byLegacyKey.TryGetValue(legacyKey, out descriptor)) continue;
+                }
+
+                var key = new LevelProgressKey(descriptor.LocationId, descriptor.PartId, descriptor.LevelIndex);
+                if (remapped.ContainsKey(key)) continue;
+                remapped[key] = new SerializableLevelProgressEntry
+                {
+                    LocationId = descriptor.LocationId,
+                    PartOfDayId = descriptor.PartId,
+                    Address = descriptor.Address,
+                    LevelIndex = descriptor.LevelIndex,
+                    IsUnlocked = serialized.IsUnlocked,
+                    Stars = serialized.Stars
+                };
+            }
+
+            ReplaceSerializedProgress(remapped.Values.ToList());
+        }
+
         public string ToJson()
         {
             return JsonUtility.ToJson(this);
@@ -127,6 +170,7 @@ namespace GameManagement
                 {
                     LocationId = entry.Key.LocationId,
                     PartOfDayId = entry.Key.PartOfDayId,
+                    Address = entry.Address,
                     LevelIndex = entry.Key.LevelIndex,
                     Stars = entry.Stars,
                     IsUnlocked = entry.IsUnlocked
@@ -141,7 +185,7 @@ namespace GameManagement
                 return LevelProgressSnapshot.Empty;
             }
 
-            var models = new List<LevelProgressEntry>();
+            var models = new Dictionary<LevelProgressKey, LevelProgressEntry>();
 
             foreach (var entry in entries)
             {
@@ -151,12 +195,19 @@ namespace GameManagement
                 }
 
                 var key = new LevelProgressKey(entry.LocationId.Trim(), entry.PartOfDayId.Trim(), Math.Max(0, entry.LevelIndex));
-                models.Add(new LevelProgressEntry(key, entry.IsUnlocked, entry.Stars));
+                var value = new LevelProgressEntry(key, entry.IsUnlocked, entry.Stars, entry.Address);
+                if (models.TryGetValue(key, out var existing))
+                {
+                    if (existing.IsUnlocked != value.IsUnlocked || existing.Stars != value.Stars)
+                        throw new InvalidOperationException("Conflicting level progress entries.");
+                    continue;
+                }
+                models.Add(key, value);
             }
 
             return models.Count == 0
                 ? LevelProgressSnapshot.Empty
-                : new LevelProgressSnapshot(models);
+                : new LevelProgressSnapshot(models.Values);
         }
 
     }
