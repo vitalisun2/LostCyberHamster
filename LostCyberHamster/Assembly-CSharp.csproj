@@ -524,6 +524,7 @@
     <Compile Include="Assets\Scripts\UI\Common\LocalSaveFeedback.cs" />
     <Compile Include="Assets\Scripts\DevTools\Networking\NetworkingDevToolsScreen.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\JumpOnFromRoof\JumpOnFromRoofStrategy.cs" />
+    <Compile Include="Assets\Scripts\GameEngine\Mechanics\LaneSwitchContactGrace.cs" />
     <Compile Include="Assets\Scripts\Bot\PlanState\PlannedAction.cs" />
     <Compile Include="Assets\Scripts\Bot\Planning\SuperFallbackActionDeduplicator.cs" />
     <Compile Include="Assets\Scripts\DevTools\ReturnActivityTesting\ReturnActivityTestingView.cs" />
@@ -539,6 +540,7 @@
     <Compile Include="Assets\Scripts\Gameplay\CrystalBonus.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpOnFromRoof\JumpOnFromRoofSpecification.cs" />
     <Compile Include="Assets\Scripts\UI\Modals\CloudSaveConflict\CloudSaveConflictCoordinator.cs" />
+    <Compile Include="Assets\Scripts\Common\LaneSwitchCollisionRule.cs" />
     <Compile Include="Assets\Scripts\Diagnostics\DeviceLogUploader.cs" />
     <Compile Include="Assets\Scripts\Entry Points\BootstrapLoadingTasks\LoadAddressablesLoadingTask.cs" />
     <Compile Include="Assets\Scripts\Leaderboard\WeeklyLeaderboardCoordinator.cs" />

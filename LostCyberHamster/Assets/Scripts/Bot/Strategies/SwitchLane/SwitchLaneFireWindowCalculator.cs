@@ -5,6 +5,7 @@ using Assets.Scripts.Bot.Perception;
 using Assets.Scripts.Bot.Planning;
 using Assets.Scripts.Bot.Strategies.Shared.Models;
 using Assets.Scripts.Bot.Strategies.Shared.Timing;
+using Assets.Scripts.Common;
 
 namespace Assets.Scripts.Bot.Strategies.SwitchLane
 {
@@ -350,11 +351,15 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                     continue;
 
                 float overlapStart = obstacle.LeftX - hamster.HamsterRightX;
-                float overlapEnd = obstacle.RightX - hamster.HamsterLeftX;
                 float unsafeStart = overlapStart
                     - SwitchLaneTiming.DecisionTravel
                     - SwitchLaneTiming.PostActionTargetLaneGuardTravel;
-                float unsafeEnd = overlapEnd;
+                // Уходящее препятствие отпускает окно по тому же порогу, что и runtime.
+                float unsafeEnd = LaneSwitchCollisionRule.GetDepartureReleaseShift(
+                    hamster.HamsterLeftX,
+                    hamster.HamsterRightX,
+                    obstacle.LeftX,
+                    obstacle.RightX);
 
                 if (unsafeEnd < 0f || unsafeStart > latestFireShift)
                     continue;

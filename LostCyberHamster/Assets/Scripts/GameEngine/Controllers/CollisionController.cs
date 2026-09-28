@@ -391,8 +391,14 @@ public class CollisionController : MonoBehaviour
         return overlap > _hamster.ColliderWidth * BigAliveJumpDamageOverlapThreshold;
     }
 
+    /// <summary>Проверяет опасное X-перекрытие с учётом льготы смены линии.</summary>
     private bool HasDamagingHorizontalOverlap(Obstacle obstacle)
     {
+        // Пропускаем контакт, разрешённый при старте смены линии.
+        if (_hamster.CanIgnoreLaneSwitchContact(obstacle))
+            return false;
+
+        // Проверяем обычный текущий X-контакт.
         return obstacle != null &&
             CollisionUtils.IsOverlapAtShift(
                 _hamster.transform,
