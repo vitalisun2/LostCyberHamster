@@ -24,7 +24,7 @@ namespace GameManagement.Progress
             Key = key;
             Address = address?.Trim();
             Stars = NormalizeStars(stars);
-            IsUnlocked = isUnlocked || Stars > 0;
+            IsUnlocked = isUnlocked;
         }
 
         public LevelProgressKey Key { get; }
@@ -51,7 +51,7 @@ namespace GameManagement.Progress
                 return this;
             }
 
-            return new LevelProgressEntry(Key, IsUnlocked || normalized > 0, normalized, Address);
+            return new LevelProgressEntry(Key, IsUnlocked, normalized, Address);
         }
 
         public LevelProgressEntry ApplyStars(int stars)

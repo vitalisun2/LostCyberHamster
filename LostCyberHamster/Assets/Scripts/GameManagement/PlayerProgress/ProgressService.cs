@@ -56,7 +56,7 @@ namespace GameManagement.Progress
         }
 
         /// <summary>
-        /// Восстанавливает производные unlock-флаги из сохранённых результатов.
+        /// Восстанавливает доступ уровней по последовательности каталога и сохранённым результатам.
         /// </summary>
         public LevelProgressSnapshot ReconcileUnlocks(LevelProgressSnapshot snapshot)
         {
@@ -66,28 +66,45 @@ namespace GameManagement.Progress
             }
 
             var current = snapshot;
-            foreach (var descriptor in _catalog.EnumerateLevels()
+            var orderedDescriptors = _catalog.EnumerateLevels()
                          .OrderBy(level => level.LocationIndex)
                          .ThenBy(level => level.PartIndex)
-                         .ThenBy(level => level.LevelIndex))
+                         .ThenBy(level => level.LevelIndex)
+                         .ToList();
+            LevelProgressEntry previousEntry = null;
+            LevelProgressKey previousKey = default;
+
+            // Определяет эффективный unlock в порядке каталога.
+            for (var index = 0; index < orderedDescriptors.Count; index++)
             {
+                var descriptor = orderedDescriptors[index];
                 var progressKey = new LevelProgressKey(
                     descriptor.LocationId,
                     descriptor.PartId,
                     descriptor.LevelIndex);
-                if (!current.TryGet(progressKey, out var entry) || !entry.IsCompleted ||
-                    !TryGetNextProgressKey(progressKey, out var nextKey))
+
+                current.TryGet(progressKey, out var entry);
+                var stars = entry?.Stars ?? 0;
+                var address = descriptor.Address;
+                var shouldUnlock = index == 0;
+
+                // Разрешает unlock только через открытого завершённого предшественника.
+                if (index > 0 && previousEntry?.IsUnlocked == true && previousEntry.IsCompleted)
                 {
-                    continue;
+                    shouldUnlock = entry?.IsUnlocked == true ||
+                                   (string.Equals(previousKey.LocationId, progressKey.LocationId, StringComparison.OrdinalIgnoreCase)
+                                       ? _unlockPolicy.CanUnlockNextLevel(current, previousKey, progressKey)
+                                       : _unlockPolicy.CanUnlockNextLocation(current, previousKey.LocationId, progressKey.LocationId));
                 }
 
-                var shouldUnlock = string.Equals(progressKey.LocationId, nextKey.LocationId, StringComparison.OrdinalIgnoreCase)
-                    ? _unlockPolicy.CanUnlockNextLevel(current, progressKey, nextKey)
-                    : _unlockPolicy.CanUnlockNextLocation(current, progressKey.LocationId, nextKey.LocationId);
-                if (shouldUnlock && (!current.TryGet(nextKey, out var nextEntry) || !nextEntry.IsUnlocked))
+                if (entry == null || entry.IsUnlocked != shouldUnlock ||
+                    !string.Equals(entry.Address, address, StringComparison.Ordinal))
                 {
-                    current = current.Set(new LevelProgressEntry(nextKey, true, nextEntry?.Stars ?? 0, GetAddress(nextKey)));
+                    current = current.Set(new LevelProgressEntry(progressKey, shouldUnlock, stars, address));
                 }
+
+                current.TryGet(progressKey, out previousEntry);
+                previousKey = progressKey;
             }
 
             return current;
