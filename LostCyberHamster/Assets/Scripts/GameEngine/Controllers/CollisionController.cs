@@ -401,7 +401,7 @@ public class CollisionController : MonoBehaviour
 
     /// <summary>
     /// Пропускает контакт на целевой линии при смене линии, если X-пересечения нет
-    /// либо уходящее препятствие заходит на хомяка не более чем на 20% его ширины.
+    /// либо уходящее препятствие заходит на хомяка не более чем на 30% его ширины.
     /// </summary>
     private bool ShouldIgnoreLaneSwitchContact(Obstacle obstacle)
     {

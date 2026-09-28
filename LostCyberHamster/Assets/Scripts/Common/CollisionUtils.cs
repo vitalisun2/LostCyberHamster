@@ -15,7 +15,7 @@ namespace Assets.Scripts.Common
     public static class CollisionUtils
     {
         /// <summary>Допустимая глубина захода уходящего препятствия при смене линии.</summary>
-        public const float LaneSwitchTrailingOverlapRatio = 0.2f;
+        public const float LaneSwitchTrailingOverlapRatio = 0.3f;
 
         private static readonly List<Obstacle> _buffer = new(32);      // внутренний пул
         private static readonly ReadOnlyCollection<Obstacle> _roBuffer // read-only обёртка
@@ -137,7 +137,7 @@ namespace Assets.Scripts.Common
             (rightA > leftB) && (rightB > leftA);
 
         /// <summary>
-        /// Возвращает превышение правым краем препятствия допустимого захода на 20% ширины хомяка.
+        /// Возвращает превышение правым краем препятствия допустимого захода на 30% ширины хомяка.
         /// Положительное значение опасно, если X-интервалы также пересекаются.
         /// </summary>
         public static float GetLaneSwitchTrailingPenetration(
