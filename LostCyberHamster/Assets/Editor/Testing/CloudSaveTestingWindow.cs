@@ -26,10 +26,10 @@ namespace LostCyberHamster.Editor.Testing
         }
 
         /// <summary>Минимальная ширина окна.</summary>
-        private const float MinWindowWidth = 960f;
+        private const float MinWindowWidth = 420f;
 
         /// <summary>Минимальная высота окна.</summary>
-        private const float MinWindowHeight = 900f;
+        private const float MinWindowHeight = 420f;
 
         /// <summary>Ширина кнопки запуска.</summary>
         private const float TestButtonWidth = 180f;

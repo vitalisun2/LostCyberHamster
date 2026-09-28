@@ -30,7 +30,8 @@ namespace LostCyberHamster.Editor.Testing
         public CloudSaveTestingUiToolkitController(CloudSaveTestingWindow window)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
-            _host = new DevToolsUiToolkitHost(showLauncher: false, useSafeArea: false);
+            _host = new DevToolsUiToolkitHost(showLauncher: false, useSafeArea: false, editorPresentation: true);
+            _host.Closed += _window.Close;
             _cloudSavePage = new CloudSaveTestingUiPage(_host.Factory);
 
             _window.rootVisualElement.Clear();
@@ -165,6 +166,8 @@ namespace LostCyberHamster.Editor.Testing
             });
             _continueButton = factory.CreateActionButton("Continue", DevToolsUiToolkitTheme.Surface, _runner.Continue, compact: true);
             _cancelButton = factory.CreateActionButton("Cancel", DevToolsUiToolkitTheme.SurfaceDanger, _runner.Cancel, compact: true);
+            _continueButton.AddToClassList("devtools-cloud-save-command");
+            _cancelButton.AddToClassList("devtools-cloud-save-command");
             runCard.Add(_stateLabel);
             runCard.Add(_scenarioLabel);
             runCard.Add(_stepDelayField);
@@ -173,6 +176,9 @@ namespace LostCyberHamster.Editor.Testing
             runCard.Add(_stepLabel);
             runCard.Add(_resultLabel);
             Root.Add(runCard);
+
+            foreach (Button button in _scenarioButtons)
+                button.AddToClassList("devtools-cloud-save-command");
         }
 
         public override void Refresh()

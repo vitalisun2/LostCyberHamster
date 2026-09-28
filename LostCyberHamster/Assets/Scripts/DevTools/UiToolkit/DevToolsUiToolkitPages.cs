@@ -129,6 +129,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             Color buttonBackground)
         {
             VisualElement row = new VisualElement();
+            row.AddToClassList("devtools-action-row");
             row.style.flexDirection = FlexDirection.Row;
             row.style.flexWrap = Wrap.Wrap;
             row.style.alignItems = Align.FlexStart;
@@ -190,6 +191,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             Color? background = null)
         {
             Root = new VisualElement();
+            Root.AddToClassList("devtools-card");
             DevToolsUiToolkitTheme.ApplyCard(Root, background ?? DevToolsUiToolkitTheme.Surface);
 
             VisualElement header = factory.CreateRow(wrap: true);
@@ -260,6 +262,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             }
 
             VisualElement grid = factory.CreateRow(wrap: true);
+            grid.AddToClassList("devtools-navigation-grid");
             grid.style.alignItems = Align.Stretch;
 
             foreach (DevToolsNavigationLink link in links)
@@ -277,6 +280,8 @@ namespace Assets.Scripts.DevTools.UiToolkit
         private VisualElement CreateTile(DevToolsNavigationLink link, Action<string> navigate)
         {
             VisualElement tile = new VisualElement();
+            tile.AddToClassList("devtools-navigation-tile");
+            tile.AddToClassList("devtools-card");
             DevToolsUiToolkitTheme.ApplyCard(tile, link.CardColor ?? DevToolsUiToolkitTheme.Surface);
             tile.style.flexGrow = 1f;
             tile.style.minWidth = DevToolsUiToolkitTheme.DashboardTileMinWidth;

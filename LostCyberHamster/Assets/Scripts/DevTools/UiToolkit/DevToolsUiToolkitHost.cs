@@ -27,6 +27,10 @@ namespace Assets.Scripts.DevTools.UiToolkit
         public static readonly Color TextMuted = new(0.22f, 0.25f, 0.31f, 1f);
         public static readonly Color Border = new(0.84f, 0.89f, 0.97f, 1f);
         public static readonly Color Summary = new(0.90f, 0.95f, 1f, 1f);
+        private static readonly Color EditorNeutralButton = new(0.23f, 0.24f, 0.27f, 1f);
+        private static readonly Color EditorAccentButton = new(0.22f, 0.34f, 0.48f, 1f);
+        private static readonly Color EditorDangerButton = new(0.46f, 0.24f, 0.24f, 1f);
+        private static readonly Color EditorActiveButton = new(0.22f, 0.45f, 0.29f, 1f);
 
         public const float RootPadding = 24f;
         public const float HeaderHeight = 76f;
@@ -41,6 +45,15 @@ namespace Assets.Scripts.DevTools.UiToolkit
         public const float DashboardTileMinHeight = 164f;
         public const float ContentWidthPortrait = 860f;
         public const float ContentWidthLandscape = 1440f;
+
+        /// <summary>Вычисляет ширину контента с компактным ограничением для editor-представления.</summary>
+        public static float ResolveContentWidth(Rect rect, bool editorPresentation)
+        {
+            if (editorPresentation)
+                return Mathf.Max(0f, rect.width - 40f);
+
+            return ResolveContentWidth(rect);
+        }
 
         public static float GetTitleSize(bool pageTitle = true)
         {
@@ -124,6 +137,150 @@ namespace Assets.Scripts.DevTools.UiToolkit
             button.style.unityFontStyleAndWeight = FontStyle.Bold;
             button.style.whiteSpace = WhiteSpace.Normal;
         }
+
+        /// <summary>Применяет компактную тёмную палитру и размеры к editor-дереву DEV-инструмента.</summary>
+        public static void ApplyEditorPresentation(VisualElement root)
+        {
+            root.style.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
+            root.Query<VisualElement>().ForEach(element =>
+            {
+                if (element.name == "dev-overlay-panel")
+                {
+                    element.style.paddingTop = 10f;
+                    element.style.paddingRight = 10f;
+                    element.style.paddingBottom = 10f;
+                    element.style.paddingLeft = 10f;
+                }
+
+                if (element.name == "devtools-header")
+                    element.style.minHeight = 42f;
+
+                if (element.name == "devtools-scroll")
+                {
+                    element.style.marginTop = 8f;
+                    element.contentContainer.style.paddingBottom = 16f;
+                }
+
+                if (element.ClassListContains("devtools-card"))
+                {
+                    Color cardBorder = new Color(0.29f, 0.31f, 0.36f, 1f);
+                    element.style.backgroundColor = new Color(0.18f, 0.19f, 0.22f, 1f);
+                    element.style.borderTopColor = cardBorder;
+                    element.style.borderRightColor = cardBorder;
+                    element.style.borderBottomColor = cardBorder;
+                    element.style.borderLeftColor = cardBorder;
+                    element.style.borderTopLeftRadius = 3f;
+                    element.style.borderTopRightRadius = 3f;
+                    element.style.borderBottomLeftRadius = 3f;
+                    element.style.borderBottomRightRadius = 3f;
+                    element.style.paddingTop = 10f;
+                    element.style.paddingRight = 10f;
+                    element.style.paddingBottom = 10f;
+                    element.style.paddingLeft = 10f;
+                    element.style.marginBottom = 6f;
+                }
+
+                if (element.ClassListContains("devtools-navigation-tile"))
+                {
+                    element.style.flexGrow = 0f;
+                    element.style.minWidth = 0f;
+                    element.style.minHeight = 84f;
+                    element.style.maxWidth = StyleKeyword.None;
+                }
+
+                if (element is TextElement text)
+                {
+                    text.style.fontSize = text.ClassListContains("devtools-page-title")
+                        ? 22f
+                        : text.ClassListContains("devtools-card-title")
+                            ? 17f
+                            : text.ClassListContains("devtools-body") ? 14f : 12f;
+                    text.style.color = text.ClassListContains("devtools-status")
+                        ? new Color(0.9f, 0.91f, 0.94f, 1f)
+                        : text.ClassListContains("devtools-caption") || text.ClassListContains("devtools-body")
+                            ? new Color(0.62f, 0.64f, 0.69f, 1f)
+                            : new Color(0.9f, 0.91f, 0.94f, 1f);
+                }
+
+                if (element is Button button)
+                {
+                    button.style.height = 28f;
+                    button.style.minHeight = 28f;
+                    button.style.minWidth = 0f;
+                    button.style.paddingLeft = 8f;
+                    button.style.paddingRight = 8f;
+                    button.style.fontSize = 12f;
+                    button.style.borderTopLeftRadius = 3f;
+                    button.style.borderTopRightRadius = 3f;
+                    button.style.borderBottomLeftRadius = 3f;
+                    button.style.borderBottomRightRadius = 3f;
+                    button.style.backgroundColor = button.ClassListContains("devtools-button-danger")
+                        ? EditorDangerButton
+                        : button.ClassListContains("devtools-button-accent") ? EditorAccentButton : EditorNeutralButton;
+                    button.style.color = new Color(0.9f, 0.91f, 0.94f, 1f);
+                    if (button.ClassListContains("devtools-cloud-save-command"))
+                    {
+                        button.style.width = 120f;
+                        button.style.minWidth = 100f;
+                        button.style.maxWidth = 150f;
+                        button.style.marginTop = 4f;
+                    }
+                    else if (button.ClassListContains("devtools-action-button"))
+                    {
+                        button.style.width = StyleKeyword.Auto;
+                        button.style.flexGrow = 0f;
+                        button.style.minWidth = 100f;
+                        button.style.maxWidth = 150f;
+                    }
+                }
+
+                if (element is IntegerField integerField)
+                {
+                    integerField.style.minHeight = 26f;
+                    integerField.style.fontSize = 12f;
+                    integerField.labelElement.style.minWidth = 110f;
+                    integerField.labelElement.style.fontSize = 11f;
+                    integerField.labelElement.style.color = new Color(0.62f, 0.64f, 0.69f, 1f);
+                }
+
+                if (element is TextField textField)
+                {
+                    textField.style.minHeight = 26f;
+                    textField.style.fontSize = 12f;
+                    textField.labelElement.style.minWidth = 110f;
+                    textField.labelElement.style.fontSize = 11f;
+                    textField.labelElement.style.color = new Color(0.62f, 0.64f, 0.69f, 1f);
+                }
+
+                if (element is DropdownField dropdownField)
+                {
+                    dropdownField.style.minHeight = 26f;
+                    dropdownField.style.fontSize = 12f;
+                    dropdownField.labelElement.style.minWidth = 110f;
+                    dropdownField.labelElement.style.fontSize = 11f;
+                    dropdownField.labelElement.style.color = new Color(0.62f, 0.64f, 0.69f, 1f);
+                }
+            });
+        }
+
+        /// <summary>Обновляет цвета кнопок текущей editor-страницы после изменения состояния.</summary>
+        public static void ApplyEditorDynamicButtonPresentation(VisualElement page)
+        {
+            page.Query<Button>().ForEach(button =>
+            {
+                Color color = button.resolvedStyle.backgroundColor;
+                if (color.g > color.r + 0.08f && color.g > color.b + 0.02f)
+                    button.style.backgroundColor = EditorActiveButton;
+                else if (color.r > color.g + 0.08f)
+                    button.style.backgroundColor = EditorDangerButton;
+                else if (button.ClassListContains("devtools-button-danger"))
+                    button.style.backgroundColor = EditorDangerButton;
+                else if (button.ClassListContains("devtools-button-accent") && color.b > color.r + 0.06f)
+                    button.style.backgroundColor = EditorAccentButton;
+                else
+                    button.style.backgroundColor = EditorNeutralButton;
+            });
+        }
     }
 
     public sealed class DevToolsUiToolkitFactory
@@ -135,6 +292,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
                 label,
                 DevToolsUiToolkitTheme.GetTitleSize(pageTitle),
                 FontStyle.Bold);
+            label.AddToClassList(pageTitle ? "devtools-page-title" : "devtools-card-title");
             return label;
         }
 
@@ -144,6 +302,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             DevToolsUiToolkitTheme.ApplyText(
                 label,
                 DevToolsUiToolkitTheme.GetBodySize());
+            label.AddToClassList("devtools-body");
             label.style.color = DevToolsUiToolkitTheme.TextMuted;
             return label;
         }
@@ -151,6 +310,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
         public Label CreateStatus(string text)
         {
             var label = CreateBody(text);
+            label.AddToClassList("devtools-status");
             label.style.color = DevToolsUiToolkitTheme.TextStrong;
             return label;
         }
@@ -161,6 +321,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             DevToolsUiToolkitTheme.ApplyText(
                 label,
                 DevToolsUiToolkitTheme.GetCaptionSize());
+            label.AddToClassList("devtools-caption");
             label.style.color = DevToolsUiToolkitTheme.TextMuted;
             return label;
         }
@@ -168,6 +329,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
         public VisualElement CreateCard(string title, string description = null, Color? background = null)
         {
             var card = new VisualElement();
+            card.AddToClassList("devtools-card");
             DevToolsUiToolkitTheme.ApplyCard(card, background);
             card.Add(CreateTitle(title, pageTitle: false));
             if (!string.IsNullOrWhiteSpace(description))
@@ -181,8 +343,19 @@ namespace Assets.Scripts.DevTools.UiToolkit
             {
                 text = title
             };
+            button.AddToClassList("devtools-action-button");
+            button.AddToClassList(IsDangerButtonColor(background)
+                ? "devtools-button-danger"
+                : background == DevToolsUiToolkitTheme.SurfaceAccent
+                    ? "devtools-button-accent"
+                    : "devtools-button-neutral");
             DevToolsUiToolkitTheme.ApplyActionButton(button, background, compact);
             return button;
+        }
+
+        private static bool IsDangerButtonColor(Color background)
+        {
+            return background == DevToolsUiToolkitTheme.SurfaceDanger || background.r > background.g + 0.04f;
         }
 
         public VisualElement CreateRow(bool wrap = false)
@@ -240,6 +413,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
     public sealed class DevToolsUiToolkitHost : IDisposable
     {
         private readonly bool _showLauncher;
+        private readonly bool _editorPresentation;
         private readonly bool _useSafeArea;
         private readonly Dictionary<string, IDevToolsUiPage> _pages = new();
         private readonly DevToolsUiToolkitFactory _factory = new();
@@ -255,10 +429,11 @@ namespace Assets.Scripts.DevTools.UiToolkit
         private string _rootPageId;
         private string _currentPageId;
 
-        public DevToolsUiToolkitHost(bool showLauncher, bool useSafeArea)
+        public DevToolsUiToolkitHost(bool showLauncher, bool useSafeArea, bool editorPresentation = false)
         {
             _showLauncher = showLauncher;
             _useSafeArea = useSafeArea;
+            _editorPresentation = editorPresentation;
 
             _root = new VisualElement { name = "devtools-uitk-root" };
             _root.style.position = Position.Absolute;
@@ -288,6 +463,8 @@ namespace Assets.Scripts.DevTools.UiToolkit
             _panel.style.right = 0f;
             _panel.style.bottom = 0f;
             _panel.style.backgroundColor = Color.white;
+            if (_editorPresentation)
+                _panel.style.backgroundColor = new Color(0.12f, 0.13f, 0.15f, 1f);
             _panel.style.display = showLauncher ? DisplayStyle.None : DisplayStyle.Flex;
             _panel.style.flexDirection = FlexDirection.Column;
             _panel.style.paddingTop = DevToolsUiToolkitTheme.RootPadding;
@@ -297,6 +474,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
             _root.Add(_panel);
 
             var header = _factory.CreateRow();
+            header.name = "devtools-header";
             header.style.alignItems = Align.Center;
             header.style.minHeight = DevToolsUiToolkitTheme.HeaderHeight;
             header.style.flexShrink = 0f;
@@ -342,6 +520,8 @@ namespace Assets.Scripts.DevTools.UiToolkit
             scroll.Add(_pageColumn);
 
             RefreshHeader();
+            if (_editorPresentation)
+                DevToolsUiToolkitTheme.ApplyEditorPresentation(_root);
         }
 
         public VisualElement Root => _root;
@@ -383,6 +563,8 @@ namespace Assets.Scripts.DevTools.UiToolkit
             page.Root.style.flexDirection = FlexDirection.Column;
             _pages.Add(pageId, page);
             _pageColumn.Add(page.Root);
+            if (_editorPresentation)
+                DevToolsUiToolkitTheme.ApplyEditorPresentation(page.Root);
         }
 
         public void SetLauncherState(string title, bool danger)
@@ -414,6 +596,10 @@ namespace Assets.Scripts.DevTools.UiToolkit
                 _panel.style.display = DisplayStyle.None;
                 _launcherButton.style.display = DisplayStyle.Flex;
             }
+            else
+            {
+                _panel.style.display = DisplayStyle.None;
+            }
 
             Closed?.Invoke();
         }
@@ -440,7 +626,11 @@ namespace Assets.Scripts.DevTools.UiToolkit
         public void Refresh()
         {
             if (!string.IsNullOrWhiteSpace(_currentPageId) && _pages.TryGetValue(_currentPageId, out IDevToolsUiPage currentPage))
+            {
                 currentPage.Refresh();
+                if (_editorPresentation)
+                    DevToolsUiToolkitTheme.ApplyEditorDynamicButtonPresentation(currentPage.Root);
+            }
             RefreshLayout();
         }
 
@@ -486,9 +676,21 @@ namespace Assets.Scripts.DevTools.UiToolkit
             if (rect.width <= 0f || rect.height <= 0f)
                 return;
 
-            float contentWidth = DevToolsUiToolkitTheme.ResolveContentWidth(rect);
+            float contentWidth = DevToolsUiToolkitTheme.ResolveContentWidth(rect, _editorPresentation);
             _pageColumn.style.width = contentWidth;
             _pageColumn.style.maxWidth = contentWidth;
+
+            if (_editorPresentation)
+            {
+                bool narrow = rect.width < 720f;
+                _root.Query<VisualElement>(className: "devtools-navigation-tile").ForEach(tile =>
+                {
+                    tile.style.width = narrow ? Length.Percent(100f) : Length.Percent(48f);
+                    tile.style.maxWidth = StyleKeyword.None;
+                    tile.style.minWidth = 0f;
+                    tile.style.marginRight = narrow ? 0f : 6f;
+                });
+            }
 
             if (_showLauncher)
             {
