@@ -77,7 +77,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 () => CompleteNextLevelRequested?.Invoke(),
                 DevToolsTheme.PrimaryButtonHeight);
 
-            // Отображаем те же target и status, что Editor Tools/Testing.
+            // Отображаем те же target и status, что Editor Tools/Testing Tool.
             _targetLevelText = CreateOutput(
                 uiFactory,
                 content,
@@ -97,7 +97,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             uiFactory.CreateBodyText(
                 "FirstSessionDescription",
                 firstSessionCard,
-                "Ручная выдача и инспекция первой сессии совпадают с editor Tools/Testing.");
+                "Ручная выдача и инспекция первой сессии совпадают с editor Tools/Testing Tool.");
             _grantTutorialBonusButton = uiFactory.CreateButton(
                 "GrantTutorialBonusButton", firstSessionCard, "Выдать tutorial-бонус (один раз)",
                 DevToolsTheme.Button, () => GrantTutorialBonusRequested?.Invoke());

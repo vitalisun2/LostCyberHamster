@@ -429,7 +429,7 @@ namespace LostCyberHamster.Editor.Testing
         private void OnNetworkModeChanged()
         {
             _networkError = null;
-            titleContent = new GUIContent(_networkFacade.IsForcedOffline ? "Testing OFF" : "Testing");
+            titleContent = new GUIContent(_networkFacade.IsForcedOffline ? "Testing Tool OFF" : "Testing Tool");
             Repaint();
         }
 

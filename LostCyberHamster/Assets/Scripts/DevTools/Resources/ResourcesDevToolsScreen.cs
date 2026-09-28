@@ -43,7 +43,7 @@ namespace Assets.Scripts.DevTools.Resources
             ui.CreateBodyText(
                 "MoneyDescription",
                 moneyCard,
-                "Точное DEV-начисление Money. Значение и результат совпадают с editor Tools/Testing.");
+                "Точное DEV-начисление Money. Значение и результат совпадают с editor Tools/Testing Tool.");
             ui.CreateBodyText("AmountLabel", moneyCard, "Amount");
             _amountField = ui.CreateInputField(
                 "AmountField",

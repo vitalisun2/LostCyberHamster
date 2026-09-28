@@ -7,7 +7,7 @@ using UnityEngine;
 namespace LostCyberHamster.Editor.Testing.SkateboardTesting
 {
     /// <summary>
-    /// Рисует ручные проверки Skateboard внутри общего окна Tools/Testing.
+    /// Рисует ручные проверки Skateboard внутри общего окна Tools/Testing Tool.
     /// </summary>
     internal sealed class SkateboardTestingPage : IDisposable
     {

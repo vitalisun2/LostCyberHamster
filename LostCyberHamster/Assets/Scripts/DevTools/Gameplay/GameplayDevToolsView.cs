@@ -61,7 +61,7 @@ namespace Assets.Scripts.DevTools.Gameplay
             uiFactory.CreateBodyText(
                 "ProgressTestingDescription",
                 testingCard,
-                "Переходы в те же сценарии тестирования прогресса, что и в Tools/Testing.");
+                "Переходы в те же сценарии тестирования прогресса, что и в Tools/Testing Tool.");
             _gameProgressTestingButton = uiFactory.CreateButton(
                 "GameProgressTestingButton",
                 testingCard,

@@ -26,7 +26,7 @@ namespace Assets.Scripts.DevTools.ReturnActivityTesting
             factory.CreateBodyText(
                 "ReturnActivitiesDescription",
                 sessionCard,
-                "Те же production-команды активностей, что и в Tools/Testing, но собранные по смысловым блокам.");
+                "Те же production-команды активностей, что и в Tools/Testing Tool, но собранные по смысловым блокам.");
             _begin = factory.CreateButton("ReturnBegin", sessionCard, "Начать изолированную сессию активностей", DevToolsTheme.Button, _runner.Begin);
             _restore = factory.CreateButton("ReturnRestore", sessionCard, "Вернуть исходное сохранение", DevToolsTheme.Button, _runner.Restore);
 

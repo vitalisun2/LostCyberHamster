@@ -43,7 +43,7 @@ namespace Assets.Scripts.DevTools.Account
             uiFactory.CreateBodyText(
                 "AccountDescription",
                 content,
-                "Общие production-команды аккаунта, выровненные по той же структуре, что и в Tools/Testing.");
+                "Общие production-команды аккаунта, выровненные по той же структуре, что и в Tools/Testing Tool.");
 
             Transform localResetCard = uiFactory.CreateCard("LocalResetCard", content, DevToolsTheme.Surface);
             uiFactory.CreateSectionHeading("LocalResetHeading", localResetCard, "LOCAL RESET");

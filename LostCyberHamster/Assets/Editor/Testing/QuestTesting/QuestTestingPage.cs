@@ -7,7 +7,7 @@ using Vues.GameCore.Quests;
 
 namespace LostCyberHamster.Editor.Testing.QuestTesting
 {
-    /// <summary>Рисует Quest Testing внутри общего окна Tools/Testing.</summary>
+    /// <summary>Рисует Quest Testing внутри общего окна Tools/Testing Tool.</summary>
     internal sealed class QuestTestingPage : IDisposable
     {
         private static readonly string[] _categoryNames =

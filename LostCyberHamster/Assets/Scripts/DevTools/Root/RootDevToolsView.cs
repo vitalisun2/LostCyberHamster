@@ -23,7 +23,7 @@ namespace Assets.Scripts.DevTools.Root
             ui.CreateBodyText(
                 "FeaturesDescription",
                 content,
-                "Те же DEV-разделы, что и в Tools/Testing, но в fullscreen mobile layout с крупными зонами касания.");
+                "Те же DEV-разделы, что и в Tools/Testing Tool, но в fullscreen mobile layout с крупными зонами касания.");
             CreateNavigationCard(
                 ui,
                 content,

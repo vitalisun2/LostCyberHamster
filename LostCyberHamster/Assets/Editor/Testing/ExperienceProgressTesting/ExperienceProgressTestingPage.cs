@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace LostCyberHamster.Editor.Testing.ExperienceProgress
 {
-    /// <summary>Рисует XP/Level Progress Testing внутри общего окна Tools/Testing.</summary>
+    /// <summary>Рисует XP/Level Progress Testing внутри общего окна Tools/Testing Tool.</summary>
     internal sealed class ExperienceProgressTestingPage : IDisposable
     {
         private const int CommandButtonHeight = 68;

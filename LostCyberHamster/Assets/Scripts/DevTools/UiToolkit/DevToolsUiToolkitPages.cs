@@ -628,7 +628,7 @@ namespace Assets.Scripts.DevTools.UiToolkit
 
             VisualElement summaryCard = CreateSummaryCard(
                 "СВОДКА",
-                "Режим сети сохраняется между перезапусками и совпадает с Tools/Testing.");
+                "Режим сети сохраняется между перезапусками и совпадает с Tools/Testing Tool.");
             _modeLabel = AddInfoRow(summaryCard, "Режим");
             _statusLabel = AddInfoRow(summaryCard, "Статус");
             Root.Add(summaryCard);

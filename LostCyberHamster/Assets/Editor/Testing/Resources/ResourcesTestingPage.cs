@@ -7,7 +7,7 @@ using Vues.GameCore;
 
 namespace LostCyberHamster.Editor.Testing.Resources
 {
-    /// <summary>Рисует точное DEV-начисление Money внутри Tools/Testing.</summary>
+    /// <summary>Рисует точное DEV-начисление Money внутри Tools/Testing Tool.</summary>
     internal sealed class ResourcesTestingPage : IDisposable
     {
         private const int _defaultAmount = 100;

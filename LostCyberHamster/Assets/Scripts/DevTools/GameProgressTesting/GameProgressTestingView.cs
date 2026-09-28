@@ -34,7 +34,7 @@ namespace Assets.Scripts.DevTools.GameProgressTesting
             uiFactory.CreateBodyText(
                 "GameProgressTestingDescription",
                 content,
-                "Те же production-flow команды, что и в Tools/Testing, но сгруппированы по карточкам с крупными CTA.");
+                "Те же production-flow команды, что и в Tools/Testing Tool, но сгруппированы по карточкам с крупными CTA.");
 
             _prepareLevelUpButton = CreateCommandCard(
                 uiFactory,

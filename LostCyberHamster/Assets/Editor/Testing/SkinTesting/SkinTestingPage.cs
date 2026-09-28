@@ -7,7 +7,7 @@ using UnityEngine;
 namespace LostCyberHamster.Editor.Testing.SkinTesting
 {
     /// <summary>
-    /// Рисует покупку и применение следующего скина внутри Tools/Testing.
+    /// Рисует покупку и применение следующего скина внутри Tools/Testing Tool.
     /// </summary>
     internal sealed class SkinTestingPage : IDisposable
     {

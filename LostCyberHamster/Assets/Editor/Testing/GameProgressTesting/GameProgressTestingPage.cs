@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace LostCyberHamster.Editor.Testing.GameProgress
 {
-    /// <summary>Рисует Game Progress Testing внутри общего окна Tools/Testing.</summary>
+    /// <summary>Рисует Game Progress Testing внутри общего окна Tools/Testing Tool.</summary>
     internal sealed class GameProgressTestingPage : IDisposable
     {
         private const float CommandRowHeight = 68f;
