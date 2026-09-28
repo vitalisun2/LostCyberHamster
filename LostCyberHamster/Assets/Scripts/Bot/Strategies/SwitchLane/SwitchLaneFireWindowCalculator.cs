@@ -354,11 +354,10 @@ namespace Assets.Scripts.Bot.Strategies.SwitchLane
                 float unsafeStart = overlapStart
                     - SwitchLaneTiming.DecisionTravel
                     - SwitchLaneTiming.PostActionTargetLaneGuardTravel;
-                // Уходящее препятствие отпускает окно по тому же порогу, что и runtime.
-                float unsafeEnd = LaneSwitchCollisionRule.GetDepartureReleaseShift(
+                // Уходящее препятствие отпускает окно при том же X-пороге, что и runtime.
+                float unsafeEnd = CollisionUtils.GetLaneSwitchTrailingPenetration(
                     hamster.HamsterLeftX,
                     hamster.HamsterRightX,
-                    obstacle.LeftX,
                     obstacle.RightX);
 
                 if (unsafeEnd < 0f || unsafeStart > latestFireShift)

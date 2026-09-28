@@ -104,6 +104,10 @@ public class CollisionController : MonoBehaviour
         if (_hamster.IsDamaged.Value)
             return;
 
+        // Пропускаем допустимый контакт при смене линии.
+        if (ShouldIgnoreLaneSwitchContact(obstacle))
+            return;
+
         // Применяем урон, если текущее состояние допускает столкновение на входе в триггер.
         if (HasCollisionInRunState(obstacle))
         {
@@ -135,6 +139,10 @@ public class CollisionController : MonoBehaviour
             return;
 
         if (_hamster.IsDamaged.Value)
+            return;
+
+        // Пропускаем допустимый контакт при смене линии.
+        if (ShouldIgnoreLaneSwitchContact(obstacle))
             return;
 
         if (HasCollisionInRunState(obstacle))
@@ -391,21 +399,46 @@ public class CollisionController : MonoBehaviour
         return overlap > _hamster.ColliderWidth * BigAliveJumpDamageOverlapThreshold;
     }
 
-    /// <summary>Проверяет опасное X-перекрытие с учётом льготы смены линии.</summary>
+    /// <summary>
+    /// Пропускает контакт на целевой линии при смене линии, если X-пересечения нет
+    /// либо уходящее препятствие заходит на хомяка не более чем на 20% его ширины.
+    /// </summary>
+    private bool ShouldIgnoreLaneSwitchContact(Obstacle obstacle)
+    {
+        // Применяем правило только к препятствию целевой линии во время смены линии.
+        if (!_hamster.IsShifting.Value || obstacle == null
+            || !HelpMethods.IsOnSameLine(_hamster.IsOnBottomLine.Value, obstacle))
+        {
+            return false;
+        }
+
+        // Проверяем X-пересечение и глубину захода правого края препятствия.
+        CollisionUtils.GetObstacleXInterval(
+            obstacle, obstacle.ColliderWidth, 0f,
+            out float obstacleLeftX, out float obstacleRightX);
+        return !CollisionUtils.IsOverlap(
+                _hamster.LeftX, _hamster.RightX, obstacleLeftX, obstacleRightX)
+            || CollisionUtils.GetLaneSwitchTrailingPenetration(
+                _hamster.LeftX, _hamster.RightX, obstacleRightX) <= 0f;
+    }
+
+    /// <summary>Проверяет опасное X-перекрытие при текущем состоянии хомяка.</summary>
     private bool HasDamagingHorizontalOverlap(Obstacle obstacle)
     {
-        // Пропускаем контакт, разрешённый при старте смены линии.
-        if (_hamster.CanIgnoreLaneSwitchContact(obstacle))
-            return false;
+        HamsterStateEnum state = _hamster.HamsterState.Value;
+        bool isRunningShift = _hamster.IsShifting.Value
+            && (state == HamsterStateEnum.Run
+                || state == HamsterStateEnum.RoofRun
+                || state == HamsterStateEnum.RunFromRoof);
 
-        // Проверяем обычный текущий X-контакт.
+        // В перестроении точный порог уже проверен; в остальных состояниях сохраняем боковой допуск.
         return obstacle != null &&
             CollisionUtils.IsOverlapAtShift(
                 _hamster.transform,
                 _hamster.ColliderWidth,
                 0f,
                 obstacle,
-                HorizontalDamageForgivenessRatio);
+                isRunningShift ? 0f : HorizontalDamageForgivenessRatio);
     }
 
     private bool HasCollisionWithRoofHazardInJumpOnRoofState(Obstacle obstacle)

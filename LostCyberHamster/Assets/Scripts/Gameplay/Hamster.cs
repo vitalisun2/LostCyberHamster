@@ -114,7 +114,6 @@ namespace Assets.Scripts.Gameplay
         public AtomicVariable<int> UltaChargeAmount = new(0);
 
         private ShiftTransformAnimatorController _shiftTransformAnimatorController;
-        private LaneSwitchContactGrace _laneSwitchContactGrace;
         private TransformAnimatorController _transformAnimatorController;
         private SpriteAnimatorController _spriteAnimatorController;
         [SerializeField] private HamsterActorSwitcher _actorSwitcher;
@@ -196,7 +195,6 @@ namespace Assets.Scripts.Gameplay
             _actorSwitcher.Initialize();
 
             CacheHorizontalBounds();
-            _laneSwitchContactGrace = new LaneSwitchContactGrace();
 
             _shiftTransformAnimatorController = GetComponentInChildren<ShiftTransformAnimatorController>();
             _transformAnimatorController = GetComponentInChildren<TransformAnimatorController>();
@@ -208,10 +206,7 @@ namespace Assets.Scripts.Gameplay
                 IsOnBottomLine,
                 _shiftTransformAnimatorController,
                 HamsterState,
-                IsShifting,
-                _laneSwitchContactGrace,
-                LeftX,
-                RightX);
+                IsShifting);
 
             CollectCoinsOrBonusAction = new CollectCoinsOrBonusAction(this);
 
@@ -329,17 +324,6 @@ namespace Assets.Scripts.Gameplay
             _tapMechanics.OnUpdate();
             _takeDamageMechanics.OnUpdate(Time.deltaTime);
             _ultaMechanics?.OnUpdate();
-        }
-
-        /// <summary>
-        /// Проверяет льготу контакта с уходящим препятствием во время смены линии.
-        /// </summary>
-        internal bool CanIgnoreLaneSwitchContact(Obstacle obstacle)
-        {
-            return _laneSwitchContactGrace?.CanIgnore(
-                obstacle,
-                IsOnBottomLine.Value,
-                IsShifting.Value) ?? false;
         }
 
         private void OnEnable()
