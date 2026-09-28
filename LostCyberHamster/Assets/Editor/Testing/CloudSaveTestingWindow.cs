@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace LostCyberHamster.Editor.Testing
 {
-    /// <summary>Показывает общий Tools/Testing с доступными testing-страницами.</summary>
+    /// <summary>Показывает общий Tools/Testing Tool с доступными testing-страницами.</summary>
     public sealed class CloudSaveTestingWindow : EditorWindow
     {
         private CloudSaveTestingUiToolkitController _uiToolkitController;
@@ -97,10 +97,11 @@ namespace LostCyberHamster.Editor.Testing
         }
 
         /// <summary>Открывает общее окно тестирования.</summary>
-        [MenuItem("Tools/Testing", priority = 700)]
+        [MenuItem("Tools/Testing Tool", priority = 700)]
         public static void ShowWindow()
         {
-            var window = GetWindow<CloudSaveTestingWindow>("Testing");
+            var window = GetWindow<CloudSaveTestingWindow>("Testing Tool");
+            window.titleContent = new GUIContent("Testing Tool");
             window.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
             if (window.position.width < MinWindowWidth || window.position.height < MinWindowHeight)
             {
