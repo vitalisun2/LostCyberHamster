@@ -422,23 +422,16 @@ public class CollisionController : MonoBehaviour
                 _hamster.LeftX, _hamster.RightX, obstacleRightX) <= 0f;
     }
 
-    /// <summary>Проверяет опасное X-перекрытие при текущем состоянии хомяка.</summary>
+    /// <summary>Проверяет опасное X-перекрытие с обычным боковым допуском 2%.</summary>
     private bool HasDamagingHorizontalOverlap(Obstacle obstacle)
     {
-        HamsterStateEnum state = _hamster.HamsterState.Value;
-        bool isRunningShift = _hamster.IsShifting.Value
-            && (state == HamsterStateEnum.Run
-                || state == HamsterStateEnum.RoofRun
-                || state == HamsterStateEnum.RunFromRoof);
-
-        // В перестроении точный порог уже проверен; в остальных состояниях сохраняем боковой допуск.
         return obstacle != null &&
             CollisionUtils.IsOverlapAtShift(
                 _hamster.transform,
                 _hamster.ColliderWidth,
                 0f,
                 obstacle,
-                isRunningShift ? 0f : HorizontalDamageForgivenessRatio);
+                HorizontalDamageForgivenessRatio);
     }
 
     private bool HasCollisionWithRoofHazardInJumpOnRoofState(Obstacle obstacle)
