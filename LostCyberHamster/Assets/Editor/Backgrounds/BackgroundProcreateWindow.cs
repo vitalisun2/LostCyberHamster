@@ -347,12 +347,22 @@ namespace LostCyberHamster.Editor.Backgrounds
             }
         }
 
-        /// <summary>Показывает ассеты и пути сохранённого окружения без редактирования ссылок.</summary>
-        private static void DrawEnvironmentDetails(BackgroundEnvironmentCatalogEntry entry)
+        /// <summary>Показывает ассеты окружения и открывает готовую композицию для настройки.</summary>
+        private void DrawEnvironmentDetails(BackgroundEnvironmentCatalogEntry entry)
         {
             EditorGUI.indentLevel++;
             if (!string.IsNullOrEmpty(entry.Error))
                 EditorGUILayout.HelpBox(entry.Error, MessageType.Warning);
+
+            // Готовая композиция открывается в том же временном режиме редактирования.
+            using (new EditorGUI.DisabledScope(!entry.IsReady))
+                if (GUILayout.Button("Редактировать"))
+                    TryAction(() =>
+                    {
+                        _session = BackgroundAuthoringSession.OpenSaved(entry.LocationId, entry.Daypart);
+                        EditorApplication.ExecuteMenuItem("Window/General/Device Simulator");
+                        Repaint();
+                    });
 
             // Четыре роли берутся из готового префаба, а не из исходного Procreate.
             using (new EditorGUI.DisabledScope(true))

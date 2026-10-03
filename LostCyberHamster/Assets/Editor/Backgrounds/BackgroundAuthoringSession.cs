@@ -37,13 +37,14 @@ namespace LostCyberHamster.Editor.Backgrounds
         private bool _disposed;
         private float _previewAspect;
 
-        /// <summary>Создаёт камеру и четыре временных слоя в новой сцене.</summary>
+        /// <summary>Создаёт временную сцену из подготовленных рисунков либо готового префаба.</summary>
         private BackgroundAuthoringSession(Dictionary<EnvironmentLayerRole, BackgroundTextureData> textures,
-            string locationId, string daypart)
+            string locationId, string daypart, GameObject savedPrefab = null)
         {
             _textures = textures;
             LocationId = locationId;
             Daypart = daypart;
+            SavedPrefabPath = savedPrefab != null ? AssetDatabase.GetAssetPath(savedPrefab) : null;
             _scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             try
@@ -55,39 +56,18 @@ namespace LostCyberHamster.Editor.Backgrounds
                 Camera.clearFlags = CameraClearFlags.SolidColor;
                 Camera.backgroundColor = Color.black;
                 LocationEnvironment.ConfigureCamera(Camera);
-                var root = new GameObject($"environment_{LocationSlug}_{Daypart}", typeof(LocationEnvironment));
+                var root = savedPrefab != null ? Object.Instantiate(savedPrefab)
+                    : new GameObject($"environment_{LocationSlug}_{Daypart}", typeof(LocationEnvironment));
+                root.name = $"environment_{LocationSlug}_{Daypart}";
                 root.transform.position = new Vector3(0f, LocationEnvironment.RoadBottomWorldY, 0f);
                 Environment = root.GetComponent<LocationEnvironment>();
 
-                // Сохраняем положение обрезанных рисунков относительно исходной дороги.
-                var roadBounds = textures[EnvironmentLayerRole.Road].SourceBounds;
-                foreach (var role in Roles)
-                {
-                    var data = textures[role];
-                    var texture = data.CreateTexture();
-                    _temporaryResources.Add(texture);
-                    var sprite = Sprite.Create(texture, data.SpriteRect, new Vector2(.5f, .5f),
-                        BackgroundTexturePreparation.PixelsPerUnit, 0, SpriteMeshType.FullRect);
-                    sprite.name = BackgroundAssetExporter.GetSpriteName(role, LocationSlug, Daypart);
-                    sprite.hideFlags = HideFlags.DontSave;
-                    _temporaryResources.Add(sprite);
-                    var layerObject = new GameObject(role.ToString(), typeof(SpriteRenderer));
-                    layerObject.transform.SetParent(root.transform, false);
-                    var bounds = data.SourceBounds;
-                    var position = new Vector3((bounds.center.x - roadBounds.center.x) /
-                        BackgroundTexturePreparation.PixelsPerUnit,
-                        (bounds.y - roadBounds.y + bounds.height * .5f) /
-                        BackgroundTexturePreparation.PixelsPerUnit, 0f);
-                    layerObject.transform.localPosition = position;
-                    _initialPositions.Add(role, position);
-                    _previewPositions.Add(role, position);
-                    var renderer = layerObject.GetComponent<SpriteRenderer>();
-                    renderer.sprite = sprite;
-                    renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
-                    renderer.sortingLayerName = LocationEnvironment.GetSortingLayer(role);
-                    _authoredLayers.Add(role, renderer);
-                    _authoredSprites.Add(role, sprite);
-                }
+                // Готовая композиция сохраняет ссылки и позиции четырёх авторских слоёв.
+                if (savedPrefab != null)
+                    foreach (var role in Roles)
+                        RememberLayer(role, Environment.GetLayer(role));
+                else
+                    CreateSourceLayers();
                 Environment.Configure(_authoredLayers[EnvironmentLayerRole.Road], _authoredLayers[EnvironmentLayerRole.Background],
                     _authoredLayers[EnvironmentLayerRole.Background2], _authoredLayers[EnvironmentLayerRole.Sky]);
                 RefreshPreview();
@@ -105,6 +85,8 @@ namespace LostCyberHamster.Editor.Backgrounds
         public string LocationSlug => GetLocationSlug(LocationId);
         public LocationEnvironment Environment { get; }
         public Camera Camera { get; }
+        /// <summary>Путь префаба, открытого для повторного редактирования.</summary>
+        public string SavedPrefabPath { get; }
         /// <summary>Горизонтальный сдвиг камеры только для текущего просмотра.</summary>
         public float PreviewOffsetX { get; private set; }
         /// <summary>Диапазон просмотра одного полного повторения самого широкого слоя.</summary>
@@ -144,6 +126,62 @@ namespace LostCyberHamster.Editor.Backgrounds
             {
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        /// <summary>Открывает сохранённую композицию с её спрайтами и относительными позициями.</summary>
+        public static BackgroundAuthoringSession OpenSaved(string locationId, string daypart)
+        {
+            // Проверяем актуальный префаб и его адрес до замены текущей сцены.
+            if (!Enum.TryParse<PartOfDayEnum>(daypart, true, out var part) || !Enum.IsDefined(typeof(PartOfDayEnum), part))
+                throw new ArgumentException("Выберите время суток.");
+            var entry = BackgroundEnvironmentCatalog.Read(new[] { locationId }, new[] { part.ToString() }).Single();
+            if (!entry.IsReady)
+                throw new InvalidOperationException(entry.Error ?? $"Готовое окружение не найдено: {entry.PrefabPath}");
+
+            // Импортированные спрайты принадлежат ассетам, а временной сессии принадлежит их копия в сцене.
+            return new BackgroundAuthoringSession(new Dictionary<EnvironmentLayerRole, BackgroundTextureData>(),
+                locationId, part.ToString().ToLowerInvariant(), entry.Prefab);
+        }
+
+        /// <summary>Создаёт четыре временных спрайта относительно исходного нижнего края дороги.</summary>
+        private void CreateSourceLayers()
+        {
+            var roadBounds = _textures[EnvironmentLayerRole.Road].SourceBounds;
+            foreach (var role in Roles)
+            {
+                // Временные пиксели и спрайты принадлежат текущей сессии.
+                var data = _textures[role];
+                var texture = data.CreateTexture();
+                _temporaryResources.Add(texture);
+                var sprite = Sprite.Create(texture, data.SpriteRect, new Vector2(.5f, .5f),
+                    BackgroundTexturePreparation.PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                sprite.name = BackgroundAssetExporter.GetSpriteName(role, LocationSlug, Daypart);
+                sprite.hideFlags = HideFlags.DontSave;
+                _temporaryResources.Add(sprite);
+
+                // Обрезка рисунка сохраняет положение относительно исходной дороги.
+                var layerObject = new GameObject(role.ToString(), typeof(SpriteRenderer));
+                layerObject.transform.SetParent(Environment.transform, false);
+                var bounds = data.SourceBounds;
+                layerObject.transform.localPosition = new Vector3((bounds.center.x - roadBounds.center.x) /
+                    BackgroundTexturePreparation.PixelsPerUnit,
+                    (bounds.y - roadBounds.y + bounds.height * .5f) /
+                    BackgroundTexturePreparation.PixelsPerUnit, 0f);
+                var renderer = layerObject.GetComponent<SpriteRenderer>();
+                renderer.sprite = sprite;
+                renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
+                renderer.sortingLayerName = LocationEnvironment.GetSortingLayer(role);
+                RememberLayer(role, renderer);
+            }
+        }
+
+        /// <summary>Фиксирует авторский слой, его спрайт и исходную позицию для предпросмотра.</summary>
+        private void RememberLayer(EnvironmentLayerRole role, SpriteRenderer renderer)
+        {
+            _authoredLayers.Add(role, renderer);
+            _authoredSprites.Add(role, renderer.sprite);
+            _initialPositions.Add(role, renderer.transform.localPosition);
+            _previewPositions.Add(role, renderer.transform.localPosition);
         }
 
         /// <summary>Возвращает подготовленные данные выбранной роли.</summary>

@@ -13,10 +13,10 @@ using Object = UnityEngine.Object;
 
 namespace LostCyberHamster.Editor.Backgrounds
 {
-    /// <summary>Сохраняет четыре PNG, их точные SpriteRect и готовый Addressable-префаб.</summary>
+    /// <summary>Экспортирует рисунки и сохраняет новый либо повторно открытый Addressable-префаб.</summary>
     public static class BackgroundAssetExporter
     {
-        /// <summary>Импортирует рисунки и сохраняет композицию без временных повторных копий.</summary>
+        /// <summary>Сохраняет композицию; при первичном экспорте также импортирует четыре рисунка.</summary>
         public static string Save(BackgroundAuthoringSession session)
         {
             // Проверяем черновик до изменения пользовательского контента.
@@ -35,25 +35,28 @@ namespace LostCyberHamster.Editor.Backgrounds
             var group = settings.FindGroup(groupName);
             if (group == null)
                 throw new InvalidOperationException($"Группа Addressables '{groupName}' не найдена.");
+            var updatingPrefab = !string.IsNullOrEmpty(session.SavedPrefabPath);
+            var environment = session.Environment;
+            var originalSprites = BackgroundAuthoringSession.Roles.ToDictionary(role => role, role => environment.GetLayer(role).sprite);
+            var imported = new Dictionary<EnvironmentLayerRole, Sprite>(originalSprites);
             var spriteDirectory = GetSpriteDirectory(session.LocationId);
-            var prefabDirectory = GetPrefabDirectory(session.LocationId);
-            EnsureDirectory(spriteDirectory);
-            EnsureDirectory(prefabDirectory);
 
-            // Импортируем четыре слоя, сохраняя идентификаторы существующих ассетов.
-            var imported = new Dictionary<EnvironmentLayerRole, Sprite>();
-            foreach (var role in BackgroundAuthoringSession.Roles)
+            // Первичная подготовка создаёт PNG; повторная настройка использует импортированные спрайты.
+            if (!updatingPrefab)
             {
-                var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
-                var path = $"{spriteDirectory}/{name}.png";
-                imported.Add(role, SaveSprite(path, name, session.GetTextureData(role)));
+                EnsureDirectory(spriteDirectory);
+                EnsureDirectory(GetPrefabDirectory(session.LocationId));
+                foreach (var role in BackgroundAuthoringSession.Roles)
+                {
+                    var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
+                    var path = $"{spriteDirectory}/{name}.png";
+                    imported[role] = SaveSprite(path, name, session.GetTextureData(role));
+                }
             }
 
             // Сохраняем только четыре авторских слоя, затем возвращаем черновые ссылки.
-            var environment = session.Environment;
-            var originalSprites = BackgroundAuthoringSession.Roles.ToDictionary(role => role, role => environment.GetLayer(role).sprite);
             var prefabName = EnvironmentKeyResolver.BuildEnvironmentKey(session.LocationId, session.Daypart);
-            var prefabPath = GetPrefabPath(session.LocationId, session.Daypart);
+            var prefabPath = updatingPrefab ? session.SavedPrefabPath : GetPrefabPath(session.LocationId, session.Daypart);
             environment.ClearCopies();
             try
             {
@@ -64,11 +67,12 @@ namespace LostCyberHamster.Editor.Backgrounds
                     throw new InvalidOperationException($"Не удалось сохранить префаб: {prefabPath}");
 
                 // Адреса соответствуют существующему каталогу окружений.
-                foreach (var role in BackgroundAuthoringSession.Roles)
-                {
-                    var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
-                    Register(settings, group, $"{spriteDirectory}/{name}.png", name);
-                }
+                if (!updatingPrefab)
+                    foreach (var role in BackgroundAuthoringSession.Roles)
+                    {
+                        var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
+                        Register(settings, group, $"{spriteDirectory}/{name}.png", name);
+                    }
                 Register(settings, group, prefabPath, prefabName);
                 settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, group, true, true);
                 EditorUtility.SetDirty(group);
