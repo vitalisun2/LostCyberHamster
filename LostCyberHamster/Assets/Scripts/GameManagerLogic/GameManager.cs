@@ -147,7 +147,7 @@ namespace Assets.Scripts.GameManagerLogic
             if (listener is Hamster)
                 return RuntimePerformanceScope.GameManagerUpdateHamsterListener;
 
-            if (listener is ScrollingEnvironment)
+            if (listener is ScrollingEnvironment or LocationEnvironment)
                 return RuntimePerformanceScope.GameManagerUpdateScrollingEnvironmentListener;
 
             if (listener is GameUi)

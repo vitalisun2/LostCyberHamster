@@ -208,11 +208,24 @@ namespace Assets.Scripts.System
             LevelData.GameManager.Finish();
         }
 
+        /// <summary>Загружает ресурсы уровня и отмечает успех только после полной загрузки.</summary>
         public async Task LoadLevelData()
         {
+            // Сбрасываем успешность предыдущего уровня перед новой загрузкой.
+            IsLevelLoaded = false;
             await LevelManager.LoadLevelData();
 
+            // Ошибка обязательного окружения не позволяет отметить уровень загруженным.
             IsLevelLoaded = true;
+        }
+
+        /// <summary>Освобождает префаб окружения, оставшийся у загрузчика при завершении приложения.</summary>
+        private void OnDestroy()
+        {
+            if (Instance != this)
+                return;
+            LevelData.ReleaseEnvironmentLease();
+            Instance = null;
         }
 
         public async Task<bool> LoadIntroData()

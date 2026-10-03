@@ -1,6 +1,8 @@
-﻿using Assets.Scripts;
+using Assets.Scripts;
 using Assets.Scripts.Common;
 using Assets.Scripts.Common.Models;
+using Assets.Scripts.Gameplay;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -82,44 +84,12 @@ public static class LevelDataValidator
         }
     }
 
-    public static void ValidateBackgroundTexture(Sprite backgroundSprite)
+    /// <summary>Проверяет готовое окружение до запуска интро и игры.</summary>
+    public static void ValidateEnvironmentPrefab(LocationEnvironment environment, string address)
     {
-        if (backgroundSprite == null)
-        {
-            HelpMethods.LogAndStopGame("[LevelDataValidator.ValidateBackgroundTexture] Background sprite is null.");
-            return;
-        }
-
-        var texture = backgroundSprite.texture;
-
-        if (texture.width != Consts.BACKGROUND_WIDTH)
-        {
-            HelpMethods.LogAndStopGame(
-                $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{backgroundSprite.name}' has width {texture.width}, expected {Consts.BACKGROUND_WIDTH}. Height is art-driven and is not fixed."
-            );
-        }
-
-        ValidateBackgroundTextureDivisibleBy4(texture, backgroundSprite.name);
-    }
-
-    private static void ValidateBackgroundTextureDivisibleBy4(Texture2D texture, string spriteName)
-    {
-        if (texture == null)
-        {
-            HelpMethods.LogAndStopGame("[LevelDataValidator.ValidateBackgroundTexture] Texture is null: " + spriteName);
-            return;
-        }
-
-        if ((texture.width % 4) == 0 && (texture.height % 4) == 0)
-        {
-            return;
-        }
-
-        HelpMethods.LogAndStopGame(
-            $"[LevelDataValidator.ValidateBackgroundTexture] Background sprite '{spriteName}' has size {texture.width}x{texture.height}. " +
-            "For ETC2 compression both width and height must be divisible by 4. " +
-            "If this asset was just added or changed, right-click the PNG in Unity and run Reimport so EnvironmentTexturePostprocessor can pad its height."
-        );
+        if (environment == null)
+            throw new InvalidOperationException($"У окружения '{address}' отсутствует LocationEnvironment.");
+        environment.ValidateConfiguration();
     }
 
     public static void ValidateObstacleSprite(ObstacleTypeEnum obstacleType, string spriteName, Sprite sprite)

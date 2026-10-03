@@ -3,6 +3,7 @@ using System.Linq;
 using Assets.Scripts.System;
 using GameManagement.Progress;
 using LostCyberHamster.UI;
+using UnityEngine;
 
 namespace Assets.Scripts.DevTools.Gameplay
 {
@@ -12,6 +13,7 @@ namespace Assets.Scripts.DevTools.Gameplay
     public static class DevToolsRuntimeState
     {
         private static HierarchicalLevelCatalog _cachedCatalog;
+        private static LevelProgressSnapshot _cachedRealProgress;
         private static LevelProgressSnapshot _cachedAllLevelsUnlockedProgress = LevelProgressSnapshot.Empty;
         private static bool _unlockAllLevels;
 
@@ -20,6 +22,16 @@ namespace Assets.Scripts.DevTools.Gameplay
             LevelManager.SetDevelopmentProgressOverride(
                 GetEffectiveProgress,
                 () => UnlockAllLevels);
+        }
+
+        /// <summary>Начинает каждый запуск игры с реального доступа и звёзд игрока.</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSession()
+        {
+            _unlockAllLevels = false;
+            _cachedCatalog = null;
+            _cachedRealProgress = null;
+            _cachedAllLevelsUnlockedProgress = LevelProgressSnapshot.Empty;
         }
 
         public static bool UnlockAllLevels
@@ -36,7 +48,7 @@ namespace Assets.Scripts.DevTools.Gameplay
         }
 
         /// <summary>
-        /// Возвращает реальный progress или временный dev snapshot со всеми уровнями из catalog.
+        /// Временно открывает уровни каталога, сохраняя реальные звёзды игрока.
         /// </summary>
         public static LevelProgressSnapshot GetEffectiveProgress(
             LevelProgressSnapshot realProgress,
@@ -45,24 +57,30 @@ namespace Assets.Scripts.DevTools.Gameplay
             if (!UnlockAllLevels || catalog == null || catalog.IsEmpty)
                 return realProgress ?? LevelProgressSnapshot.Empty;
 
-            EnsureAllLevelsUnlockedProgress(catalog);
+            EnsureAllLevelsUnlockedProgress(catalog, realProgress ?? LevelProgressSnapshot.Empty);
             return _cachedAllLevelsUnlockedProgress;
         }
 
-        private static void EnsureAllLevelsUnlockedProgress(HierarchicalLevelCatalog catalog)
+        /// <summary>Обновляет доступ уровней при изменении каталога или сохранённого прогресса.</summary>
+        private static void EnsureAllLevelsUnlockedProgress(
+            HierarchicalLevelCatalog catalog,
+            LevelProgressSnapshot realProgress)
         {
-            if (ReferenceEquals(_cachedCatalog, catalog))
+            if (ReferenceEquals(_cachedCatalog, catalog) && ReferenceEquals(_cachedRealProgress, realProgress))
                 return;
 
-            // Snapshot строится только по уровням, которые реально присутствуют в текущем catalog.
+            // Открытие меняет доступ, а звёзды и адрес принадлежат реальному уровню.
             var entries = catalog.EnumerateLevels()
-                .Select(level => new LevelProgressEntry(
-                    new LevelProgressKey(level.LocationId, level.PartId, level.LevelIndex),
-                    true,
-                    LevelProgressEntry.MaxStars))
+                .Select(level =>
+                {
+                    var key = new LevelProgressKey(level.LocationId, level.PartId, level.LevelIndex);
+                    return new LevelProgressEntry(key, true, realProgress.GetStars(key), level.Address);
+                })
                 .ToList();
 
+            // Кеш относится к конкретным неизменяемым входным снимкам.
             _cachedCatalog = catalog;
+            _cachedRealProgress = realProgress;
             _cachedAllLevelsUnlockedProgress = entries.Count == 0
                 ? LevelProgressSnapshot.Empty
                 : new LevelProgressSnapshot(entries);

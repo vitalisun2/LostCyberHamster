@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Assets.Scripts.Gameplay;
 using LoadingTasks;
 using UnityEngine;
 
@@ -16,11 +17,11 @@ namespace Assets.Scripts.Entry_Points.GameLoadingTasks
         private List<ILoadingTask> _children = new();
         public List<ILoadingTask> Children => _children;
 
+        /// <summary>Применяет общие настройки игровой камеры и редактора фонов.</summary>
         public Task LoadAsync(Dictionary<string, object> bundle)
         {
             var gameCamera = (Camera)bundle["gameCamera"];
-            gameCamera.orthographicSize = Consts.CameraSize;
-            gameCamera.transform.position = Consts.CameraPosition;
+            LocationEnvironment.ConfigureCamera(gameCamera);
             return Task.CompletedTask;
         }
     }

@@ -1,27 +1,26 @@
-using Assets.Scripts;
-using Assets.Scripts.System;
-using Assets.Scripts.System.Rendering;
-using UnityEditor.SceneManagement;
-using UnityEngine.Tilemaps;
-using UnityEngine;
 using System;
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.System.LevelManagement;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 
 public static class SceneCreator
 {
-    private const float BackgroundZPosition = 1.0f;
-    private const float RoadZPosition = 0.5f;
-    private const string BackgroundSortingLayer = "Background";
-    private const string RoadSortingLayer = "Road";
-
+    /// <summary>
+    /// Создаёт tilemap и четыре фона из готового префаба выбранной локации и времени суток.
+    /// </summary>
     public static GameObject CreateSceneWithTilemap(int targetWidth, string locationName, string daypartSlug)
     {
-        // Work in the currently active scene
+        // Проверяем окружение до замены текущего редактируемого уровня.
+        var environmentPrefab = LoadEnvironmentPrefab(locationName, daypartSlug);
+        environmentPrefab.GetComponent<LocationEnvironment>().ValidateConfiguration();
         var scene = SceneManager.GetActiveScene();
-
-        // Очистка старых объектов Grid и фона при смене локации/файла
         CleanupOldSceneObjects(scene);
 
+        // Подготавливаем сетку размещения объектов уровня.
         var gridGameObject = new GameObject("Grid");
         SceneManager.MoveGameObjectToScene(gridGameObject, scene);
         var grid = gridGameObject.AddComponent<Grid>();
@@ -38,131 +37,62 @@ public static class SceneCreator
         tilemapRenderer.sortingLayerName = "SpecialEffects";
         tilemap.tileAnchor = Vector3.zero;
 
-        var bgKey = LocationAssetFallback.BuildBackgroundKey(locationName, daypartSlug);
-        var rdKey = LocationAssetFallback.BuildRoadKey(
-            LocationAssetFallback.ToLocationSlug(locationName), daypartSlug);
-
-        CreateBackground(targetWidth, bgKey, scene);
-        CreateRoad(targetWidth, rdKey, scene);
+        // Сохраняем авторскую композицию и повторяем каждый слой на ширину уровня.
+        var environmentObject = (GameObject)PrefabUtility.InstantiatePrefab(environmentPrefab, scene);
+        environmentObject.name = "LevelEnvironment";
+        environmentObject.transform.position = new Vector3(0f, LocationEnvironment.RoadBottomWorldY, 0f);
+        environmentObject.GetComponent<LocationEnvironment>().PopulateStatic(0f, Mathf.Max(1, targetWidth));
         return tilemapGameObject;
     }
 
     /// <summary>
-    /// Удаляет все старые объекты Grid, Tilemap, BackgroundSegment и RoadSegment из сцены.
+    /// Удаляет сетку уровня и ранее созданные фоны из текущей сцены редактора.
     /// </summary>
     public static void CleanupOldSceneObjects(Scene scene)
     {
         var rootObjects = scene.GetRootGameObjects();
-        int removedCount = 0;
-        
         foreach (var obj in rootObjects)
         {
-            // Удаляем старые Grid (содержат Tilemap как дочерний)
-            if (obj.name == "Grid")
+            if (obj.name == "Grid" || obj.GetComponent<LocationEnvironment>() != null ||
+                obj.name.StartsWith("BackgroundSegment_", StringComparison.Ordinal) ||
+                obj.name.StartsWith("RoadSegment_", StringComparison.Ordinal))
             {
                 UnityEngine.Object.DestroyImmediate(obj);
-                removedCount++;
             }
-            // Удаляем старые сегменты фона
-            else if (obj.name.StartsWith("BackgroundSegment_"))
+        }
+    }
+
+    /// <summary>
+    /// Находит подготовленный префаб по его точному адресу в настройках Addressables.
+    /// </summary>
+    private static GameObject LoadEnvironmentPrefab(string locationName, string daypartSlug)
+    {
+        // В редакторе используем сами assets, чтобы видеть изменения до сборки каталога.
+        var address = EnvironmentKeyResolver.BuildEnvironmentKey(locationName, daypartSlug);
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        GameObject prefab = null;
+        if (settings != null)
+        {
+            foreach (var group in settings.groups)
             {
-                UnityEngine.Object.DestroyImmediate(obj);
-                removedCount++;
+                if (group == null)
+                    continue;
+                foreach (var entry in group.entries)
+                {
+                    if (!string.Equals(entry.address, address, StringComparison.Ordinal))
+                        continue;
+                    if (prefab != null)
+                        throw new InvalidOperationException($"Адрес окружения зарегистрирован несколько раз: {address}");
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(entry.AssetPath);
+                }
             }
-            // Удаляем старые сегменты дороги
-            else if (obj.name.StartsWith("RoadSegment_"))
-            {
-                UnityEngine.Object.DestroyImmediate(obj);
-                removedCount++;
-            }
-        }
-        
-        if (removedCount > 0)
-        {
-        }
-    }
-
-    private static void CreateBackground(int targetWidth, string backgroundKey, Scene scene)
-    {
-        if (string.IsNullOrEmpty(backgroundKey))
-        {
-            Debug.LogWarning("[SceneCreator] Background key is empty.");
-            return;
         }
 
-        // СИНХРОННАЯ загрузка
-        var sprite = SpriteLoader.LoadSpriteSync(backgroundKey);
-        if (sprite == null)
-        {
-            Debug.LogWarning($"[SceneCreator] Failed to load background sprite: {backgroundKey}");
-            return;
-        }
-
-        float textureWidthInUnits = sprite.bounds.size.x;
-        if (textureWidthInUnits <= 0f)
-        {
-            Debug.LogWarning($"[SceneCreator] Background sprite has invalid width: {backgroundKey}");
-            return;
-        }
-
-        int numberOfCopies = Mathf.CeilToInt(targetWidth / textureWidthInUnits);
-
-        for (int i = 0; i < numberOfCopies; i++)
-        {
-            CreateBackgroundSegment(sprite, i * textureWidthInUnits, scene);
-        }
-    }
-
-
-    private static void CreateBackgroundSegment(Sprite sprite, float xPosition, Scene scene)
-    {
-        var segment = new GameObject($"BackgroundSegment_{xPosition}");
-        SceneManager.MoveGameObjectToScene(segment, scene);
-        var renderer = segment.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(sprite, Consts.BackgroundBottomYPos);
-        segment.transform.position = new Vector3(xPosition, pivotY, BackgroundZPosition);
-        renderer.sortingLayerName = BackgroundSortingLayer;
-    }
-
-    private static void CreateRoad(int targetWidth, string roadKey, Scene scene)
-    {
-        if (string.IsNullOrEmpty(roadKey))
-        {
-            Debug.LogWarning("[SceneCreator] Road key is empty.");
-            return;
-        }
-
-        var sprite = SpriteLoader.LoadSpriteSync(roadKey);
-        if (sprite == null)
-        {
-            Debug.LogWarning($"[SceneCreator] Failed to load road sprite: {roadKey}");
-            return;
-        }
-
-        float textureWidthInUnits = sprite.bounds.size.x;
-        if (textureWidthInUnits <= 0f)
-        {
-            Debug.LogWarning($"[SceneCreator] Road sprite has invalid width: {roadKey}");
-            return;
-        }
-
-        int numberOfCopies = Mathf.CeilToInt(targetWidth / textureWidthInUnits);
-
-        for (int i = 0; i < numberOfCopies; i++)
-        {
-            CreateRoadSegment(sprite, i * textureWidthInUnits, scene);
-        }
-    }
-
-    private static void CreateRoadSegment(Sprite sprite, float xPosition, Scene scene)
-    {
-        var segment = new GameObject($"RoadSegment_{xPosition}");
-        SceneManager.MoveGameObjectToScene(segment, scene);
-        var renderer = segment.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        var pivotY = EnvironmentLayerPlacement.GetPivotYForBottom(sprite, Consts.RoadBottomYPos);
-        segment.transform.position = new Vector3(xPosition, pivotY, RoadZPosition);
-        renderer.sortingLayerName = RoadSortingLayer;
+        // Отсутствующий набор требует подготовки через инструмент фонов.
+        if (prefab == null || prefab.GetComponent<LocationEnvironment>() == null)
+            throw new InvalidOperationException(
+                $"Окружение не подготовлено: локация '{locationName}', время '{daypartSlug}', адрес '{address}'. " +
+                "Сохраните четыре фона через Tools/Backgrounds/Procreate.");
+        return prefab;
     }
 }
