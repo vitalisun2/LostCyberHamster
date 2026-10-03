@@ -56,13 +56,22 @@ namespace Assets.Scripts.GameEngine.Skins
             if (!_isPlaybackEnabled || !_isRunAlternationActive || _animator == null)
                 return;
 
-            // Переключаем gait по завершении случайного числа циклов.
+            // Выбираем gait с соотношением 2:1 после случайного числа циклов.
             AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
             int currentStateHash = _isAlternateRunState ? _runAlternateStateHash : _runBaseStateHash;
             if (stateInfo.fullPathHash != currentStateHash || stateInfo.normalizedTime < _nextRunSwitchTime)
                 return;
 
-            _isAlternateRunState = !_isAlternateRunState;
+            bool chooseAlternateRun = _runRandom.Next(0, 3) == 0;
+            if (chooseAlternateRun == _isAlternateRunState)
+            {
+                // При повторном выборе оставляем gait и фазу клипа, назначая следующий рубеж.
+                _nextRunSwitchTime = Mathf.Floor(stateInfo.normalizedTime) + RandomRunCyclesBeforeAlternate();
+                return;
+            }
+
+            // При смене gait начинаем новый клип с начала и отсчитываем его циклы заново.
+            _isAlternateRunState = chooseAlternateRun;
             int nextStateHash = _isAlternateRunState ? _runAlternateStateHash : _runBaseStateHash;
             _animator.Play(nextStateHash, 0, 0f);
             _activeStateHash = nextStateHash;
