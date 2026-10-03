@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Assets.Scripts.GameEngine.Skins
 {
     /// <summary>
-    /// Правило выбора Animator state для одного семантического действия с wildcard-вариантами.
+    /// Правило выбора Animator state для одного семантического действия, включая необязательный вариант.
     /// </summary>
     [Serializable]
     public sealed class SkinVisualActionMapping
@@ -16,6 +16,8 @@ namespace Assets.Scripts.GameEngine.Skins
         public SkinVisualOutcome Outcome;
         public string StateName;
         public AnimationClip Clip;
+        public string AlternateStateName;
+        public AnimationClip AlternateClip;
         public bool Loop;
 
         /// <summary>

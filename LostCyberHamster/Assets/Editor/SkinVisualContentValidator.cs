@@ -285,6 +285,26 @@ namespace LostCyberHamster.Editor
                 return;
             }
 
+            ValidateMappingCoverage(errors, visual, template, controller, slug);
+
+            if (isSkateboard)
+                ValidatePhysicsShapeSprites(
+                    errors,
+                    visual,
+                    template,
+                    slug);
+        }
+
+        /// <summary>Проверяет покрытие ожидаемых действий с учетом приоритета конкретных правил.</summary>
+        private static void ValidateMappingCoverage(
+            ICollection<string> errors,
+            SkinVisual visual,
+            SkinVisual template,
+            AnimatorController controller,
+            string slug)
+        {
+            // Для каждого ожидаемого контекста находим единственное наиболее конкретное правило.
+            var matchedMappings = new HashSet<SkinVisualActionMapping>();
             foreach (SkinVisualActionMapping expected in template.Mappings)
             {
                 if (expected == null)
@@ -293,38 +313,107 @@ namespace LostCyberHamster.Editor
                     continue;
                 }
 
-                List<SkinVisualActionMapping> matches = visual.Mappings
-                    .Where(mapping =>
-                        HasSameSemanticContract(mapping, expected))
-                    .ToList();
-                if (matches.Count != 1)
+                foreach (SkinVisualVariant variant in Enum.GetValues(typeof(SkinVisualVariant)))
                 {
-                    errors.Add(
-                        $"{slug}: mapping for {Describe(expected)} is " +
-                        "missing or duplicated.");
-                    continue;
+                    if (!expected.MatchAnyVariant && expected.Variant != variant)
+                        continue;
+
+                    foreach (SkinVisualOutcome outcome in Enum.GetValues(typeof(SkinVisualOutcome)))
+                    {
+                        if (!expected.MatchAnyOutcome && expected.Outcome != outcome)
+                            continue;
+
+                        var context = new SkinActionContext(
+                            expected.Action,
+                            variant,
+                            outcome,
+                            duration: 1f,
+                            actionId: 0);
+                        List<SkinVisualActionMapping> matches = visual.Mappings
+                            .Where(mapping => mapping != null && mapping.Matches(context))
+                            .ToList();
+                        if (matches.Count == 0)
+                        {
+                            errors.Add(
+                                $"{slug}: no mapping resolves {expected.Action}/" +
+                                $"{variant}/{outcome} required by {Describe(expected)}.");
+                            continue;
+                        }
+
+                        int bestSpecificity = matches.Max(mapping => mapping.Specificity);
+                        List<SkinVisualActionMapping> bestMatches = matches
+                            .Where(mapping => mapping.Specificity == bestSpecificity)
+                            .ToList();
+                        if (bestMatches.Count != 1)
+                        {
+                            errors.Add(
+                                $"{slug}: {expected.Action}/{variant}/{outcome} " +
+                                "has tied mappings at the highest specificity.");
+                            foreach (SkinVisualActionMapping tiedMapping in bestMatches)
+                            {
+                                matchedMappings.Add(tiedMapping);
+                                ValidateMapping(errors, tiedMapping, expected, controller, slug);
+                                ValidateAlternateMapping(errors, tiedMapping, controller, slug);
+                            }
+
+                            continue;
+                        }
+
+                        SkinVisualActionMapping resolved = bestMatches[0];
+                        matchedMappings.Add(resolved);
+                        ValidateMapping(errors, resolved, expected, controller, slug);
+                        ValidateAlternateMapping(errors, resolved, controller, slug);
+                    }
                 }
-
-                ValidateMapping(
-                    errors,
-                    matches[0],
-                    expected,
-                    controller,
-                    slug);
             }
 
-            if (visual.Mappings.Count != template.Mappings.Count)
+            // Не допускаем null и mappings, которые ни разу не выбираются.
+            foreach (SkinVisualActionMapping mapping in visual.Mappings)
             {
-                errors.Add(
-                    $"{slug}: mapping count differs from default template.");
+                if (mapping == null)
+                {
+                    errors.Add($"{slug}: SkinVisual contains a null mapping.");
+                }
+                else if (!matchedMappings.Contains(mapping))
+                {
+                    errors.Add($"{slug}: mapping for {Describe(mapping)} is never selected.");
+                }
+            }
+        }
+
+        /// <summary>Проверяет согласованность необязательной пары дополнительного state и clip.</summary>
+        private static void ValidateAlternateMapping(
+            ICollection<string> errors,
+            SkinVisualActionMapping mapping,
+            AnimatorController controller,
+            string slug)
+        {
+            // Alternate state и clip образуют одну необязательную настройку.
+            bool hasAlternateState = !string.IsNullOrWhiteSpace(mapping.AlternateStateName);
+            bool hasAlternateClip = mapping.AlternateClip != null;
+            if (hasAlternateState != hasAlternateClip)
+            {
+                errors.Add($"{slug}: alternate state and clip must both be configured or empty.");
+                return;
             }
 
-            if (isSkateboard)
-                ValidatePhysicsShapeSprites(
-                    errors,
-                    visual,
-                    template,
-                    slug);
+            if (!hasAlternateState)
+                return;
+
+            // Проверяем controller-ссылку и совместимую частоту кадра дополнительного клипа.
+            AnimatorState alternateState = controller == null
+                ? null
+                : controller.layers
+                    .SelectMany(layer => layer.stateMachine.states)
+                    .Select(child => child.state)
+                    .FirstOrDefault(candidate => candidate.name == mapping.AlternateStateName);
+            if (alternateState == null || alternateState.motion != mapping.AlternateClip)
+                errors.Add($"{slug}: alternate state '{mapping.AlternateStateName}' does not use mapped clip.");
+            if (mapping.Clip != null &&
+                !Mathf.Approximately(mapping.AlternateClip.frameRate, mapping.Clip.frameRate))
+            {
+                errors.Add($"{slug}: alternate clip '{mapping.AlternateClip.name}' frame rate differs from mapped clip.");
+            }
         }
 
         private static void ValidatePhysicsShapeSprites(
@@ -431,22 +520,6 @@ namespace LostCyberHamster.Editor
             if (visual == null)
                 errors.Add($"Missing {label} SkinVisual prefab: {path}.");
             return visual;
-        }
-
-        private static bool HasSameSemanticContract(
-            SkinVisualActionMapping candidate,
-            SkinVisualActionMapping expected)
-        {
-            return candidate != null &&
-                   candidate.Action == expected.Action &&
-                   candidate.MatchAnyVariant == expected.MatchAnyVariant &&
-                   candidate.Variant == expected.Variant &&
-                   candidate.MatchAnyOutcome == expected.MatchAnyOutcome &&
-                   candidate.Outcome == expected.Outcome &&
-                   string.Equals(
-                       candidate.StateName,
-                       expected.StateName,
-                       StringComparison.Ordinal);
         }
 
         private static string Describe(SkinVisualActionMapping mapping)

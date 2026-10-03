@@ -136,6 +136,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: run
     Clip: {fileID: 7400000, guid: 5de1684e2983d1a4ea2ab155c83f25ba, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 1
   - Action: 1
     MatchAnyVariant: 1
@@ -144,6 +146,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: run
     Clip: {fileID: 7400000, guid: 5de1684e2983d1a4ea2ab155c83f25ba, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 1
   - Action: 2
     MatchAnyVariant: 1
@@ -152,6 +156,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 0
   - Action: 3
     MatchAnyVariant: 1
@@ -160,14 +166,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
-    Loop: 0
-  - Action: 4
-    MatchAnyVariant: 1
-    Variant: 0
-    MatchAnyOutcome: 1
-    Outcome: 0
-    StateName: jump
-    Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 0
   - Action: 5
     MatchAnyVariant: 1
@@ -176,6 +176,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 0
   - Action: 6
     MatchAnyVariant: 1
@@ -184,6 +186,8 @@ MonoBehaviour:
     Outcome: 0
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 0
   - Action: 7
     MatchAnyVariant: 1
@@ -192,14 +196,48 @@ MonoBehaviour:
     Outcome: 0
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    AlternateStateName:
+    AlternateClip: {fileID: 0}
     Loop: 0
-  - Action: 8
-    MatchAnyVariant: 1
+  - Action: 4
+    MatchAnyVariant: 0
     Variant: 0
     MatchAnyOutcome: 1
     Outcome: 0
-    StateName: jump
-    Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
+    StateName: jump_on_obstacle_normal_a
+    Clip: {fileID: 7400000, guid: 2222f9284f32264469aeaebce19eea4a, type: 2}
+    AlternateStateName: jump_on_obstacle_normal_b
+    AlternateClip: {fileID: 7400000, guid: 6a7074503ea9ab54f9c418330597964e, type: 2}
+    Loop: 0
+  - Action: 4
+    MatchAnyVariant: 0
+    Variant: 1
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: jump_on_obstacle_super_a
+    Clip: {fileID: 7400000, guid: 7331a66179ce5ad43b76d0bada6e936d, type: 2}
+    AlternateStateName: jump_on_obstacle_super_b
+    AlternateClip: {fileID: 7400000, guid: 4473073059db6734fac40ea857874ab8, type: 2}
+    Loop: 0
+  - Action: 8
+    MatchAnyVariant: 0
+    Variant: 0
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: jump_on_obstacle_from_roof_normal_a
+    Clip: {fileID: 7400000, guid: 7210e92f188836f4a9327ad4dd7f1168, type: 2}
+    AlternateStateName: jump_on_obstacle_from_roof_normal_b
+    AlternateClip: {fileID: 7400000, guid: 8cec8677dcea3214b96cf436d92f0549, type: 2}
+    Loop: 0
+  - Action: 8
+    MatchAnyVariant: 0
+    Variant: 1
+    MatchAnyOutcome: 1
+    Outcome: 0
+    StateName: jump_on_obstacle_from_roof_super_a
+    Clip: {fileID: 7400000, guid: 2d239c8a5ae05334b8ca48ad04c0ed00, type: 2}
+    AlternateStateName: jump_on_obstacle_from_roof_super_b
+    AlternateClip: {fileID: 7400000, guid: 90c2f83b9267c9f4bac71a5305a9e038, type: 2}
     Loop: 0
   _physicsShapeSprites: []
   _alternateRunStateName: run_trot

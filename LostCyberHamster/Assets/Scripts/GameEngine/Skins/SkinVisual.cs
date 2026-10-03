@@ -32,6 +32,8 @@ namespace Assets.Scripts.GameEngine.Skins
         private int _runAlternateStateHash;
         private float _nextRunSwitchTime;
         private SystemRandom _runRandom;
+        private long _doubleArcActionId = -1;
+        private bool _isAlternateDoubleArc;
 
         public IReadOnlyList<SkinVisualActionMapping> Mappings => _mappings;
         public IReadOnlyList<Sprite> PhysicsShapeSprites => _physicsShapeSprites;
@@ -97,8 +99,29 @@ namespace Assets.Scripts.GameEngine.Skins
                 return;
             }
 
+            // Закрепляем вариант double-arc за ActionId, включая normal-to-super upgrade.
+            string stateName = mapping.StateName;
+            AnimationClip visualClip = mapping.Clip;
+            bool hasAlternateDoubleArc = IsObstacleJumpAction(context.Action)
+                                         && !string.IsNullOrWhiteSpace(mapping.AlternateStateName)
+                                         && mapping.AlternateClip != null;
+            if (hasAlternateDoubleArc)
+            {
+                if (_doubleArcActionId != context.ActionId)
+                {
+                    _doubleArcActionId = context.ActionId;
+                    _isAlternateDoubleArc = _runRandom.Next(0, 2) == 1;
+                }
+
+                if (_isAlternateDoubleArc)
+                {
+                    stateName = mapping.AlternateStateName;
+                    visualClip = mapping.AlternateClip;
+                }
+            }
+
             // Вычисляем FitToAction и сохраняем фазу при normal-to-super upgrade.
-            string statePath = $"{_animator.GetLayerName(0)}.{mapping.StateName}";
+            string statePath = $"{_animator.GetLayerName(0)}.{stateName}";
             int stateHash = Animator.StringToHash(statePath);
             bool continuesSameAction = context.ActionId == _activeActionId;
 
@@ -133,7 +156,7 @@ namespace Assets.Scripts.GameEngine.Skins
                 : 0f;
             if (alternatesRun && startsAlternatingRun)
                 normalizedTime = 0f;
-            float speed = CalculateSpeed(mapping, context, continuesSameAction);
+            float speed = CalculateSpeed(mapping, visualClip, context, continuesSameAction);
             _animator.SetFloat(SpeedParameterName, speed);
 
             if (!continuesSameAction || stateHash != _activeStateHash || startsAlternatingRun)
@@ -176,6 +199,8 @@ namespace Assets.Scripts.GameEngine.Skins
             _activeActionId = -1;
             _isRunAlternationActive = false;
             _isAlternateRunState = false;
+            _doubleArcActionId = -1;
+            _isAlternateDoubleArc = false;
             _animator.Rebind();
         }
 
@@ -216,11 +241,12 @@ namespace Assets.Scripts.GameEngine.Skins
 
         private float CalculateSpeed(
             SkinVisualActionMapping mapping,
+            AnimationClip visualClip,
             in SkinActionContext context,
             bool continuesSameAction)
         {
             float playbackSpeed = Mathf.Max(0.01f, context.PlaybackSpeed);
-            if (mapping.Loop || context.IsLoop || mapping.Clip == null || context.Duration <= 0f)
+            if (mapping.Loop || context.IsLoop || visualClip == null || context.Duration <= 0f)
                 return playbackSpeed;
 
             float remainingNormalized = 1f;
@@ -230,8 +256,14 @@ namespace Assets.Scripts.GameEngine.Skins
                 remainingNormalized = Mathf.Clamp01(1f - stateInfo.normalizedTime);
             }
 
-            float fitToAction = mapping.Clip.length * remainingNormalized / context.Duration;
+            float fitToAction = visualClip.length * remainingNormalized / context.Duration;
             return Mathf.Max(0.01f, fitToAction * playbackSpeed);
+        }
+
+        private static bool IsObstacleJumpAction(SkinVisualAction action)
+        {
+            return action is SkinVisualAction.JumpOnObstacle
+                or SkinVisualAction.JumpOnObstacleFromRoof;
         }
 
         private bool CanAlternateRun(
