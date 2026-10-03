@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Settings;
@@ -32,7 +33,7 @@ namespace LostCyberHamster.Editor
             Build(BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone);
         }
 
-        private static void Build(BuildTarget target, BuildTargetGroup targetGroup)
+        private static void Build(BuildTarget target, BuildTargetGroup targetGroup, bool scriptImportRetried = false)
         {
             try
             {
@@ -42,7 +43,13 @@ namespace LostCyberHamster.Editor
                 var development = GetBoolArg(DevelopmentArg);
                 var showDevelopmentConsole = GetBoolArg(ShowDevelopmentConsoleArg);
                 EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroup, target);
-                BuildAddressables();
+
+                // Восстанавливаем связь скриптов Zenject с типами перед упаковкой сцен.
+                if (RestoreZenjectScriptImportsIfNeeded(scriptImportRetried))
+                {
+                    EditorApplication.delayCall += () => Build(target, targetGroup, scriptImportRetried: true);
+                    return;
+                }
 
                 var scenes = EditorBuildSettings.scenes
                     .Where(scene => scene.enabled)
@@ -51,6 +58,10 @@ namespace LostCyberHamster.Editor
 
                 if (scenes.Length == 0)
                     throw new InvalidOperationException("No enabled scenes found in EditorBuildSettings.");
+
+                // Проверяем стартовые объекты до дорогой сборки контента и Player.
+                ValidatePlayerScripts(scenes);
+                BuildAddressables();
 
                 var buildPath = GetBuildPath(outputRoot, target);
                 Directory.CreateDirectory(Path.GetDirectoryName(buildPath));
@@ -100,6 +111,83 @@ namespace LostCyberHamster.Editor
             {
                 Debug.LogException(exception);
                 EditorApplication.Exit(1);
+            }
+        }
+
+        /// <summary>
+        /// Повторно импортирует Zenject при потере типов; проверка повторяется на следующем update редактора.
+        /// </summary>
+        private static bool RestoreZenjectScriptImportsIfNeeded(bool importRetried)
+        {
+            const string contextsPath = "Assets/Plugins/Zenject/Source/Install/Contexts/";
+            var requiredTypes = new[]
+            {
+                typeof(Zenject.SceneContext),
+                typeof(Zenject.ProjectContext),
+                typeof(Zenject.GameObjectContext)
+            };
+
+            // Отличаем повреждённый импорт от отсутствующего исходного файла.
+            var invalidScripts = requiredTypes.Where(type =>
+            {
+                string path = contextsPath + type.Name + ".cs";
+                var script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+                if (script == null)
+                    throw new FileNotFoundException("Required Zenject script was not found.", path);
+                return script.GetClass() != type;
+            }).Select(type => type.FullName).ToArray();
+
+            if (invalidScripts.Length == 0)
+                return false;
+            if (importRetried)
+                throw new InvalidOperationException("Zenject script import is invalid: " + string.Join(", ", invalidScripts));
+
+            // Пересоздаём только импорты Zenject, сохраняя Library и сборочные кэши.
+            foreach (string guid in AssetDatabase.FindAssets("t:MonoScript", new[] { "Assets/Plugins/Zenject" }))
+                AssetDatabase.ImportAsset(AssetDatabase.GUIDToAssetPath(guid), ImportAssetOptions.ForceUpdate);
+            Debug.Log("[BuildPreflight] Reimported Zenject scripts; validating on the next Editor update.");
+            return true;
+        }
+
+        /// <summary>
+        /// Останавливает сборку при Missing Script в включённых сценах и глобальном DI-контексте.
+        /// </summary>
+        private static void ValidatePlayerScripts(string[] scenes)
+        {
+            var previousSetup = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                // Проверяем компоненты сцен, включая неактивные объекты и вложенные prefab instances.
+                foreach (string path in scenes)
+                {
+                    var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                    foreach (var root in scene.GetRootGameObjects())
+                        ValidateObjectScripts(root, path);
+                }
+
+                // ProjectContext загружается Zenject из Resources и отсутствует в списке сцен.
+                const string projectContextPath = "Assets/Resources/ProjectContext.prefab";
+                var projectContext = AssetDatabase.LoadAssetAtPath<GameObject>(projectContextPath);
+                if (projectContext == null)
+                    throw new FileNotFoundException("Required ProjectContext prefab was not found.", projectContextPath);
+                ValidateObjectScripts(projectContext, projectContextPath);
+                Debug.Log($"[BuildPreflight] Validated {scenes.Length} scenes and ProjectContext: no missing scripts.");
+            }
+            finally
+            {
+                EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
+            }
+        }
+
+        /// <summary>
+        /// Проверяет компоненты всей иерархии объекта без изменения сцены или prefab.
+        /// </summary>
+        private static void ValidateObjectScripts(GameObject root, string assetPath)
+        {
+            foreach (var transform in root.GetComponentsInChildren<Transform>(includeInactive: true))
+            {
+                if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(transform.gameObject) > 0)
+                    throw new InvalidOperationException($"Missing Script on '{transform.name}' in '{assetPath}'.");
             }
         }
 
