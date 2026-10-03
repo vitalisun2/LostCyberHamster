@@ -79,9 +79,19 @@ namespace UiGallery
             Fixtures.Register();
             ExtraFixtures.Register();
         }
+        /// <summary>Закрывает временные панели и восстанавливает исходное состояние следующей проверки.</summary>
         public async Task Reset(Context context)
         {
             if (!GameDataManager.IsProgressionTestingProfile) throw new InvalidOperationException("Testing profile lost");
+            // Проверка launcher не переносит открытую DEV-панель в следующий экран.
+            var overlay = UnityEngine.Object.FindFirstObjectByType<Assets.Scripts.DevTools.DevToolsMenuOverlay>();
+            var shell = overlay != null ? Context.Field(overlay, "_shell") : null;
+            if (shell != null)
+            {
+                Context.Call(shell, "ShowRootScreen");
+                Context.Call(shell, "ClosePanel");
+            }
+            // Профиль и игровые панели начинают каждое состояние с общей базы.
             context.CloseModal();
             JsonUtility.FromJsonOverwrite(baseline, GameDataManager.PlayerData);
             await QuestManager.Init();

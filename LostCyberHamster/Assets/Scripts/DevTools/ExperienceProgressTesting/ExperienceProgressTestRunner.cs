@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.Scripts.DevTools.Gameplay;
 using Assets.Scripts.System;
 using Assets.Scripts.Tutorial;
 using GameManagement;
@@ -69,6 +70,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
 
         public bool CanPrepareNewRecord =>
             !_isBusy &&
+            !DevToolsRuntimeState.UnlockAllLevels &&
             !_preparedRunScore.HasValue &&
             IsMainMenuReady &&
             IsGameDataReady() &&
@@ -76,6 +78,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
 
         public bool CanCompleteNextLevel =>
             !_isBusy &&
+            !DevToolsRuntimeState.UnlockAllLevels &&
             IsMainMenuReady &&
             IsGameDataReady() &&
             TryGetTargetLevel(out _);
@@ -92,7 +95,9 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                     ? "Все gameplay-уровни пройдены"
                     : "Каталог и player data ещё не готовы";
 
-        public string Status => _status;
+        public string Status => DevToolsRuntimeState.UnlockAllLevels
+            ? "Отключите временное открытие уровней перед проверкой XP и завершения."
+            : _status;
 
         public bool CanInspectFirstSession => Application.isPlaying && GameDataManager.IsLoaded &&
                                               GameDataManager.PlayerData != null;
@@ -379,6 +384,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
             _trackedRuns.Clear();
         }
 
+        /// <summary>Выбирает непройденный уровень по сохранённому прогрессу игрока.</summary>
         private bool TryGetTargetLevel(
             out LevelProgress level)
         {
@@ -387,7 +393,7 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                 return false;
 
             // Сохраняем один target между Prepare и Complete.
-            var levels = LevelSelectionModel.Create().FlattenedLevels;
+            var levels = LevelManager.SavedProgressOverview.Levels;
             if (!string.IsNullOrWhiteSpace(_targetLevelAddress))
             {
                 level = levels.FirstOrDefault(candidate =>
@@ -395,21 +401,25 @@ namespace Assets.Scripts.DevTools.ExperienceProgressTesting
                         candidate.Address?.Trim(),
                         _targetLevelAddress,
                         StringComparison.OrdinalIgnoreCase));
-                if (!string.IsNullOrWhiteSpace(level.Address))
+                if (level != null && !level.IsCompleted && !string.IsNullOrWhiteSpace(level.Address))
                     return true;
+
+                // Смена target отменяет подготовленный score и его ожидающий сетевой запрос.
+                ++_operationVersion;
+                _isBusy = false;
+                ResetTarget();
             }
 
             // После completion выбираем следующий уровень без звёзд в порядке каталога.
-            level = levels.FirstOrDefault(candidate =>
-                    LevelManager.GetLevelStars(candidate.Address) == 0);
-            _targetLevelAddress = level.Address?.Trim() ?? string.Empty;
-            return !string.IsNullOrWhiteSpace(level.Address);
+            level = levels.FirstOrDefault(candidate => !candidate.IsCompleted);
+            _targetLevelAddress = level?.Address?.Trim() ?? string.Empty;
+            return !string.IsNullOrWhiteSpace(_targetLevelAddress);
         }
 
         private static bool IsGameDataReady()
         {
             return GameDataManager.PlayerData != null &&
-                   LevelSelectionModel.Create().FlattenedLevels.Count > 0;
+                   LevelManager.SavedProgressOverview.Levels.Count > 0;
         }
 
         private static bool IsMainMenuShown()
