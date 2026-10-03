@@ -40,6 +40,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 58b31a8810edfff439af88712877b1b4
+    m_Address: environment_paris_afternoon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 640b0578b35886c4dbdb3e5c224a820c
     m_Address: bg_2_paris_evening
     m_ReadOnly: 0
@@ -85,6 +90,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c39dc83f17d7105409cce6622bcbcdcb
+    m_Address: environment_paris_evening
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c51cc1b82efe848449c1b43275ee5972
     m_Address: bg_2_paris_night
     m_ReadOnly: 0
@@ -97,6 +107,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ee4904acdea5afe4eb7d432af1596664
     m_Address: rd_paris_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fcd6c02a8a1aa4c408b9e2445311ea97
+    m_Address: environment_paris_night
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

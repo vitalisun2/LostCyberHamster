@@ -41,25 +41,25 @@ namespace LostCyberHamster.Editor.Backgrounds
             var imported = new Dictionary<EnvironmentLayerRole, Sprite>(originalSprites);
             var spriteDirectory = GetSpriteDirectory(session.LocationId);
 
-            // Первичная подготовка создаёт PNG; повторная настройка использует импортированные спрайты.
-            if (!updatingPrefab)
-            {
-                EnsureDirectory(spriteDirectory);
-                EnsureDirectory(GetPrefabDirectory(session.LocationId));
-                foreach (var role in BackgroundAuthoringSession.Roles)
-                {
-                    var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
-                    var path = $"{spriteDirectory}/{name}.png";
-                    imported[role] = SaveSprite(path, name, session.GetTextureData(role));
-                }
-            }
-
-            // Сохраняем только четыре авторских слоя, затем возвращаем черновые ссылки.
             var prefabName = EnvironmentKeyResolver.BuildEnvironmentKey(session.LocationId, session.Daypart);
             var prefabPath = updatingPrefab ? session.SavedPrefabPath : GetPrefabPath(session.LocationId, session.Daypart);
-            environment.ClearCopies();
             try
             {
+                // Первичная подготовка создаёт PNG; повторная настройка использует импортированные спрайты.
+                if (!updatingPrefab)
+                {
+                    EnsureDirectory(spriteDirectory);
+                    EnsureDirectory(GetPrefabDirectory(session.LocationId));
+                    foreach (var role in BackgroundAuthoringSession.Roles)
+                    {
+                        var name = GetSpriteName(role, session.LocationSlug, session.Daypart);
+                        var path = $"{spriteDirectory}/{name}.png";
+                        imported[role] = SaveSprite(path, name, session.GetTextureData(role));
+                    }
+                }
+
+                // Префаб получает только четыре авторских слоя.
+                environment.ClearCopies();
                 foreach (var role in BackgroundAuthoringSession.Roles)
                     environment.GetLayer(role).sprite = imported[role];
                 var prefab = PrefabUtility.SaveAsPrefabAsset(environment.gameObject, prefabPath, out var success);
@@ -81,6 +81,7 @@ namespace LostCyberHamster.Editor.Backgrounds
             }
             finally
             {
+                // Ошибка импорта также возвращает черновые рисунки и полный предпросмотр.
                 foreach (var role in BackgroundAuthoringSession.Roles)
                     if (environment != null)
                         environment.GetLayer(role).sprite = originalSprites[role];
@@ -173,7 +174,10 @@ namespace LostCyberHamster.Editor.Backgrounds
             var sprite = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<Sprite>().SingleOrDefault();
             if (sprite == null || sprite.rect != data.SpriteRect ||
                 sprite.texture.width != data.Width || sprite.texture.height != data.Height)
-                throw new InvalidOperationException($"Импорт изменил размер или не создал точный спрайт: {assetPath}");
+                throw new InvalidOperationException($"Импорт спрайта не завершён: {assetPath}. " +
+                    $"Ожидались текстура {data.Width}×{data.Height} и SpriteRect {data.SpriteRect}; " +
+                    $"получены {sprite?.texture.width}×{sprite?.texture.height}, SpriteRect {sprite?.rect}. " +
+                    "Проверьте предшествующие ошибки импорта в Console.");
             return sprite;
         }
 
