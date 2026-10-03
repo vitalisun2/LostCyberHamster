@@ -396,6 +396,10 @@ namespace Assets.Scripts.System
         public static bool CompleteLevel(string levelKey, int stars)
         {
             _lastCompletionExperience = default;
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                return false;
+            }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_developmentProgressSaveSuppression?.Invoke() == true)
             {

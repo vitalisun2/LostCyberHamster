@@ -64,7 +64,7 @@ namespace GameManagement
         public static CloudUploadAttempt LastUploadAttempt => _envelope?.UploadAttempt == null
             ? null : JsonUtility.FromJson<CloudUploadAttempt>(JsonUtility.ToJson(_envelope.UploadAttempt));
 
-        /// <summary>Восстанавливает envelope либо безопасно переносит старый PlayerData.</summary>
+        /// <summary>Загружает и выравнивает envelope, не записывая его на диск в служебном automation-запуске.</summary>
         public static Task LoadDataAsync()
         {
             // Незавершённая DEV-сессия восстанавливается и в обычной сборке до чтения профиля.
@@ -95,11 +95,23 @@ namespace GameManagement
             _envelope.PlayerData = PlayerData;
             IsLoaded = true;
             Generation++;
-            try
+
+            if (IsAutomationRun())
             {
-                PersistEnvelope(rotateValidPrimary: fromPrimary);
+                // Сохраняем текущий runtime-снимок как baseline без записи в PlayerPrefs.
+                _durableEnvelopeJson = JsonUtility.ToJson(_envelope);
+                _savedPlayerDataJson = PlayerData.ToJson();
             }
-            catch (Exception exception) { ReportSaveFailure(exception); throw; }
+            else
+            {
+                // Обычная загрузка сохраняет результаты миграции и безопасного выравнивания.
+                try
+                {
+                    PersistEnvelope(rotateValidPrimary: fromPrimary);
+                }
+                catch (Exception exception) { ReportSaveFailure(exception); throw; }
+            }
+
             Notify(PlayerDataReplaced);
             Notify(ProfileChanged);
             var alignmentChanged = !string.Equals(beforeAlignment, PlayerData.ToJson(), StringComparison.Ordinal);

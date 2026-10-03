@@ -926,6 +926,9 @@ namespace Vues.GameCore
         private static void HandleActionCounterQuestEvent(
             ActionCounterQuestEvent questEvent)
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun()) return;
+
+            // Сохраняем действие только внутри обычной квестовой попытки.
             _attemptBuffer.Add(questEvent);
             RefreshAttemptPreview();
         }
@@ -937,6 +940,8 @@ namespace Vues.GameCore
             string stateId,
             string entityId)
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun()) return;
+
             if (!PlayerStateValueResolver.TryGetCurrentValue(
                     GameDataManager.PlayerData,
                     stateId,
@@ -978,6 +983,15 @@ namespace Vues.GameCore
         /// </summary>
         private static void HandleLevelStarted(int _)
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                // Удаляем предыдущую проекцию без создания квестовой попытки.
+                _attemptBuffer.DiscardAttempt();
+                InvalidateAttemptPreview();
+                return;
+            }
+
+            // Открываем и публикуем новую попытку для квестового preview.
             _attemptBuffer.StartAttempt();
             RefreshAttemptPreview();
             if (!TutorialConstants.IsTutorialLevel(GameDataManager.PlayerData?.CurrentLevel))
@@ -989,6 +1003,14 @@ namespace Vues.GameCore
         /// </summary>
         private static void HandleLevelCompleted(int levelId, int stars)
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun())
+            {
+                // Очищаем буфер до того, как будут созданы meta-события результата.
+                _attemptBuffer.DiscardAttempt();
+                InvalidateAttemptPreview();
+                return;
+            }
+
             FirstSessionTelemetry.Record("attempt_win", _attemptBuffer.AttemptId, stars);
             // Собираем итог завершённой попытки.
             IReadOnlyList<ActionCounterQuestEvent> bufferedEvents =
