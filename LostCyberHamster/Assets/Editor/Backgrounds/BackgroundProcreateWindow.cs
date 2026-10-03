@@ -17,6 +17,7 @@ namespace LostCyberHamster.Editor.Backgrounds
         private const string DefaultFolder = @"G:\My Drive\LostCyberHamster\Backgrounds";
         private const string FolderPreference = "LostCyberHamster.Backgrounds.SourceFolder";
         private static readonly string[] RoleNames = { "Дорога", "Первый фон", "Второй фон", "Небо" };
+        private static readonly string[] PreviewRoleNames = { "Дорога", "Фон 1", "Фон 2", "Небо" };
         private static readonly string[] DaypartNames = Enum.GetNames(typeof(PartOfDayEnum));
 
         [SerializeField] private string _folder;
@@ -40,6 +41,12 @@ namespace LostCyberHamster.Editor.Backgrounds
         private Vector2 _scroll;
         private string _message;
         private bool _quitting;
+        private bool _windowEnabled;
+        private bool _runningSceneAction;
+        private Action _pendingSceneAction;
+
+        /// <summary>Показывает, ожидает ли окно завершения операции со сценой.</summary>
+        public bool IsSceneActionPending => _pendingSceneAction != null || _runningSceneAction;
 
         /// <summary>Открывает окно подготовки четырёх фонов.</summary>
         [MenuItem("Tools/Backgrounds/Procreate", priority = 701)]
@@ -49,6 +56,7 @@ namespace LostCyberHamster.Editor.Backgrounds
         private void OnEnable()
         {
             // Восстанавливаем папку и берём локации из существующей структуры контента.
+            _windowEnabled = true;
             minSize = new Vector2(600f, 520f);
             if (string.IsNullOrEmpty(_folder))
                 _folder = EditorPrefs.GetString(FolderPreference, DefaultFolder);
@@ -72,6 +80,8 @@ namespace LostCyberHamster.Editor.Backgrounds
         private void OnDisable()
         {
             // Отключаем события перед закрытием временной сцены.
+            _windowEnabled = false;
+            CancelPendingSceneAction();
             EditorApplication.update -= OnEditorUpdate;
             EditorApplication.projectChanged -= RefreshEnvironmentCatalog;
             EditorApplication.quitting -= OnQuitting;
@@ -92,22 +102,26 @@ namespace LostCyberHamster.Editor.Backgrounds
                 EditorGUILayout.HelpBox("Подготовка фонов доступна в Edit Mode.", MessageType.Info);
                 return;
             }
-            if (_session != null && _session.IsActive)
+            // Отложенная операция сохраняет текущий выбор и исключает повторный запуск.
+            using (new EditorGUI.DisabledScope(IsSceneActionPending))
             {
-                DrawComposition();
-                return;
-            }
+                if (_session != null && _session.IsActive)
+                {
+                    DrawComposition();
+                    return;
+                }
 
-            // Общая прокрутка сохраняет превью сразу под деревом любой высоты.
-            DrawFolder();
-            _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            foreach (var path in _files)
-                DrawFile(path);
-            DrawLayerPreview();
-            DrawEnvironmentCatalog();
-            DrawAssignments();
-            DrawMessage();
-            EditorGUILayout.EndScrollView();
+                // Общая прокрутка сохраняет превью сразу под деревом любой высоты.
+                DrawFolder();
+                _scroll = EditorGUILayout.BeginScrollView(_scroll);
+                foreach (var path in _files)
+                    DrawFile(path);
+                DrawLayerPreview();
+                DrawEnvironmentCatalog();
+                DrawAssignments();
+                DrawMessage();
+                EditorGUILayout.EndScrollView();
+            }
         }
 
         /// <summary>Выбирает и обновляет папку исходных Procreate-файлов.</summary>
@@ -209,14 +223,47 @@ namespace LostCyberHamster.Editor.Backgrounds
             // Сцена создаётся после четырёх уникальных назначений.
             using (new EditorGUI.DisabledScope(_document == null || _layers.Count != 4 || _locationIds.Length == 0))
                 if (GUILayout.Button("Создать композицию"))
-                    TryAction(() =>
-                    {
-                        _session = BackgroundAuthoringSession.Create(_document, _layers, _locationIds[_locationIndex], DaypartNames[_daypartIndex]);
-                        EditorApplication.ExecuteMenuItem("Window/General/Device Simulator");
-                    });
+                    TryAction(CreateComposition);
         }
 
-        /// <summary>Редактирует высоты, сдвигает просмотр и завершает экспорт.</summary>
+        /// <summary>Откладывает создание композиции до завершения текущего OnGUI.</summary>
+        public void CreateComposition()
+        {
+            // Фиксируем четыре назначения на момент нажатия кнопки.
+            if (_document == null || _layers.Count != 4 || _locationIds.Length == 0)
+                throw new InvalidOperationException("Выберите исходник и назначьте четыре роли.");
+            var document = _document;
+            var layers = new Dictionary<EnvironmentLayerRole, ProcreateNode>(_layers);
+            var locationId = _locationIds[_locationIndex];
+            var daypart = DaypartNames[_daypartIndex];
+
+            // Native progress bar, новая сцена и Simulator открываются вне GUI-стека.
+            QueueSceneAction(() => OpenComposition(() =>
+                BackgroundAuthoringSession.Create(document, layers, locationId, daypart)));
+        }
+
+        /// <summary>Откладывает открытие готовой композиции до завершения текущего OnGUI.</summary>
+        public void OpenSavedComposition(string locationId, string daypart) =>
+            QueueSceneAction(() => OpenComposition(() => BackgroundAuthoringSession.OpenSaved(locationId, daypart)));
+
+        /// <summary>Создаёт сессию и показывает Simulator только для ещё открытого окна.</summary>
+        private void OpenComposition(Func<BackgroundAuthoringSession> create)
+        {
+            // Native операции могут обработать закрытие окна во время создания сессии.
+            var session = create();
+            if (this == null || !_windowEnabled || _quitting)
+            {
+                session.Dispose(!_quitting);
+                return;
+            }
+
+            // Готовая сессия использует общий режим вертикальной настройки.
+            _session = session;
+            EditorApplication.ExecuteMenuItem("Window/General/Device Simulator");
+            Repaint();
+        }
+
+        /// <summary>Редактирует высоты и скорости, управляет просмотром и завершает экспорт.</summary>
         private void DrawComposition()
         {
             EditorGUILayout.LabelField($"{_session.LocationId} / {_session.Daypart}", EditorStyles.boldLabel);
@@ -236,6 +283,26 @@ namespace LostCyberHamster.Editor.Backgrounds
                     TryAction(() => _session.SetLayerY(role, nextY));
             }
 
+            // Скорости и воспроизведение проверяют стыки четырёх слоёв в симуляторе.
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(_session.IsPreviewPlaying ? "Stop" : "Play", GUILayout.Width(55f)))
+                TryAction(() =>
+                {
+                    if (_session.IsPreviewPlaying)
+                        _session.StopPreviewPlayback();
+                    else
+                        _session.StartPreviewPlayback();
+                });
+            foreach (var role in BackgroundAuthoringSession.Roles)
+            {
+                GUILayout.Label(PreviewRoleNames[(int)role], GUILayout.Width(45f));
+                EditorGUI.BeginChangeCheck();
+                var speed = EditorGUILayout.FloatField(_session.GetPreviewSpeed(role), GUILayout.Width(60f));
+                if (EditorGUI.EndChangeCheck())
+                    TryAction(() => _session.SetPreviewSpeed(role, speed));
+            }
+            EditorGUILayout.EndHorizontal();
+
             // Ползунок сдвигает только временную камеру симулятора.
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
@@ -250,7 +317,7 @@ namespace LostCyberHamster.Editor.Backgrounds
 
             // Save завершает сессию и возвращает редактор в Bootstrap.
             if (GUILayout.Button("Save"))
-                TryAction(() =>
+                QueueSceneAction(() =>
                 {
                     var path = _session.Save();
                     _session = null;
@@ -258,7 +325,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                     RefreshEnvironmentCatalog();
                 });
             if (GUILayout.Button("Отбросить композицию"))
-                CloseSession(true);
+                QueueSceneAction(() => CloseSession(true));
             DrawMessage();
         }
 
@@ -357,12 +424,7 @@ namespace LostCyberHamster.Editor.Backgrounds
             // Готовая композиция открывается в том же временном режиме редактирования.
             using (new EditorGUI.DisabledScope(!entry.IsReady))
                 if (GUILayout.Button("Редактировать"))
-                    TryAction(() =>
-                    {
-                        _session = BackgroundAuthoringSession.OpenSaved(entry.LocationId, entry.Daypart);
-                        EditorApplication.ExecuteMenuItem("Window/General/Device Simulator");
-                        Repaint();
-                    });
+                    TryAction(() => OpenSavedComposition(entry.LocationId, entry.Daypart));
 
             // Четыре роли берутся из готового префаба, а не из исходного Procreate.
             using (new EditorGUI.DisabledScope(true))
@@ -380,11 +442,11 @@ namespace LostCyberHamster.Editor.Backgrounds
             EditorGUILayout.SelectableLabel(entry.PrefabPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
             using (new EditorGUI.DisabledScope(entry.Prefab == null))
                 if (GUILayout.Button("Показать префаб в Project"))
-                    ShowInProject(entry.PrefabPath);
+                    QueueSceneAction(() => ShowInProject(entry.PrefabPath));
             EditorGUILayout.SelectableLabel(entry.SpriteDirectory, GUILayout.Height(EditorGUIUtility.singleLineHeight));
             using (new EditorGUI.DisabledScope(!AssetDatabase.IsValidFolder(entry.SpriteDirectory)))
                 if (GUILayout.Button("Показать папку PNG в Project"))
-                    ShowInProject(entry.SpriteDirectory);
+                    QueueSceneAction(() => ShowInProject(entry.SpriteDirectory));
             EditorGUI.indentLevel--;
         }
 
@@ -404,7 +466,7 @@ namespace LostCyberHamster.Editor.Backgrounds
         /// <summary>Обновляет неподвижные копии после изменения высоты или устройства.</summary>
         private void OnEditorUpdate()
         {
-            if (_session == null)
+            if (_session == null || IsSceneActionPending)
                 return;
             if (!_session.IsActive)
                 CloseSession(false);
@@ -422,13 +484,22 @@ namespace LostCyberHamster.Editor.Backgrounds
         /// <summary>Освобождает черновик после внешней смены сцены.</summary>
         private void OnSceneChanged(Scene previous, Scene current)
         {
+            // Внешняя смена сцены отменяет ещё не начатое создание композиции.
+            if (!_runningSceneAction)
+                CancelPendingSceneAction();
+
+            // Уже выполняемая операция завершает собственный переход целиком.
             if (_session != null && !_session.IsActive)
+            {
                 CloseSession(false);
+            }
         }
 
         /// <summary>Освобождает превью и завершает временную сцену перед перезагрузкой сборок.</summary>
         private void OnBeforeReload()
         {
+            // Действие старого окна не переносится через перезагрузку сборок.
+            CancelPendingSceneAction();
             // Текстура превью не переживает перезагрузку сборок.
             ClearLayerPreview();
             // Черновик завершается возвратом в Bootstrap.
@@ -445,6 +516,47 @@ namespace LostCyberHamster.Editor.Backgrounds
             session?.Dispose(openBootstrap);
         }
 
+        /// <summary>Назначает одну операцию со сценой на следующий редакторский callback.</summary>
+        private void QueueSceneAction(Action action)
+        {
+            if (this == null || !_windowEnabled || _quitting || IsSceneActionPending)
+                return;
+            _pendingSceneAction = action;
+            EditorApplication.delayCall += ExecutePendingSceneAction;
+            Repaint();
+        }
+
+        /// <summary>Выполняет отложенную операцию вне OnGUI, пока окно остаётся активным.</summary>
+        private void ExecutePendingSceneAction()
+        {
+            // Забираем действие один раз и проверяем жизненный цикл редактора.
+            EditorApplication.delayCall -= ExecutePendingSceneAction;
+            var action = _pendingSceneAction;
+            _pendingSceneAction = null;
+            if (action == null || this == null || !_windowEnabled || _quitting || EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            // Повторный ввод и обновление черновика ждут завершения native операций.
+            _runningSceneAction = true;
+            try
+            {
+                TryAction(action);
+            }
+            finally
+            {
+                _runningSceneAction = false;
+                if (this != null && _windowEnabled)
+                    Repaint();
+            }
+        }
+
+        /// <summary>Отменяет ещё не начатую операцию закрытого или перезагружаемого окна.</summary>
+        private void CancelPendingSceneAction()
+        {
+            EditorApplication.delayCall -= ExecutePendingSceneAction;
+            _pendingSceneAction = null;
+        }
+
         /// <summary>Показывает ошибку операции в текущем окне.</summary>
         private void TryAction(Action action)
         {
@@ -453,7 +565,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                 _message = null;
                 action();
             }
-            catch (Exception exception)
+            catch (Exception exception) when (!(exception is ExitGUIException))
             {
                 _message = exception.Message;
                 Debug.LogException(exception);

@@ -33,9 +33,12 @@ namespace LostCyberHamster.Editor.Backgrounds
             new Dictionary<EnvironmentLayerRole, Vector3>();
         private readonly Dictionary<EnvironmentLayerRole, Vector3> _previewPositions =
             new Dictionary<EnvironmentLayerRole, Vector3>();
+        private readonly Dictionary<EnvironmentLayerRole, EnvironmentStrip> _previewStrips =
+            new Dictionary<EnvironmentLayerRole, EnvironmentStrip>();
         private readonly Scene _scene;
         private bool _disposed;
         private float _previewAspect;
+        private double _previousPreviewTime;
 
         /// <summary>Создаёт временную сцену из подготовленных рисунков либо готового префаба.</summary>
         private BackgroundAuthoringSession(Dictionary<EnvironmentLayerRole, BackgroundTextureData> textures,
@@ -72,6 +75,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                     _authoredLayers[EnvironmentLayerRole.Background2], _authoredLayers[EnvironmentLayerRole.Sky]);
                 RefreshPreview();
                 Selection.activeGameObject = Environment.GetLayer(EnvironmentLayerRole.Background).gameObject;
+                EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             }
             catch
             {
@@ -89,6 +93,8 @@ namespace LostCyberHamster.Editor.Backgrounds
         public string SavedPrefabPath { get; }
         /// <summary>Горизонтальный сдвиг камеры только для текущего просмотра.</summary>
         public float PreviewOffsetX { get; private set; }
+        /// <summary>Признак редакторской прокрутки текущей композиции.</summary>
+        public bool IsPreviewPlaying { get; private set; }
         /// <summary>Диапазон просмотра одного полного повторения самого широкого слоя.</summary>
         public float PreviewScrollRange => Roles.Max(role =>
             _authoredSprites[role].rect.width / _authoredSprites[role].pixelsPerUnit);
@@ -192,12 +198,96 @@ namespace LostCyberHamster.Editor.Backgrounds
         {
             if (!IsActive || role == EnvironmentLayerRole.Road || !float.IsFinite(y))
                 return;
+
+            // Undo хранит изменение основного слоя, авторская позиция сохраняет высоту отдельно от фазы.
             var transform = Environment.GetLayer(role).transform;
             Undo.RecordObject(transform, "Высота слоя фона");
             var position = transform.localPosition;
             position.y = y;
             transform.localPosition = position;
+            var authoredPosition = _previewPositions[role];
+            authoredPosition.y = y;
+            _previewPositions[role] = authoredPosition;
             RefreshPreview();
+        }
+
+        /// <summary>Возвращает сохранённую скорость роли для просмотра и игры.</summary>
+        public float GetPreviewSpeed(EnvironmentLayerRole role) => Environment.GetLayerScrollSpeed(role);
+
+        /// <summary>Меняет сохраняемую скорость роли с Undo без сброса фазы просмотра.</summary>
+        public void SetPreviewSpeed(EnvironmentLayerRole role, float speed)
+        {
+            if (!IsActive || !float.IsFinite(speed))
+                return;
+
+            // Настройка принадлежит компоненту будущего префаба.
+            speed = Mathf.Max(0f, speed);
+            if (Mathf.Approximately(Environment.GetLayerScrollSpeed(role), speed))
+                return;
+            Undo.RecordObject(Environment, "Скорость слоя фона");
+            Environment.SetLayerScrollSpeed(role, speed);
+        }
+
+        /// <summary>Запускает редакторскую прокрутку четырёх ролей из авторских позиций.</summary>
+        public void StartPreviewPlayback()
+        {
+            if (!IsActive || IsPreviewPlaying || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPaused)
+                return;
+
+            // Фиксируем авторскую композицию до создания прокручиваемых повторов.
+            UpdatePreview();
+            Environment.ClearCopies();
+            Environment.ValidateConfiguration();
+            var copiesRoot = new GameObject("_EnvironmentRepeats").transform;
+            copiesRoot.SetParent(Environment.transform, false);
+            foreach (var role in Roles)
+                _previewStrips.Add(role, new EnvironmentStrip(_authoredLayers[role], copiesRoot, GetPreviewSpeed(role)));
+
+            // Фаза и редакторское время принадлежат текущему запуску просмотра.
+            _previousPreviewTime = EditorApplication.timeSinceStartup;
+            IsPreviewPlaying = true;
+            RefreshPreview();
+        }
+
+        /// <summary>Останавливает прокрутку и возвращает слои к авторским позициям.</summary>
+        public void StopPreviewPlayback()
+        {
+            EndPreviewPlayback();
+            RefreshPreview();
+        }
+
+        /// <summary>Удаляет анимационные повторы и восстанавливает авторские координаты.</summary>
+        private void EndPreviewPlayback()
+        {
+            // При остановке учитываем последнюю настройку высоты в Inspector или Scene View.
+            if (IsPreviewPlaying)
+                foreach (var role in Roles)
+                    if (role != EnvironmentLayerRole.Road && _authoredLayers[role] != null &&
+                        float.IsFinite(_authoredLayers[role].transform.localPosition.y))
+                    {
+                        var position = _previewPositions[role];
+                        position.y = _authoredLayers[role].transform.localPosition.y;
+                        _previewPositions[role] = position;
+                    }
+
+            // Убираем фазу до восстановления слоя и возможного обновления окна.
+            IsPreviewPlaying = false;
+            _previewStrips.Clear();
+            _previousPreviewTime = 0d;
+
+            // Авторские высоты сохраняются отдельно от горизонтального движения.
+            foreach (var role in Roles)
+                if (_authoredLayers.TryGetValue(role, out var renderer) && renderer != null)
+                    renderer.transform.localPosition = _previewPositions[role];
+            if (Environment != null)
+                Environment.ClearCopies();
+        }
+
+        /// <summary>Убирает редакторскую прокрутку перед переключением Play Mode.</summary>
+        private void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingEditMode)
+                EndPreviewPlayback();
         }
 
         /// <summary>Сдвигает просмотр по горизонтали, сохраняя авторские позиции слоёв.</summary>
@@ -209,12 +299,27 @@ namespace LostCyberHamster.Editor.Backgrounds
             UpdatePreview();
         }
 
-        /// <summary>Фиксирует вертикальную настройку и обновляет камеру просмотра и копии.</summary>
+        /// <summary>Фиксирует авторскую настройку, обновляет камеру и прокручивает активный просмотр.</summary>
         public bool UpdatePreview()
         {
             if (!IsActive)
                 return false;
             var changed = false;
+
+            // Play Mode завершает редакторскую прокрутку до игровых обновлений.
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                if (IsPreviewPlaying)
+                    EndPreviewPlayback();
+                return false;
+            }
+
+            // Редакторская пауза возвращает авторскую композицию.
+            if (IsPreviewPlaying && EditorApplication.isPaused)
+            {
+                EndPreviewPlayback();
+                changed = true;
+            }
 
             // Фиксируем дорожный якорь, масштаб и горизонтальные позиции.
             var root = Environment.transform;
@@ -241,10 +346,13 @@ namespace LostCyberHamster.Editor.Backgrounds
                 var position = _initialPositions[role];
                 if (role != EnvironmentLayerRole.Road && float.IsFinite(transform.localPosition.y))
                     position.y = transform.localPosition.y;
-                changed |= transform.localPosition != position || transform.localRotation != Quaternion.identity ||
+                var displayPosition = position;
+                if (IsPreviewPlaying)
+                    displayPosition.x = _previewStrips[role].SourceX - root.position.x;
+                changed |= transform.localPosition != displayPosition || transform.localRotation != Quaternion.identity ||
                            transform.localScale != Vector3.one || _previewPositions[role] != position;
-                if (transform.localPosition != position)
-                    transform.localPosition = position;
+                if (transform.localPosition != displayPosition)
+                    transform.localPosition = displayPosition;
                 _previewPositions[role] = position;
                 if (transform.localRotation != Quaternion.identity)
                     transform.localRotation = Quaternion.identity;
@@ -258,6 +366,17 @@ namespace LostCyberHamster.Editor.Backgrounds
                 RefreshPreview();
                 changed = true;
             }
+
+            // Скорости читаются на каждом кадре; копии сохраняются между кадрами.
+            if (IsPreviewPlaying)
+            {
+                var now = EditorApplication.timeSinceStartup;
+                UpdatePreviewStrips(Math.Max(0d, now - _previousPreviewTime));
+                _previousPreviewTime = now;
+                SceneView.RepaintAll();
+                EditorApplication.QueuePlayerLoopUpdate();
+                changed = true;
+            }
             return changed;
         }
 
@@ -266,9 +385,18 @@ namespace LostCyberHamster.Editor.Backgrounds
         {
             if (!IsActive)
                 return;
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            // Активная прокрутка сохраняет пул, неподвижный просмотр строит статические повторы.
             _previewAspect = Camera.aspect;
-            var halfWidth = Camera.orthographicSize * Mathf.Max(_previewAspect, 1792f / 828f);
-            Environment.PopulateStatic(Camera.transform.position.x - halfWidth, Camera.transform.position.x + halfWidth);
+            if (IsPreviewPlaying)
+                UpdatePreviewStrips(0d);
+            else
+            {
+                var halfWidth = Camera.orthographicSize * Mathf.Max(_previewAspect, 1792f / 828f);
+                Environment.PopulateStatic(Camera.transform.position.x - halfWidth, Camera.transform.position.x + halfWidth);
+            }
 
             // Служебные копии видны в симуляторе, а редактируются только авторские слои.
             foreach (Transform child in Environment.transform)
@@ -280,6 +408,22 @@ namespace LostCyberHamster.Editor.Backgrounds
             }
             SceneView.RepaintAll();
             EditorApplication.QueuePlayerLoopUpdate();
+        }
+
+        /// <summary>Покрывает ширину устройства четырьмя полосами с независимыми скоростями.</summary>
+        private void UpdatePreviewStrips(double deltaTime)
+        {
+            // Область повторов следует устройству и горизонтальному сдвигу камеры.
+            var halfWidth = Camera.orthographicSize * Mathf.Max(Camera.aspect, 1792f / 828f);
+            var center = Camera.transform.position.x;
+
+            // Undo и настройка скорости применяются с сохранением текущей фазы.
+            foreach (var role in Roles)
+            {
+                var strip = _previewStrips[role];
+                strip.SetSpeed(GetPreviewSpeed(role));
+                strip.Update(center - halfWidth, center + halfWidth, deltaTime);
+            }
         }
 
         /// <summary>Экспортирует композицию, затем возвращается в Bootstrap.</summary>
@@ -300,6 +444,10 @@ namespace LostCyberHamster.Editor.Backgrounds
         {
             if (_disposed)
                 return;
+
+            // Сначала завершаем прокрутку и отключаем подписку сессии.
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EndPreviewPlayback();
             _disposed = true;
 
             // Удаляем черновые объекты до освобождения спрайтов и текстур.
@@ -326,6 +474,10 @@ namespace LostCyberHamster.Editor.Backgrounds
         {
             if (!IsActive)
                 throw new InvalidOperationException("Черновая композиция закрыта.");
+            // Экспорт получает только авторские позиции и четыре исходных слоя.
+            EndPreviewPlayback();
+
+            // Проверяем принадлежность исходных рисунков перед сохранением.
             foreach (var role in Roles)
             {
                 var renderer = Environment.GetLayer(role);
