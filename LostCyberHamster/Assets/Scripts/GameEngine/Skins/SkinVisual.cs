@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using SystemRandom = System.Random;
 using UnityEngine;
 
 namespace Assets.Scripts.GameEngine.Skins
@@ -16,12 +17,21 @@ namespace Assets.Scripts.GameEngine.Skins
         [SerializeField] private SpriteRenderer _spriteRenderer;
         [SerializeField] private List<SkinVisualActionMapping> _mappings = new();
         [SerializeField] private List<Sprite> _physicsShapeSprites = new();
+        [SerializeField] private string _alternateRunStateName;
+        [SerializeField, Min(1)] private int _minRunCyclesBeforeAlternate = 2;
+        [SerializeField, Min(1)] private int _maxRunCyclesBeforeAlternate = 5;
 
         private int _activeStateHash;
         private long _activeActionId = -1;
         private bool _isDamaged;
         private bool _isPlaybackEnabled = true;
         private float _damageElapsed;
+        private bool _isRunAlternationActive;
+        private bool _isAlternateRunState;
+        private int _runBaseStateHash;
+        private int _runAlternateStateHash;
+        private float _nextRunSwitchTime;
+        private SystemRandom _runRandom;
 
         public IReadOnlyList<SkinVisualActionMapping> Mappings => _mappings;
         public IReadOnlyList<Sprite> PhysicsShapeSprites => _physicsShapeSprites;
@@ -31,15 +41,32 @@ namespace Assets.Scripts.GameEngine.Skins
         {
             _animator ??= GetComponent<Animator>();
             _spriteRenderer ??= GetComponent<SpriteRenderer>();
+            _runRandom = new SystemRandom(unchecked(Environment.TickCount ^ GetInstanceID()));
         }
 
         private void Update()
         {
-            if (!_isDamaged || !_isPlaybackEnabled || _spriteRenderer == null)
+            // Сохраняем damage feedback.
+            if (_isDamaged && _isPlaybackEnabled && _spriteRenderer != null)
+            {
+                _damageElapsed += Time.deltaTime;
+                _spriteRenderer.enabled = Mathf.FloorToInt(_damageElapsed * 12f) % 2 == 0;
+            }
+
+            if (!_isPlaybackEnabled || !_isRunAlternationActive || _animator == null)
                 return;
 
-            _damageElapsed += Time.deltaTime;
-            _spriteRenderer.enabled = Mathf.FloorToInt(_damageElapsed * 12f) % 2 == 0;
+            // Переключаем gait по завершении случайного числа циклов.
+            AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            int currentStateHash = _isAlternateRunState ? _runAlternateStateHash : _runBaseStateHash;
+            if (stateInfo.fullPathHash != currentStateHash || stateInfo.normalizedTime < _nextRunSwitchTime)
+                return;
+
+            _isAlternateRunState = !_isAlternateRunState;
+            int nextStateHash = _isAlternateRunState ? _runAlternateStateHash : _runBaseStateHash;
+            _animator.Play(nextStateHash, 0, 0f);
+            _activeStateHash = nextStateHash;
+            _nextRunSwitchTime = RandomRunCyclesBeforeAlternate();
         }
 
         private void OnDisable()
@@ -65,14 +92,46 @@ namespace Assets.Scripts.GameEngine.Skins
             string statePath = $"{_animator.GetLayerName(0)}.{mapping.StateName}";
             int stateHash = Animator.StringToHash(statePath);
             bool continuesSameAction = context.ActionId == _activeActionId;
+
+            // Включаем alternation только для настроенного loop-run state.
+            bool alternatesRun = CanAlternateRun(context, mapping, statePath, out int alternateStateHash);
+            bool startsAlternatingRun = false;
+            if (alternatesRun)
+            {
+                bool continuesAlternatingRun = _isRunAlternationActive
+                                               && continuesSameAction
+                                               && _runBaseStateHash == stateHash
+                                               && _runAlternateStateHash == alternateStateHash;
+                startsAlternatingRun = !continuesAlternatingRun;
+                if (!continuesAlternatingRun)
+                {
+                    _isAlternateRunState = false;
+                    _runBaseStateHash = stateHash;
+                    _runAlternateStateHash = alternateStateHash;
+                }
+
+                _isRunAlternationActive = true;
+                stateHash = _isAlternateRunState ? _runAlternateStateHash : _runBaseStateHash;
+            }
+            else
+            {
+                _isRunAlternationActive = false;
+                _isAlternateRunState = false;
+            }
+
             float normalizedTime = continuesSameAction
                 ? Mathf.Clamp01(_animator.GetCurrentAnimatorStateInfo(0).normalizedTime)
                 : 0f;
+            if (alternatesRun && startsAlternatingRun)
+                normalizedTime = 0f;
             float speed = CalculateSpeed(mapping, context, continuesSameAction);
             _animator.SetFloat(SpeedParameterName, speed);
 
-            if (!continuesSameAction || stateHash != _activeStateHash)
+            if (!continuesSameAction || stateHash != _activeStateHash || startsAlternatingRun)
                 _animator.Play(stateHash, 0, normalizedTime);
+
+            if (alternatesRun && startsAlternatingRun)
+                _nextRunSwitchTime = RandomRunCyclesBeforeAlternate();
 
             _activeStateHash = stateHash;
             _activeActionId = context.ActionId;
@@ -106,6 +165,8 @@ namespace Assets.Scripts.GameEngine.Skins
         {
             _activeStateHash = 0;
             _activeActionId = -1;
+            _isRunAlternationActive = false;
+            _isAlternateRunState = false;
             _animator.Rebind();
         }
 
@@ -162,6 +223,35 @@ namespace Assets.Scripts.GameEngine.Skins
 
             float fitToAction = mapping.Clip.length * remainingNormalized / context.Duration;
             return Mathf.Max(0.01f, fitToAction * playbackSpeed);
+        }
+
+        private bool CanAlternateRun(
+            in SkinActionContext context,
+            SkinVisualActionMapping mapping,
+            string baseStatePath,
+            out int alternateStateHash)
+        {
+            alternateStateHash = 0;
+            if (_animator == null
+                || !mapping.Loop
+                || context.Action is not (SkinVisualAction.GroundRun or SkinVisualAction.RoofRun)
+                || string.IsNullOrWhiteSpace(_alternateRunStateName))
+            {
+                return false;
+            }
+
+            string alternateStatePath = $"{_animator.GetLayerName(0)}.{_alternateRunStateName}";
+            alternateStateHash = Animator.StringToHash(alternateStatePath);
+            return alternateStateHash != Animator.StringToHash(baseStatePath)
+                   && _animator.HasState(0, Animator.StringToHash(baseStatePath))
+                   && _animator.HasState(0, alternateStateHash);
+        }
+
+        private int RandomRunCyclesBeforeAlternate()
+        {
+            int minimum = Mathf.Max(1, _minRunCyclesBeforeAlternate);
+            int maximum = Mathf.Max(minimum, _maxRunCyclesBeforeAlternate);
+            return _runRandom.Next(minimum, maximum + 1);
         }
     }
 }

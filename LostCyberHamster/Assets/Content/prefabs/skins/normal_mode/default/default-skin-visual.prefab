@@ -81,7 +81,7 @@ SpriteRenderer:
   m_SortingLayerID: 851019927
   m_SortingLayer: 7
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1296217005, guid: 5de87c9f9db496f438299871512a6540, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 27cf217e47f8e2d4d84d7d784767a0a8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -201,3 +201,7 @@ MonoBehaviour:
     StateName: jump
     Clip: {fileID: 7400000, guid: 14a64c727731a234484d535f99e6a2a8, type: 2}
     Loop: 0
+  _physicsShapeSprites: []
+  _alternateRunStateName: run_trot
+  _minRunCyclesBeforeAlternate: 2
+  _maxRunCyclesBeforeAlternate: 5
