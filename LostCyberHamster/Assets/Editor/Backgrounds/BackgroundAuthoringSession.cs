@@ -105,6 +105,11 @@ namespace LostCyberHamster.Editor.Backgrounds
         public string LocationSlug => GetLocationSlug(LocationId);
         public LocationEnvironment Environment { get; }
         public Camera Camera { get; }
+        /// <summary>Горизонтальный сдвиг камеры только для текущего просмотра.</summary>
+        public float PreviewOffsetX { get; private set; }
+        /// <summary>Диапазон просмотра одного полного повторения самого широкого слоя.</summary>
+        public float PreviewScrollRange => Roles.Max(role =>
+            _authoredSprites[role].rect.width / _authoredSprites[role].pixelsPerUnit);
         public bool IsActive => !_disposed && _scene.IsValid() && _scene.isLoaded && Environment != null &&
                                 Camera != null && Roles.All(role => Environment.GetLayer(role) != null);
 
@@ -157,7 +162,16 @@ namespace LostCyberHamster.Editor.Backgrounds
             RefreshPreview();
         }
 
-        /// <summary>Сохраняет только вертикальные изменения и обновляет повторные копии.</summary>
+        /// <summary>Сдвигает просмотр по горизонтали, сохраняя авторские позиции слоёв.</summary>
+        public void SetPreviewOffsetX(float x)
+        {
+            if (!IsActive || !float.IsFinite(x))
+                return;
+            PreviewOffsetX = Mathf.Clamp(x, -PreviewScrollRange, PreviewScrollRange);
+            UpdatePreview();
+        }
+
+        /// <summary>Фиксирует вертикальную настройку и обновляет камеру просмотра и копии.</summary>
         public bool UpdatePreview()
         {
             if (!IsActive)
@@ -172,12 +186,17 @@ namespace LostCyberHamster.Editor.Backgrounds
                 root.SetPositionAndRotation(rootPosition, Quaternion.identity);
             if (root.localScale != Vector3.one)
                 root.localScale = Vector3.one;
+            // Горизонтальный просмотр принадлежит камере вне корня экспортируемого префаба.
+            var cameraPosition = Consts.CameraPosition + Vector3.right * PreviewOffsetX;
             if (!Camera.orthographic || !Mathf.Approximately(Camera.orthographicSize, Consts.CameraSize) ||
-                Camera.transform.position != Consts.CameraPosition || Camera.transform.rotation != Quaternion.identity)
+                Camera.transform.position != cameraPosition || Camera.transform.rotation != Quaternion.identity)
             {
                 LocationEnvironment.ConfigureCamera(Camera);
+                Camera.transform.position = cameraPosition;
                 changed = true;
             }
+
+            // В композиции меняется только высота трёх задних слоёв.
             foreach (var role in Roles)
             {
                 var transform = Environment.GetLayer(role).transform;

@@ -211,7 +211,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                     });
         }
 
-        /// <summary>Редактирует вертикальные позиции и завершает экспорт.</summary>
+        /// <summary>Редактирует высоты, сдвигает просмотр и завершает экспорт.</summary>
         private void DrawComposition()
         {
             EditorGUILayout.LabelField($"{_session.LocationId} / {_session.Daypart}", EditorStyles.boldLabel);
@@ -230,6 +230,18 @@ namespace LostCyberHamster.Editor.Backgrounds
                 if (EditorGUI.EndChangeCheck())
                     TryAction(() => _session.SetLayerY(role, nextY));
             }
+
+            // Ползунок сдвигает только временную камеру симулятора.
+            EditorGUILayout.BeginHorizontal();
+            EditorGUI.BeginChangeCheck();
+            var previewX = EditorGUILayout.Slider(new GUIContent("Просмотр по X",
+                "Сдвиг камеры для просмотра. В префаб не сохраняется."),
+                _session.PreviewOffsetX, -_session.PreviewScrollRange, _session.PreviewScrollRange);
+            if (EditorGUI.EndChangeCheck())
+                TryAction(() => _session.SetPreviewOffsetX(previewX));
+            if (GUILayout.Button("Сброс", GUILayout.Width(60f)))
+                TryAction(() => _session.SetPreviewOffsetX(0f));
+            EditorGUILayout.EndHorizontal();
 
             // Save завершает сессию и возвращает редактор в Bootstrap.
             if (GUILayout.Button("Save"))
