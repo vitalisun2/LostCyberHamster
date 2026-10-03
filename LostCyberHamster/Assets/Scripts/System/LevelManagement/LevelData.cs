@@ -17,14 +17,23 @@ namespace Assets.Scripts.System
 
         // availalable loaded addressables
 
-        // scrolling environment (shared prefab for sky, background, road)
-        public GameObject ScrollingEnvironmentPrefab { get; set; }
+        // Префаб удерживается загрузчиком до передачи экземпляру окружения.
+        public AddressableLease<GameObject> EnvironmentPrefabLease { get; set; }
 
-        // layer textures
-        public Sprite SkySprite { get; set; }
-        public Sprite Background2Sprite { get; set; }
-        public Sprite BackgroundSprite { get; set; }
-        public Sprite RoadSprite { get; set; }
+        /// <summary>Передаёт владение загруженным окружением создающему его экземпляру.</summary>
+        public AddressableLease<GameObject> TakeEnvironmentLease()
+        {
+            var lease = EnvironmentPrefabLease;
+            EnvironmentPrefabLease = null;
+            return lease;
+        }
+
+        /// <summary>Освобождает окружение, которое ещё не передано экземпляру сцены.</summary>
+        public void ReleaseEnvironmentLease()
+        {
+            EnvironmentPrefabLease?.Dispose();
+            EnvironmentPrefabLease = null;
+        }
 
     public AddressableSetLease<Sprite> ObstaclesSpritesLease { get; set; }
     public AddressableSetLease<Sprite> CollectablesSpritesLease { get; set; }

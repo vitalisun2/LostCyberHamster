@@ -87,7 +87,8 @@ namespace Assets.Scripts
         public const float BackgroundBottomYPos = -0.685f;
         public const float Background2BottomYPos = BackgroundBottomYPos + 0.885f;
         public const float SkyBottomYPos = BackgroundBottomYPos + (ENVIRONMENT_REFERENCE_HEIGHT * PIXELS_TO_UNITS_RATIO / 1.8f);
-        public const float RoadBottomYPos = BackgroundBottomYPos - (ROAD_HEIGHT * PIXELS_TO_UNITS_RATIO);
+        /// <summary>Мировой нижний край дороги, общий для всех готовых композиций.</summary>
+        public const float RoadBottomYPos = -3.085f;
 
         public const float CameraSize = 3.1f;
         public static Vector3 CameraPosition = new(0, 0, -10);

@@ -1,123 +1,33 @@
+using System;
 using GameManagement;
-using UnityEngine;
 
 namespace Assets.Scripts.System.LevelManagement
 {
-    /// <summary>
-    /// Derives environment asset keys (background, background2, road, sky)
-    /// from the current level's canonical LocationId and PartId in the catalog.
-    /// Single source of truth for all environment texture key generation at runtime.
-    /// </summary>
+    /// <summary>Разрешает точный адрес готового окружения по локации и времени суток.</summary>
     public static class EnvironmentKeyResolver
     {
-        /// <summary>
-        /// Resolves background key for the current level using catalog descriptor.
-        /// Falls back to first available location if the current level is not in the catalog.
-        /// </summary>
-        public static string BuildBackgroundKey()
+        /// <summary>Строит адрес готового префаба для указанной локации и времени суток.</summary>
+        public static string BuildEnvironmentKey(string locationId, string daypart)
         {
-            var (locationSlug, daypartSlug) = ResolveCurrentSlugs();
+            var locationSlug = LocationAssetFallback.ToLocationSlug(locationId);
+            var daypartSlug = LocationAssetFallback.ToSlug(daypart);
             if (string.IsNullOrWhiteSpace(locationSlug) || string.IsNullOrWhiteSpace(daypartSlug))
-                return null;
-
-            return $"bg_{locationSlug}_{daypartSlug}";
+                throw new ArgumentException($"Не заданы локация '{locationId}' или время суток '{daypart}'.");
+            return $"environment_{locationSlug}_{daypartSlug}";
         }
 
-        /// <summary>
-        /// Resolves background2 key for the current level using catalog descriptor.
-        /// </summary>
-        public static string BuildBackground2Key()
+        /// <summary>Строит адрес окружения текущего уровня из каталога или полного адреса уровня.</summary>
+        public static string BuildEnvironmentKey()
         {
-            var (locationSlug, daypartSlug) = ResolveCurrentSlugs();
-            if (string.IsNullOrWhiteSpace(locationSlug) || string.IsNullOrWhiteSpace(daypartSlug))
-                return null;
+            // Каталог содержит канонические идентификаторы текущего уровня.
+            var currentLevel = GameDataManager.PlayerData?.CurrentLevel;
+            if (LevelCatalogService.TryFindLevel(currentLevel, out var descriptor))
+                return BuildEnvironmentKey(descriptor.LocationId, descriptor.PartId);
 
-            return $"bg_2_{locationSlug}_{daypartSlug}";
-        }
-
-        /// <summary>
-        /// Resolves road key for the current level using catalog descriptor.
-        /// </summary>
-        public static string BuildRoadKey()
-        {
-            var (locationSlug, daypartSlug) = ResolveCurrentSlugs();
-            if (string.IsNullOrWhiteSpace(locationSlug) || string.IsNullOrWhiteSpace(daypartSlug))
-                return null;
-
-            return $"rd_{locationSlug}_{daypartSlug}";
-        }
-
-        /// <summary>
-        /// Resolves sky key for the current level using catalog descriptor.
-        /// </summary>
-        public static string BuildSkyKey()
-        {
-            var (locationSlug, daypartSlug) = ResolveCurrentSlugs();
-            if (string.IsNullOrWhiteSpace(locationSlug) || string.IsNullOrWhiteSpace(daypartSlug))
-                return null;
-
-            return $"sky_{locationSlug}_{daypartSlug}";
-        }
-
-        /// <summary>
-        /// Resolves canonical location slug and daypart slug from the current level descriptor.
-        /// Uses catalog LocationId (e.g. "01_New_York") → ToLocationSlug → "new_york",
-        /// and PartId (e.g. "Morning") → ToSlug → "morning".
-        /// Falls back to the first available location in LocationInfoList if catalog lookup fails.
-        /// </summary>
-        private static (string LocationSlug, string DaypartSlug) ResolveCurrentSlugs()
-        {
-            // Primary path: use canonical catalog data
-            var locationIndex = LevelManager.GetLocationIndex();
-            var locationKey = LevelManager.GetLocationKey(locationIndex);
-            var partOfDay = LevelManager.GetCurrentPartOfDay();
-
-            if (!string.IsNullOrWhiteSpace(locationKey) && !string.IsNullOrWhiteSpace(partOfDay))
-            {
-                var locationSlug = LocationAssetFallback.ToLocationSlug(locationKey);
-                var daypartSlug = LocationAssetFallback.ToSlug(partOfDay);
-
-                if (!string.IsNullOrWhiteSpace(locationSlug) && !string.IsNullOrWhiteSpace(daypartSlug))
-                    return (locationSlug, daypartSlug);
-            }
-
-            // Direct address path: used when a launched level is intentionally outside the gameplay catalog.
-            var currentLevelAddress = GameDataManager.PlayerData?.CurrentLevel;
-            if (HierarchicalLevelCatalog.TryParseLevelAddress(currentLevelAddress, out var addressLocationKey, out var addressPartKey, out _))
-            {
-                var locationSlug = LocationAssetFallback.ToLocationSlug(addressLocationKey);
-                var daypartSlug = LocationAssetFallback.ToSlug(addressPartKey);
-
-                if (!string.IsNullOrWhiteSpace(locationSlug) && !string.IsNullOrWhiteSpace(daypartSlug))
-                    return (locationSlug, daypartSlug);
-            }
-
-            // Fallback: first location from LocationInfoList + catalog
-            Debug.LogWarning("[EnvironmentKeyResolver] Catalog lookup failed, using fallback location.");
-            var fallbackLocationKey = TryGetFallbackLocationKey();
-            if (string.IsNullOrWhiteSpace(fallbackLocationKey))
-                return (null, null);
-
-            var fallbackSlug = LocationAssetFallback.ToLocationSlug(fallbackLocationKey);
-            var fallbackDaypart = !string.IsNullOrWhiteSpace(partOfDay)
-                ? LocationAssetFallback.ToSlug(partOfDay)
-                : "morning";
-
-            return (fallbackSlug, fallbackDaypart);
-        }
-
-        /// <summary>
-        /// Tries to resolve the canonical location key for the fallback (first) location.
-        /// Prefers catalog's GetLocationId(0) over display names.
-        /// </summary>
-        private static string TryGetFallbackLocationKey()
-        {
-            var key = LevelManager.GetLocationKey(0);
-            if (!string.IsNullOrWhiteSpace(key))
-                return key;
-
-            // Last resort: hardcoded canonical key
-            return "01_New_York";
+            // Уровни инструментов вне каталога сохраняют локацию и время суток в своём адресе.
+            if (HierarchicalLevelCatalog.TryParseLevelAddress(currentLevel, out var locationId, out var daypart, out _))
+                return BuildEnvironmentKey(locationId, daypart);
+            throw new InvalidOperationException($"Не удалось определить окружение для уровня '{currentLevel}': нужны локация и время суток.");
         }
     }
 }

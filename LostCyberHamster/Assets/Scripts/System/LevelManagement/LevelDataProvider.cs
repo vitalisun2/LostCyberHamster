@@ -19,22 +19,32 @@ namespace Assets.Scripts.System
         private static List<AsyncOperationHandle<Sprite>> _introHandles = new List<AsyncOperationHandle<Sprite>>();
 
 
+        /// <summary>Загружает готовое окружение и остальные ресурсы текущего уровня до запуска интро.</summary>
         public static async Task LoadLevelData()
         {
             var levelData = LevelController.Instance.LevelData;
+            levelData.ReleaseEnvironmentLease();
 
-            await LoadLevelInfo(levelData);
-            await LoadSkyPrefab(levelData);
-            await LoadBackground2Prefab(levelData);
-            await LoadBackgroundPrefab(levelData);
-            await LoadRoadPrefab(levelData);
-            await LoadBonuses(levelData);
-            await LoadEffects(levelData);
-            await LoadObstacles(levelData);
-            await LoadObstaclesSprites(levelData);
-            await LoadObstacleAnimations(levelData);
-            await LoadDecorSprites(levelData);
-            await LoadCollectablesSprites(levelData);
+            // Готовое окружение обязательно для локации и времени суток текущего уровня.
+            try
+            {
+                await LoadLevelInfo(levelData);
+                await LoadEnvironmentPrefab(levelData);
+
+                // Остальные ресурсы продолжают использовать существующую загрузку.
+                await LoadBonuses(levelData);
+                await LoadEffects(levelData);
+                await LoadObstacles(levelData);
+                await LoadObstaclesSprites(levelData);
+                await LoadObstacleAnimations(levelData);
+                await LoadDecorSprites(levelData);
+                await LoadCollectablesSprites(levelData);
+            }
+            catch
+            {
+                levelData.ReleaseEnvironmentLease();
+                throw;
+            }
         }
 
         // Load intro sprites
@@ -286,86 +296,37 @@ public static void ReleaseIntroSprites()
             return levelKey;
         }
 
-        private static async Task LoadBackgroundPrefab(LevelData levelData)
+        /// <summary>Загружает обязательный префаб четырёх фонов и удерживает его до создания экземпляра.</summary>
+        private static async Task LoadEnvironmentPrefab(LevelData levelData)
         {
-            // Load shared prefab only once if not already loaded
-            if (levelData.ScrollingEnvironmentPrefab == null)
+            // Ключ явно содержит канонические локацию и время суток.
+            var key = EnvironmentKeyResolver.BuildEnvironmentKey();
+            AsyncOperationHandle<GameObject> handle = default;
+            AddressableLease<GameObject> lease = null;
+            try
             {
-                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
+                handle = Addressables.LoadAssetAsync<GameObject>(key);
+                await handle.Task;
+                if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
+                    throw new InvalidOperationException("Addressables не вернул готовый префаб.");
+
+                // Проверяем композицию до интро и передаём lease загрузочным данным.
+                var environment = handle.Result.GetComponent<LocationEnvironment>();
+                LevelDataValidator.ValidateEnvironmentPrefab(environment, key);
+                lease = AddressableLease<GameObject>.FromHandle(handle);
+                levelData.EnvironmentPrefabLease = lease;
             }
-
-            var backgroundKey = EnvironmentKeyResolver.BuildBackgroundKey();
-            var backgroundSprite = await TryLoadEnvironmentSprite(backgroundKey, "background");
-
-            if (backgroundSprite == null)
+            catch (Exception exception)
             {
-                Debug.LogError("[LevelDataProvider] Unable to load background sprite for the current level.");
-                return;
+                if (lease != null)
+                    lease.Dispose();
+                else if (handle.IsValid())
+                    Addressables.Release(handle);
+                throw new InvalidOperationException(
+                    $"Не удалось загрузить окружение '{key}' для уровня '{GameDataManager.PlayerData?.CurrentLevel}'. " +
+                    "Подготовьте и сохраните префаб этой локации и времени суток через Background Tool. " +
+                    exception.Message, exception);
             }
-
-            LevelDataValidator.ValidateBackgroundTexture(backgroundSprite);
-            levelData.BackgroundSprite = backgroundSprite;
-        }
-
-        private static async Task LoadBackground2Prefab(LevelData levelData)
-        {
-            // Load shared prefab only once if not already loaded
-            if (levelData.ScrollingEnvironmentPrefab == null)
-            {
-                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
-            }
-
-            var background2Key = EnvironmentKeyResolver.BuildBackground2Key();
-            var background2Sprite = await TryLoadEnvironmentSprite(background2Key, "background2");
-
-            if (background2Sprite == null)
-            {
-                Debug.LogWarning("[LevelDataProvider] Unable to load background2 sprite, continuing without it.");
-                return;
-            }
-
-            LevelDataValidator.ValidateBackgroundTexture(background2Sprite);
-            levelData.Background2Sprite = background2Sprite;
-        }
-
-        private static async Task LoadRoadPrefab(LevelData levelData)
-        {
-            // Load shared prefab only once if not already loaded
-            if (levelData.ScrollingEnvironmentPrefab == null)
-            {
-                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
-            }
-
-            var roadKey = EnvironmentKeyResolver.BuildRoadKey();
-            var roadSprite = await TryLoadEnvironmentSprite(roadKey, "road");
-
-            if (roadSprite == null)
-            {
-                Debug.LogError("[LevelDataProvider] Unable to load road sprite for the current level.");
-                return;
-            }
-
-            levelData.RoadSprite = roadSprite;
-        }
-
-        private static async Task LoadSkyPrefab(LevelData levelData)
-        {
-            // Load shared prefab only once if not already loaded
-            if (levelData.ScrollingEnvironmentPrefab == null)
-            {
-                levelData.ScrollingEnvironmentPrefab = await Addressables.LoadAssetAsync<GameObject>(Consts.ScrollingEnvironmentPrefabName).Task;
-            }
-
-            var skyKey = EnvironmentKeyResolver.BuildSkyKey();
-            var skySprite = await TryLoadEnvironmentSprite(skyKey, "sky");
-
-            if (skySprite == null)
-            {
-                Debug.LogError("[LevelDataProvider] Unable to load sky sprite for the current level.");
-                return;
-            }
-
-            levelData.SkySprite = skySprite;
         }
 
         private static async Task LoadBonuses(LevelData levelData)
@@ -728,48 +689,6 @@ public static void ReleaseIntroSprites()
         }
 
         /// <summary>
-        /// Loads an environment sprite by its resolved key. Used for background, background2, road, sky.
-        /// </summary>
-        private static async Task<Sprite> TryLoadEnvironmentSprite(string key, string assetType)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                Debug.LogError($"[LevelDataProvider] Unable to build {assetType} texture key.");
-                return null;
-            }
-
-            var sprite = await TryLoadSpriteByKey(key, $"{assetType} sprite");
-            if (sprite == null)
-            {
-                Debug.LogWarning($"[LevelDataProvider] {assetType} sprite '{key}' not found.");
-            }
-
-            return sprite;
-        }
-
-        private static async Task<Sprite> TryLoadSpriteByKey(string key, string description)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                return null;
-            }
-
-            try
-            {
-                return await Addressables.LoadAssetAsync<Sprite>(key).Task;
-            }
-            catch (InvalidKeyException)
-            {
-                Debug.LogWarning($"[LevelDataProvider] Addressables key '{key}' not found for {description}.");
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[LevelDataProvider] Failed to load sprite '{key}' ({description}): {ex.Message}");
-                return null;
-            }
-        }
-        /// <summary>
         /// Возвращает список полных адресов gameplay-уровней, сохраняя legacy-имя метода.
         /// </summary>
         public static Task<List<string>> GetAllLevelNamesAsync()
@@ -844,14 +763,3 @@ public static void ReleaseIntroSprites()
 
     }
 }
-
-
-
-
-
-
-
-
-
-
-

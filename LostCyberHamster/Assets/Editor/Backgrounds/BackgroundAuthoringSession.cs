@@ -1,0 +1,290 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Assets.Scripts;
+using Assets.Scripts.Common.Models;
+using Assets.Scripts.Gameplay;
+using Assets.Scripts.System;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
+
+namespace LostCyberHamster.Editor.Backgrounds
+{
+    /// <summary>Хранит несохранённую композицию четырёх слоёв и её временные ресурсы.</summary>
+    public sealed class BackgroundAuthoringSession : IDisposable
+    {
+        public static readonly EnvironmentLayerRole[] Roles =
+        {
+            EnvironmentLayerRole.Road, EnvironmentLayerRole.Background,
+            EnvironmentLayerRole.Background2, EnvironmentLayerRole.Sky
+        };
+
+        private readonly Dictionary<EnvironmentLayerRole, BackgroundTextureData> _textures;
+        private readonly List<Object> _temporaryResources = new List<Object>();
+        private readonly Dictionary<EnvironmentLayerRole, SpriteRenderer> _authoredLayers =
+            new Dictionary<EnvironmentLayerRole, SpriteRenderer>();
+        private readonly Dictionary<EnvironmentLayerRole, Sprite> _authoredSprites =
+            new Dictionary<EnvironmentLayerRole, Sprite>();
+        private readonly Dictionary<EnvironmentLayerRole, Vector3> _initialPositions =
+            new Dictionary<EnvironmentLayerRole, Vector3>();
+        private readonly Dictionary<EnvironmentLayerRole, Vector3> _previewPositions =
+            new Dictionary<EnvironmentLayerRole, Vector3>();
+        private readonly Scene _scene;
+        private bool _disposed;
+        private float _previewAspect;
+
+        /// <summary>Создаёт камеру и четыре временных слоя в новой сцене.</summary>
+        private BackgroundAuthoringSession(Dictionary<EnvironmentLayerRole, BackgroundTextureData> textures,
+            string locationId, string daypart)
+        {
+            _textures = textures;
+            LocationId = locationId;
+            Daypart = daypart;
+            _scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            try
+            {
+                // Создаём игровую камеру и корень нижнего края дороги.
+                var cameraObject = new GameObject("Background preview camera", typeof(Camera));
+                Camera = cameraObject.GetComponent<Camera>();
+                Camera.tag = "MainCamera";
+                Camera.clearFlags = CameraClearFlags.SolidColor;
+                Camera.backgroundColor = Color.black;
+                LocationEnvironment.ConfigureCamera(Camera);
+                var root = new GameObject($"environment_{LocationSlug}_{Daypart}", typeof(LocationEnvironment));
+                root.transform.position = new Vector3(0f, LocationEnvironment.RoadBottomWorldY, 0f);
+                Environment = root.GetComponent<LocationEnvironment>();
+
+                // Сохраняем положение обрезанных рисунков относительно исходной дороги.
+                var roadBounds = textures[EnvironmentLayerRole.Road].SourceBounds;
+                foreach (var role in Roles)
+                {
+                    var data = textures[role];
+                    var texture = data.CreateTexture();
+                    _temporaryResources.Add(texture);
+                    var sprite = Sprite.Create(texture, data.SpriteRect, new Vector2(.5f, .5f),
+                        BackgroundTexturePreparation.PixelsPerUnit, 0, SpriteMeshType.FullRect);
+                    sprite.name = BackgroundAssetExporter.GetSpriteName(role, LocationSlug, Daypart);
+                    sprite.hideFlags = HideFlags.DontSave;
+                    _temporaryResources.Add(sprite);
+                    var layerObject = new GameObject(role.ToString(), typeof(SpriteRenderer));
+                    layerObject.transform.SetParent(root.transform, false);
+                    var bounds = data.SourceBounds;
+                    var position = new Vector3((bounds.center.x - roadBounds.center.x) /
+                        BackgroundTexturePreparation.PixelsPerUnit,
+                        (bounds.y - roadBounds.y + bounds.height * .5f) /
+                        BackgroundTexturePreparation.PixelsPerUnit, 0f);
+                    layerObject.transform.localPosition = position;
+                    _initialPositions.Add(role, position);
+                    _previewPositions.Add(role, position);
+                    var renderer = layerObject.GetComponent<SpriteRenderer>();
+                    renderer.sprite = sprite;
+                    renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Sprites-Default.mat");
+                    renderer.sortingLayerName = LocationEnvironment.GetSortingLayer(role);
+                    _authoredLayers.Add(role, renderer);
+                    _authoredSprites.Add(role, sprite);
+                }
+                Environment.Configure(_authoredLayers[EnvironmentLayerRole.Road], _authoredLayers[EnvironmentLayerRole.Background],
+                    _authoredLayers[EnvironmentLayerRole.Background2], _authoredLayers[EnvironmentLayerRole.Sky]);
+                RefreshPreview();
+                Selection.activeGameObject = Environment.GetLayer(EnvironmentLayerRole.Background).gameObject;
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
+        }
+
+        public string LocationId { get; }
+        public string Daypart { get; }
+        public string LocationSlug => GetLocationSlug(LocationId);
+        public LocationEnvironment Environment { get; }
+        public Camera Camera { get; }
+        public bool IsActive => !_disposed && _scene.IsValid() && _scene.isLoaded && Environment != null &&
+                                Camera != null && Roles.All(role => Environment.GetLayer(role) != null);
+
+        /// <summary>Декодирует четыре выбранных слоя и открывает черновую сцену.</summary>
+        public static BackgroundAuthoringSession Create(ProcreateDocument document,
+            IReadOnlyDictionary<EnvironmentLayerRole, ProcreateNode> layers, string locationId, string daypart)
+        {
+            // Проверяем принадлежность выбора документу и канонические параметры экспорта.
+            if (document == null || layers == null || Roles.Any(role => !layers.ContainsKey(role)) || layers.Count != 4)
+                throw new ArgumentException("Нужны документ и четыре назначенные роли.");
+            if (Roles.Select(role => layers[role].Id).Distinct().Count() != 4 ||
+                Roles.Any(role => layers[role].IsGroup || !ContainsNode(document.Roots, layers[role])))
+                throw new ArgumentException("Каждой роли нужен отдельный растровый слой выбранного документа.");
+            if (string.IsNullOrEmpty(locationId) || Path.GetFileName(locationId) != locationId ||
+                !Directory.Exists($"Assets/Content/locations/{locationId}/levels"))
+                throw new ArgumentException("Выберите существующую локацию.");
+            if (!Enum.TryParse<PartOfDayEnum>(daypart, true, out var part) || !Enum.IsDefined(typeof(PartOfDayEnum), part))
+                throw new ArgumentException("Выберите время суток.");
+
+            // Подготавливаем всё до замены текущей сцены.
+            var textures = new Dictionary<EnvironmentLayerRole, BackgroundTextureData>();
+            try
+            {
+                foreach (var role in Roles)
+                {
+                    EditorUtility.DisplayProgressBar("Подготовка фонов", layers[role].Name, textures.Count / 4f);
+                    textures.Add(role, BackgroundTexturePreparation.Prepare(ProcreateLayerDecoder.Decode(document, layers[role])));
+                }
+                return new BackgroundAuthoringSession(textures, locationId, part.ToString().ToLowerInvariant());
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        /// <summary>Возвращает подготовленные данные выбранной роли.</summary>
+        public BackgroundTextureData GetTextureData(EnvironmentLayerRole role) => _textures[role];
+
+        /// <summary>Меняет высоту слоя с поддержкой Undo/Redo.</summary>
+        public void SetLayerY(EnvironmentLayerRole role, float y)
+        {
+            if (!IsActive || role == EnvironmentLayerRole.Road || !float.IsFinite(y))
+                return;
+            var transform = Environment.GetLayer(role).transform;
+            Undo.RecordObject(transform, "Высота слоя фона");
+            var position = transform.localPosition;
+            position.y = y;
+            transform.localPosition = position;
+            RefreshPreview();
+        }
+
+        /// <summary>Сохраняет только вертикальные изменения и обновляет повторные копии.</summary>
+        public bool UpdatePreview()
+        {
+            if (!IsActive)
+                return false;
+            var changed = false;
+
+            // Фиксируем дорожный якорь, масштаб и горизонтальные позиции.
+            var root = Environment.transform;
+            var rootPosition = new Vector3(0f, LocationEnvironment.RoadBottomWorldY, 0f);
+            changed |= root.position != rootPosition || root.rotation != Quaternion.identity || root.localScale != Vector3.one;
+            if (root.position != rootPosition || root.rotation != Quaternion.identity)
+                root.SetPositionAndRotation(rootPosition, Quaternion.identity);
+            if (root.localScale != Vector3.one)
+                root.localScale = Vector3.one;
+            if (!Camera.orthographic || !Mathf.Approximately(Camera.orthographicSize, Consts.CameraSize) ||
+                Camera.transform.position != Consts.CameraPosition || Camera.transform.rotation != Quaternion.identity)
+            {
+                LocationEnvironment.ConfigureCamera(Camera);
+                changed = true;
+            }
+            foreach (var role in Roles)
+            {
+                var transform = Environment.GetLayer(role).transform;
+                var position = _initialPositions[role];
+                if (role != EnvironmentLayerRole.Road && float.IsFinite(transform.localPosition.y))
+                    position.y = transform.localPosition.y;
+                changed |= transform.localPosition != position || transform.localRotation != Quaternion.identity ||
+                           transform.localScale != Vector3.one || _previewPositions[role] != position;
+                if (transform.localPosition != position)
+                    transform.localPosition = position;
+                _previewPositions[role] = position;
+                if (transform.localRotation != Quaternion.identity)
+                    transform.localRotation = Quaternion.identity;
+                if (transform.localScale != Vector3.one)
+                    transform.localScale = Vector3.one;
+            }
+
+            // Новое устройство меняет необходимую ширину повторения.
+            if (changed || !Mathf.Approximately(_previewAspect, Camera.aspect))
+            {
+                RefreshPreview();
+                changed = true;
+            }
+            return changed;
+        }
+
+        /// <summary>Повторяет четыре слоя на ширину текущего устройства.</summary>
+        public void RefreshPreview()
+        {
+            if (!IsActive)
+                return;
+            _previewAspect = Camera.aspect;
+            var halfWidth = Camera.orthographicSize * Mathf.Max(_previewAspect, 1792f / 828f);
+            Environment.PopulateStatic(Camera.transform.position.x - halfWidth, Camera.transform.position.x + halfWidth);
+
+            // Служебные копии видны в симуляторе, а редактируются только авторские слои.
+            foreach (Transform child in Environment.transform)
+            {
+                if (Roles.Any(role => Environment.GetLayer(role).transform == child))
+                    continue;
+                child.gameObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor;
+                SceneVisibilityManager.instance.DisablePicking(child.gameObject, true);
+            }
+            SceneView.RepaintAll();
+            EditorApplication.QueuePlayerLoopUpdate();
+        }
+
+        /// <summary>Экспортирует композицию, затем возвращается в Bootstrap.</summary>
+        public string Save()
+        {
+            if (!IsActive)
+                throw new InvalidOperationException("Черновая композиция закрыта.");
+            var path = BackgroundAssetExporter.Save(this);
+            Dispose();
+            return path;
+        }
+
+        /// <summary>Отбрасывает черновую сцену и освобождает временные пиксели.</summary>
+        public void Dispose() => Dispose(true);
+
+        /// <summary>Освобождает ресурсы; при завершении редактирования открывает Bootstrap.</summary>
+        public void Dispose(bool openBootstrap)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+
+            // Удаляем черновые объекты до освобождения спрайтов и текстур.
+            if (Environment != null)
+                Object.DestroyImmediate(Environment.gameObject);
+            if (Camera != null)
+                Object.DestroyImmediate(Camera.gameObject);
+            foreach (var resource in _temporaryResources)
+                if (resource != null)
+                    Object.DestroyImmediate(resource);
+            _temporaryResources.Clear();
+            _textures.Clear();
+
+            // Сцена композиции существует только в текущей редакторской сессии.
+            if (openBootstrap && _scene.IsValid() && _scene.isLoaded && !EditorApplication.isPlayingOrWillChangePlaymode)
+                EditorSceneManager.OpenScene("Assets/Scenes/Bootstrap.unity", OpenSceneMode.Single);
+        }
+
+        /// <summary>Получает техническое имя существующей локации.</summary>
+        public static string GetLocationSlug(string locationId) => LocationAssetFallback.ToLocationSlug(locationId);
+
+        /// <summary>Проверяет принадлежность четырёх рисунков текущему черновику.</summary>
+        public void ValidateForSave()
+        {
+            if (!IsActive)
+                throw new InvalidOperationException("Черновая композиция закрыта.");
+            foreach (var role in Roles)
+            {
+                var renderer = Environment.GetLayer(role);
+                if (renderer != _authoredLayers[role] || renderer.sprite != _authoredSprites[role] ||
+                    renderer.sortingLayerName != LocationEnvironment.GetSortingLayer(role))
+                    throw new InvalidOperationException($"Слой {role} изменён за пределами вертикальной настройки. Создайте композицию заново.");
+            }
+        }
+
+        /// <summary>Проверяет, что выбранный узел принадлежит исходному документу.</summary>
+        private static bool ContainsNode(IReadOnlyList<ProcreateNode> nodes, ProcreateNode target)
+        {
+            foreach (var node in nodes)
+                if (ReferenceEquals(node, target) || ContainsNode(node.Children, target))
+                    return true;
+            return false;
+        }
+    }
+}

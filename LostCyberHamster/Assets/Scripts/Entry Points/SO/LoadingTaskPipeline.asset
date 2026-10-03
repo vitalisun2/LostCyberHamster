@@ -17,6 +17,10 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
+    - rid: 715522665726607442
+      type: {class: InitEnvironmentLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
+      data:
+        _children: []
     - rid: 1442725433635242043
       type: {class: InitObstaclesPoolLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
@@ -35,27 +39,16 @@ MonoBehaviour:
         _children:
         - rid: 9100000000000000001
         - rid: 9100000000000000002
-        - rid: 2706311562664083607
         - rid: 6421078045922951243
-        - rid: 6570499326113218626
-        - rid: 6570499326113218627
-        - rid: 6570499326113218622
-        - rid: 6570499326113218623
         - rid: 6570499326113218621
+        - rid: 715522665726607442
+        - rid: 2706311562664083607
         - rid: 6570499326113218624
         - rid: 6570499326113218625
         - rid: 8847391099000000001
         - rid: 1442725433635242043
     - rid: 6570499326113218621
       type: {class: InitCameraLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
-      data:
-        _children: []
-    - rid: 6570499326113218622
-      type: {class: InitBackgroundLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
-      data:
-        _children: []
-    - rid: 6570499326113218623
-      type: {class: InitRoadLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
     - rid: 6570499326113218624
@@ -66,21 +59,13 @@ MonoBehaviour:
       type: {class: InitGameUiLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
-    - rid: 6570499326113218626
-      type: {class: InitSkyLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
-      data:
-        _children: []
-    - rid: 6570499326113218627
-      type: {class: InitBackground2LoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
-      data:
-        _children: []
     - rid: 8847391099000000001
       type: {class: InitDecorationsLoadingTask, ns: Assets.Scripts.Entry_Points.GameLoadingTasks, asm: Assembly-CSharp}
       data:
         _children: []
     - rid: 9100000000000000001
       type: {class: TutorialLevelRoutingLoadingTask, ns: Assets.Scripts.Tutorial, asm: Assembly-CSharp}
-      data: {}
+      data: 
     - rid: 9100000000000000002
       type: {class: InitTutorialRuntimeLoadingTask, ns: Assets.Scripts.Tutorial, asm: Assembly-CSharp}
-      data: {}
+      data: 
