@@ -25,9 +25,11 @@ namespace LostCyberHamster.Editor.Backgrounds
         private readonly Dictionary<string, ProcreateDocument> _documents = new Dictionary<string, ProcreateDocument>();
         private readonly HashSet<string> _openFiles = new HashSet<string>();
         private readonly HashSet<string> _openGroups = new HashSet<string>();
+        private readonly HashSet<string> _openEnvironments = new HashSet<string>();
         private readonly Dictionary<EnvironmentLayerRole, ProcreateNode> _layers = new Dictionary<EnvironmentLayerRole, ProcreateNode>();
         private string[] _files = Array.Empty<string>();
         private string[] _locationIds = Array.Empty<string>();
+        private IReadOnlyList<BackgroundEnvironmentCatalogEntry> _environments = Array.Empty<BackgroundEnvironmentCatalogEntry>();
         private ProcreateDocument _document;
         private ProcreateDocument _previewDocument;
         private ProcreateNode _previewNode;
@@ -59,6 +61,7 @@ namespace LostCyberHamster.Editor.Backgrounds
 
             // Черновик принадлежит открытому окну редактора.
             EditorApplication.update += OnEditorUpdate;
+            EditorApplication.projectChanged += RefreshEnvironmentCatalog;
             EditorApplication.quitting += OnQuitting;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeReload;
             EditorSceneManager.activeSceneChangedInEditMode += OnSceneChanged;
@@ -70,6 +73,7 @@ namespace LostCyberHamster.Editor.Backgrounds
         {
             // Отключаем события перед закрытием временной сцены.
             EditorApplication.update -= OnEditorUpdate;
+            EditorApplication.projectChanged -= RefreshEnvironmentCatalog;
             EditorApplication.quitting -= OnQuitting;
             AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeReload;
             EditorSceneManager.activeSceneChangedInEditMode -= OnSceneChanged;
@@ -80,7 +84,7 @@ namespace LostCyberHamster.Editor.Backgrounds
             CloseSession(!_quitting);
         }
 
-        /// <summary>Показывает выбор источника, его превью либо текущую композицию.</summary>
+        /// <summary>Показывает исходники, превью и готовые окружения либо текущую композицию.</summary>
         private void OnGUI()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -100,6 +104,7 @@ namespace LostCyberHamster.Editor.Backgrounds
             foreach (var path in _files)
                 DrawFile(path);
             DrawLayerPreview();
+            DrawEnvironmentCatalog();
             DrawAssignments();
             DrawMessage();
             EditorGUILayout.EndScrollView();
@@ -250,6 +255,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                     var path = _session.Save();
                     _session = null;
                     _message = $"Сохранено: {path}";
+                    RefreshEnvironmentCatalog();
                 });
             if (GUILayout.Button("Отбросить композицию"))
                 CloseSession(true);
@@ -283,7 +289,7 @@ namespace LostCyberHamster.Editor.Backgrounds
                     _daypartIndex = i;
         }
 
-        /// <summary>Перечитывает список исходников и сбрасывает назначения.</summary>
+        /// <summary>Перечитывает исходники, готовые окружения и сбрасывает назначения.</summary>
         private void RefreshFiles()
         {
             // Сбрасываем структуру предыдущего документа.
@@ -300,6 +306,89 @@ namespace LostCyberHamster.Editor.Backgrounds
                 : Array.Empty<string>();
             _message = _files.Length == 0 ? "В папке нет файлов .procreate." : null;
             EditorPrefs.SetString(FolderPreference, _folder);
+            // Статусы готового контента обновляются вместе с ручным обновлением источников.
+            RefreshEnvironmentCatalog();
+        }
+
+        /// <summary>Перечитывает статусы готовых окружений после изменений проекта.</summary>
+        private void RefreshEnvironmentCatalog()
+        {
+            _environments = BackgroundEnvironmentCatalog.Read(_locationIds, DaypartNames);
+            Repaint();
+        }
+
+        /// <summary>Показывает кешированный каталог готовых вариантов окружения.</summary>
+        private void DrawEnvironmentCatalog()
+        {
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("Готовые окружения", EditorStyles.boldLabel);
+            foreach (var entry in _environments)
+            {
+                // Цвет и подпись показывают результат последней проверки ассетов.
+                var previousColor = GUI.contentColor;
+                GUI.contentColor = entry.IsReady ? new Color(.3f, .8f, .4f)
+                    : string.IsNullOrEmpty(entry.Error) ? Color.gray : new Color(1f, .7f, .25f);
+                var status = entry.IsReady ? "Готово" : string.IsNullOrEmpty(entry.Error) ? "Не подготовлено" : "Ошибка";
+                var expanded = _openEnvironments.Contains(entry.Address);
+                var requested = EditorGUILayout.Foldout(expanded,
+                    $"{entry.LocationId} / {entry.Daypart} — {status}", true);
+                GUI.contentColor = previousColor;
+                if (requested != expanded)
+                {
+                    if (requested)
+                        _openEnvironments.Add(entry.Address);
+                    else
+                        _openEnvironments.Remove(entry.Address);
+                }
+
+                // Раскрытие показывает фактические ссылки и расположение рисунков.
+                if (requested)
+                    DrawEnvironmentDetails(entry);
+            }
+        }
+
+        /// <summary>Показывает ассеты и пути сохранённого окружения без редактирования ссылок.</summary>
+        private static void DrawEnvironmentDetails(BackgroundEnvironmentCatalogEntry entry)
+        {
+            EditorGUI.indentLevel++;
+            if (!string.IsNullOrEmpty(entry.Error))
+                EditorGUILayout.HelpBox(entry.Error, MessageType.Warning);
+
+            // Четыре роли берутся из готового префаба, а не из исходного Procreate.
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUILayout.ObjectField("Префаб", entry.Prefab, typeof(GameObject), false);
+            for (var i = 0; i < BackgroundAuthoringSession.Roles.Length; i++)
+            {
+                using (new EditorGUI.DisabledScope(true))
+                    EditorGUILayout.ObjectField(RoleNames[i], entry.Sprites[i], typeof(Sprite), false);
+                if (!string.IsNullOrEmpty(entry.SpritePaths[i]))
+                    EditorGUILayout.SelectableLabel(entry.SpritePaths[i], GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            }
+
+            // Project-переходы позволяют найти префаб и общую папку экспортированных PNG.
+            EditorGUILayout.LabelField("Адрес", entry.Address);
+            EditorGUILayout.SelectableLabel(entry.PrefabPath, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            using (new EditorGUI.DisabledScope(entry.Prefab == null))
+                if (GUILayout.Button("Показать префаб в Project"))
+                    ShowInProject(entry.PrefabPath);
+            EditorGUILayout.SelectableLabel(entry.SpriteDirectory, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+            using (new EditorGUI.DisabledScope(!AssetDatabase.IsValidFolder(entry.SpriteDirectory)))
+                if (GUILayout.Button("Показать папку PNG в Project"))
+                    ShowInProject(entry.SpriteDirectory);
+            EditorGUI.indentLevel--;
+        }
+
+        /// <summary>Выбирает сохранённый ассет в окне Project.</summary>
+        private static void ShowInProject(string assetPath)
+        {
+            // Находим сохранённый ассет по его пути.
+            var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+            if (asset == null)
+                return;
+            // Выделяем ассет в существующем окне Project.
+            EditorUtility.FocusProjectWindow();
+            Selection.activeObject = asset;
+            EditorGUIUtility.PingObject(asset);
         }
 
         /// <summary>Обновляет неподвижные копии после изменения высоты или устройства.</summary>

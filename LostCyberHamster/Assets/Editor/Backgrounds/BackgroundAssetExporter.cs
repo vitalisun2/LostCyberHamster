@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Assets.Scripts.Gameplay;
+using Assets.Scripts.System.LevelManagement;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -34,8 +35,8 @@ namespace LostCyberHamster.Editor.Backgrounds
             var group = settings.FindGroup(groupName);
             if (group == null)
                 throw new InvalidOperationException($"Группа Addressables '{groupName}' не найдена.");
-            var spriteDirectory = $"Assets/Content/locations/{session.LocationId}/sprites/backgrounds";
-            var prefabDirectory = $"Assets/Content/prefabs/environments/{session.LocationId}";
+            var spriteDirectory = GetSpriteDirectory(session.LocationId);
+            var prefabDirectory = GetPrefabDirectory(session.LocationId);
             EnsureDirectory(spriteDirectory);
             EnsureDirectory(prefabDirectory);
 
@@ -51,8 +52,8 @@ namespace LostCyberHamster.Editor.Backgrounds
             // Сохраняем только четыре авторских слоя, затем возвращаем черновые ссылки.
             var environment = session.Environment;
             var originalSprites = BackgroundAuthoringSession.Roles.ToDictionary(role => role, role => environment.GetLayer(role).sprite);
-            var prefabName = $"environment_{session.LocationSlug}_{session.Daypart}";
-            var prefabPath = $"{prefabDirectory}/{prefabName}.prefab";
+            var prefabName = EnvironmentKeyResolver.BuildEnvironmentKey(session.LocationId, session.Daypart);
+            var prefabPath = GetPrefabPath(session.LocationId, session.Daypart);
             environment.ClearCopies();
             try
             {
@@ -82,6 +83,18 @@ namespace LostCyberHamster.Editor.Backgrounds
                 session.RefreshPreview();
             }
         }
+
+        /// <summary>Возвращает каталог спрайтов фона внутри локации.</summary>
+        public static string GetSpriteDirectory(string locationId) =>
+            $"Assets/Content/locations/{locationId}/sprites/backgrounds";
+
+        /// <summary>Возвращает каталог готовых окружений внутри локации.</summary>
+        public static string GetPrefabDirectory(string locationId) =>
+            $"Assets/Content/locations/{locationId}/prefabs/environments";
+
+        /// <summary>Возвращает путь префаба по локации и времени суток.</summary>
+        public static string GetPrefabPath(string locationId, string daypart) =>
+            $"{GetPrefabDirectory(locationId)}/{EnvironmentKeyResolver.BuildEnvironmentKey(locationId, daypart)}.prefab";
 
         /// <summary>Формирует техническое имя рисунка по роли и варианту окружения.</summary>
         public static string GetSpriteName(EnvironmentLayerRole role, string locationSlug, string daypart)

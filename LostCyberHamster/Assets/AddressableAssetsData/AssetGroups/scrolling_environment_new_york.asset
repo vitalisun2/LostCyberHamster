@@ -45,6 +45,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6a4f23ea70058cc4d8970da18a42944d
+    m_Address: environment_new_york_night
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7e27e0ce885299d40b6a1c4092f8b649
     m_Address: rd_new_york_afternoon
     m_ReadOnly: 0
