@@ -26,7 +26,7 @@ source worktree
 ## Роли
 
 - `SourceWorktree` - рабочая копия, состояние которой нужно собрать: task-worktree, `integration/unity-live` или текущий dirty worktree по явному намерению пользователя.
-- `BuildSandbox` - прогретая сборочная копия проекта, например `C:\BuildWorkspaces\LostCyberHamster_Android`.
+- `BuildSandbox` - прогретая сборочная копия проекта, например `C:\Personal\BuildWorkspaces\LostCyberHamster_Android`.
 - `tools/build/build_android_telegram.ps1` - целевой repo entrypoint для подготовки sandbox, manifest и APK. По умолчанию запускает Unity через CLI.
 - `publish-build-to-telegram-buffer` - локальный skill, который вызывает repo entrypoint и публикует APK в Telegram.
 
@@ -52,7 +52,7 @@ source worktree
 Постоянный build sandbox:
 
 ```text
-C:\BuildWorkspaces\LostCyberHamster_Android
+C:\Personal\BuildWorkspaces\LostCyberHamster_Android
 ```
 
 Это не git-ветка и не source of truth. Это локальная сборочная копия, в которой сохраняются тяжелые кэши:
@@ -134,7 +134,7 @@ Entry point должен проверить, существует ли `BuildSan
   "sourceCommit": "a1b2c3d",
   "sourceDirty": true,
   "sourceDiffHash": "7f91...",
-  "sandboxRoot": "C:/BuildWorkspaces/LostCyberHamster_Android",
+  "sandboxRoot": "C:/Personal/BuildWorkspaces/LostCyberHamster_Android",
   "builtAtUtc": "2026-07-04T17:15:00Z",
   "platform": "Android",
   "development": true
@@ -170,7 +170,7 @@ Entry point создаёт/актуализирует warm sandbox, генери
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\build\build_android_telegram.ps1 `
   -SourceWorktree "<path-to-source-worktree>" `
-  -SandboxRoot "C:\BuildWorkspaces\LostCyberHamster_Android" `
+  -SandboxRoot "C:\Personal\BuildWorkspaces\LostCyberHamster_Android" `
   -BuildLabel "<short-human-label>" `
   -UnityLauncher Auto `
   -Development `

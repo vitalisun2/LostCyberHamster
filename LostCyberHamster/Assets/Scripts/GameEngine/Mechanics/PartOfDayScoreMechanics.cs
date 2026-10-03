@@ -48,6 +48,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
 
         public void OnEnable()
         {
+            if (AutomationRuntimePrefs.IsTestLevelAutomationRun()) return;
+
             // Серверная версия фиксируется один раз, до начала gameplay.
             if (!_contextCaptured)
             {
@@ -57,6 +59,8 @@ namespace Assets.Scripts.GameEngine.Mechanics
                 if (_hasRunLevelKey)
                     _runContext = _coordinator?.CaptureRunContext(_runLevelKey);
             }
+
+            // Подписываем только обычный игровой забег на preview и отправку результата.
             if (_coordinator != null) _coordinator.RunChanged += OnRunChanged;
             _runScoreMechanics.ScoreChanged += OnScoreChanged;
             _gameManager.OnFinish += OnFinish;

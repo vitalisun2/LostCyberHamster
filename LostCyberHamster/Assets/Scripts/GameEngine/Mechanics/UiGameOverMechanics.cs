@@ -53,21 +53,31 @@ namespace Assets.Scripts.GameEngine.Mechanics
             }
             else
             {
-                var completedLevelNumber = LevelManager.GetCurrentLevelNumber();
-                var playerData = GameDataManager.PlayerData;
-                if (completedLevelNumber == 1 &&
-                    playerData != null &&
-                    !playerData.IsAccountPromptPending &&
-                    !playerData.IsAccountPromptShown)
+                bool isTestLevelAutomationRun =
+                    AutomationRuntimePrefs.IsTestLevelAutomationRun();
+                if (!isTestLevelAutomationRun)
                 {
-                    playerData.IsAccountPromptPending = true;
+                    // Записываем meta completion только для обычного игрового забега.
+                    var completedLevelNumber = LevelManager.GetCurrentLevelNumber();
+                    var playerData = GameDataManager.PlayerData;
+                    if (completedLevelNumber == 1 &&
+                        playerData != null &&
+                        !playerData.IsAccountPromptPending &&
+                        !playerData.IsAccountPromptShown)
+                    {
+                        playerData.IsAccountPromptPending = true;
+                    }
+
+                    _activityAttempt.GrossCoins = Math.Max(0, _grossCoins?.Invoke() ?? 0);
+                    _activityAttempt.Complete(() => GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value));
                 }
 
-                _activityAttempt.GrossCoins = Math.Max(0, _grossCoins?.Invoke() ?? 0);
-                _activityAttempt.Complete(() => GameEventsManager.LevelCompleted(completedLevelNumber, _hamster.Lives.Value));
                 _finishCommitted = true;
-                if (_activityAttempt.Committed) GameAds.InterstitialAdService.Instance.SelectWin(_activityAttempt.Id);
 
+                if (!isTestLevelAutomationRun && _activityAttempt.Committed)
+                    GameAds.InterstitialAdService.Instance.SelectWin(_activityAttempt.Id);
+
+                // Показываем результат победы и в служебном прогоне без meta completion.
                 var winScreenController = _uiManager.GetController<WinModalController>();
                 winScreenController.SetParamsForInit(LevelManager.GetLocationName(), LevelManager.GetCurrentPartOfDay(), _hamster.Lives.Value);
                 winScreenController.SetRunResult(_hamster.LatestRunResult);

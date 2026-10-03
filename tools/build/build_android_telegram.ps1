@@ -1,6 +1,6 @@
 param(
     [string]$SourceWorktree = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
-    [string]$SandboxRoot = 'C:\BuildWorkspaces\LostCyberHamster_Android',
+    [string]$SandboxRoot = 'C:\Personal\BuildWorkspaces\LostCyberHamster_Android',
     [string]$BuildLabel = '',
     [string]$UnityExe = 'C:\Program Files\Unity\Hub\Editor\6000.2.6f2\Editor\Unity.exe',
     [string]$AndroidSigningConfigPath = '',

@@ -1,6 +1,6 @@
 param(
     [string]$RepositoryRoot = '',
-    [string]$SandboxRoot = 'C:\BuildWorkspaces\LostCyberHamster_Android',
+    [string]$SandboxRoot = 'C:\Personal\BuildWorkspaces\LostCyberHamster_Android',
     [string]$BuildLabel = 'telegram-worker',
     [string]$TelegramConfigPath = '',
     [string]$SkillRoot = '',
