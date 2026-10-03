@@ -175,7 +175,11 @@ namespace LostCyberHamster.Editor
             }
             finally
             {
-                EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
+                // В batchmode исходная сцена может отсутствовать; оставляем чистую пустую сцену.
+                if (previousSetup.Any(scene => scene.isLoaded && scene.isActive))
+                    EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
+                else
+                    EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             }
         }
 
