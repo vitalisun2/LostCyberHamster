@@ -94,17 +94,15 @@ namespace LostCyberHamster.Editor.Backgrounds
                 return;
             }
 
-            // Список, превью и назначения идут компактным стеком от верхнего края.
+            // Общая прокрутка сохраняет превью сразу под деревом любой высоты.
             DrawFolder();
-            var maxListHeight = Mathf.Max(100f, position.height - 400f);
-            _scroll = EditorGUILayout.BeginScrollView(_scroll,
-                GUILayout.ExpandHeight(false), GUILayout.MaxHeight(maxListHeight));
+            _scroll = EditorGUILayout.BeginScrollView(_scroll);
             foreach (var path in _files)
                 DrawFile(path);
-            EditorGUILayout.EndScrollView();
             DrawLayerPreview();
             DrawAssignments();
             DrawMessage();
+            EditorGUILayout.EndScrollView();
         }
 
         /// <summary>Выбирает и обновляет папку исходных Procreate-файлов.</summary>
