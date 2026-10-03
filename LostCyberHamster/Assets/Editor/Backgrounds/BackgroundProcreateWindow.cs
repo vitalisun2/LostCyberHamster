@@ -283,7 +283,8 @@ namespace LostCyberHamster.Editor.Backgrounds
                     TryAction(() => _session.SetLayerY(role, nextY));
             }
 
-            // Скорости и воспроизведение проверяют стыки четырёх слоёв в симуляторе.
+            // Общие скорости применяются к каждой композиции и сохраняются сразу.
+            EditorGUILayout.LabelField("Скорости общие для всех композиций; сохраняются сразу.", EditorStyles.miniLabel);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button(_session.IsPreviewPlaying ? "Stop" : "Play", GUILayout.Width(55f)))
                 TryAction(() =>
@@ -474,9 +475,13 @@ namespace LostCyberHamster.Editor.Backgrounds
                 Repaint();
         }
 
-        /// <summary>Показывает результат Undo/Redo в симуляторе.</summary>
+        /// <summary>Сохраняет общие скорости после Undo/Redo и обновляет симулятор.</summary>
         private void OnUndoRedo()
         {
+            // Общая настройка сохраняется независимо от текущего черновика.
+            AssetDatabase.SaveAssetIfDirty(EnvironmentScrollSettings.Current);
+
+            // Авторские высоты и фаза просмотра используют текущие значения.
             _session?.RefreshPreview();
             Repaint();
         }

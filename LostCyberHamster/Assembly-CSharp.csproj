@@ -497,6 +497,7 @@
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\IJumpFromRoofOnRoofPolicy.cs" />
     <Compile Include="Assets\Scripts\Bot\Diagnostics\BotDiagnosticLevel.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\JumpFromRoofOnRoof\JumpFromRoofOnRoofWindowCalculator.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\EnvironmentScrollSettings.cs" />
     <Compile Include="Assets\Scripts\Bot\Strategies\Shared\Timing\SafeInterval.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\SuperAttackFactory.cs" />
     <Compile Include="Assets\Scripts\SharedCore\Meta\SuperAttacks\ElectricStrikeAttack.cs" />

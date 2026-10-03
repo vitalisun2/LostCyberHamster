@@ -19,10 +19,6 @@ namespace Assets.Scripts.Gameplay
         [SerializeField] private SpriteRenderer _background;
         [SerializeField] private SpriteRenderer _background2;
         [SerializeField] private SpriteRenderer _sky;
-        [SerializeField, Min(0f)] private float _roadScrollSpeed = Consts.RoadScrollSpeed;
-        [SerializeField, Min(0f)] private float _backgroundScrollSpeed = Consts.BackgroundScrollSpeed;
-        [SerializeField, Min(0f)] private float _background2ScrollSpeed = Consts.Background2ScrollSpeed;
-        [SerializeField, Min(0f)] private float _skyScrollSpeed = Consts.SkyScrollSpeed;
 
         private GameManager _gameManager;
         private Camera _camera;
@@ -62,52 +58,14 @@ namespace Assets.Scripts.Gameplay
             };
         }
 
-        /// <summary>Возвращает исходную игровую скорость прокрутки роли.</summary>
-        public static float GetScrollSpeed(EnvironmentLayerRole role)
-        {
-            return role switch
-            {
-                EnvironmentLayerRole.Road => Consts.RoadScrollSpeed,
-                EnvironmentLayerRole.Background => Consts.BackgroundScrollSpeed,
-                EnvironmentLayerRole.Background2 => Consts.Background2ScrollSpeed,
-                EnvironmentLayerRole.Sky => Consts.SkyScrollSpeed,
-                _ => throw new ArgumentOutOfRangeException(nameof(role))
-            };
-        }
+        /// <summary>Возвращает общую для всех композиций и игры скорость роли.</summary>
+        public static float GetScrollSpeed(EnvironmentLayerRole role) => EnvironmentScrollSettings.Current.GetSpeed(role);
 
-        /// <summary>Возвращает сохранённую в композиции скорость указанной роли.</summary>
-        public float GetLayerScrollSpeed(EnvironmentLayerRole role)
-        {
-            return role switch
-            {
-                EnvironmentLayerRole.Road => _roadScrollSpeed,
-                EnvironmentLayerRole.Background => _backgroundScrollSpeed,
-                EnvironmentLayerRole.Background2 => _background2ScrollSpeed,
-                EnvironmentLayerRole.Sky => _skyScrollSpeed,
-                _ => throw new ArgumentOutOfRangeException(nameof(role))
-            };
-        }
+        /// <summary>Возвращает общую для всех композиций скорость указанной роли.</summary>
+        public float GetLayerScrollSpeed(EnvironmentLayerRole role) => GetScrollSpeed(role);
 
-        /// <summary>Сохраняет скорость роли и применяет её к текущей игровой прокрутке.</summary>
-        public void SetLayerScrollSpeed(EnvironmentLayerRole role, float speed)
-        {
-            if (!float.IsFinite(speed) || speed < 0f)
-                throw new ArgumentOutOfRangeException(nameof(speed), "Скорость должна быть конечной и неотрицательной.");
-
-            // Скорость принадлежит конкретной композиции и сериализуется вместе с ней.
-            switch (role)
-            {
-                case EnvironmentLayerRole.Road: _roadScrollSpeed = speed; break;
-                case EnvironmentLayerRole.Background: _backgroundScrollSpeed = speed; break;
-                case EnvironmentLayerRole.Background2: _background2ScrollSpeed = speed; break;
-                case EnvironmentLayerRole.Sky: _skyScrollSpeed = speed; break;
-                default: throw new ArgumentOutOfRangeException(nameof(role));
-            }
-
-            // Живая игровая полоса сохраняет фазу после изменения скорости.
-            if (_strips != null)
-                _strips[(int)role].SetSpeed(speed);
-        }
+        /// <summary>Меняет общую скорость роли для всех композиций и игры.</summary>
+        public void SetLayerScrollSpeed(EnvironmentLayerRole role, float speed) => EnvironmentScrollSettings.Current.SetSpeed(role, speed);
 
         /// <summary>Возвращает слой отрисовки роли.</summary>
         public static string GetSortingLayer(EnvironmentLayerRole role)
@@ -135,6 +93,9 @@ namespace Assets.Scripts.Gameplay
         /// <summary>Проверяет спрайты, скорости и начало координат на нижнем крае дороги.</summary>
         public void ValidateConfiguration()
         {
+            // Все композиции используют четыре проверенные общие скорости.
+            EnvironmentScrollSettings.Current.Validate();
+
             // Фиксируем простой контракт: четыре непосредственных дочерних спрайта без масштаба.
             if (transform.localScale != Vector3.one || transform.localRotation != Quaternion.identity
                 || !HasFinitePosition(transform.localPosition))
@@ -160,11 +121,6 @@ namespace Assets.Scripts.Gameplay
                     throw new InvalidOperationException($"Слой {role}: требуется ненулевой Sprite Rect и PPU {Consts.PixelsPerUnit}.");
                 if (sprite.texture.width % 4 != 0 || sprite.texture.height % 4 != 0)
                     throw new InvalidOperationException($"Слой {role}: размер текстуры должен быть кратен четырём.");
-
-                // Скорость задаёт движение влево либо неподвижный слой.
-                var speed = GetLayerScrollSpeed(role);
-                if (!float.IsFinite(speed) || speed < 0f)
-                    throw new InvalidOperationException($"Слой {role}: скорость должна быть конечной и неотрицательной.");
             }
 
             // Высота рисунка произвольна; нижний край дороги всегда задаёт local Y = 0.
@@ -291,9 +247,14 @@ namespace Assets.Scripts.Gameplay
             var halfWidth = _camera.orthographicSize * _camera.aspect;
             var center = _camera.transform.position.x;
 
-            // Каждая полоса сохраняет собственную фазу.
-            foreach (var strip in _strips)
+            // Общие скорости применяются ко всем экземплярам без сброса фазы.
+            var settings = EnvironmentScrollSettings.Current;
+            for (var i = 0; i < _strips.Length; i++)
+            {
+                var strip = _strips[i];
+                strip.SetSpeed(settings.GetSpeed((EnvironmentLayerRole)i));
                 strip.Update(center - halfWidth, center + halfWidth, deltaTime);
+            }
         }
 
         /// <summary>Удаляет подписку на игру и освобождает ресурсы готового префаба.</summary>

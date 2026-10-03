@@ -211,21 +211,26 @@ namespace LostCyberHamster.Editor.Backgrounds
             RefreshPreview();
         }
 
-        /// <summary>Возвращает сохранённую скорость роли для просмотра и игры.</summary>
+        /// <summary>Возвращает общую скорость роли для всех композиций и игры.</summary>
         public float GetPreviewSpeed(EnvironmentLayerRole role) => Environment.GetLayerScrollSpeed(role);
 
-        /// <summary>Меняет сохраняемую скорость роли с Undo без сброса фазы просмотра.</summary>
+        /// <summary>Сохраняет общую скорость роли с Undo без сброса фазы просмотра.</summary>
         public void SetPreviewSpeed(EnvironmentLayerRole role, float speed)
         {
             if (!IsActive || !float.IsFinite(speed))
                 return;
 
-            // Настройка принадлежит компоненту будущего префаба.
+            // Все композиции читают один общий набор скоростей.
             speed = Mathf.Max(0f, speed);
             if (Mathf.Approximately(Environment.GetLayerScrollSpeed(role), speed))
                 return;
-            Undo.RecordObject(Environment, "Скорость слоя фона");
-            Environment.SetLayerScrollSpeed(role, speed);
+            var settings = EnvironmentScrollSettings.Current;
+            Undo.RecordObject(settings, "Общая скорость слоя фона");
+            settings.SetSpeed(role, speed);
+
+            // Общая настройка сохраняется независимо от экспорта композиции.
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
         }
 
         /// <summary>Запускает редакторскую прокрутку четырёх ролей из авторских позиций.</summary>

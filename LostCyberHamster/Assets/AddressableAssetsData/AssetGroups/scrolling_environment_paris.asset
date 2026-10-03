@@ -70,6 +70,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0a0b85d40614f24097ee04f0cc9e237
+    m_Address: environment_paris_morning
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a836658dda157db4da5b7ff914754843
     m_Address: rd_paris_afternoon
     m_ReadOnly: 0
